@@ -27,12 +27,9 @@ docker run -d --rm --name mongo_test_db \
   -e "MONGO_INITDB_DATABASE=${MONGO_DATABASE}" \
   mongo
 
-docker run -d --rm --name redis_test_db -p 6379:6379 redis
-
 function cleanup {
   docker stop postgres_test_db
   docker stop mongo_test_db
-  docker stop redis_test_db
 }
 
 trap cleanup EXIT

@@ -42,9 +42,6 @@ jobs:
         initdb --locale=C -U $POSTGRES_USERNAME --pwfile=<(echo $POSTGRES_PASSWORD)
         pg_ctl start --wait
         echo ::endgroup::
-        echo ::group::Starting Redis service
-        brew install redis && brew services start redis
-        echo ::endgroup::
         echo ::group::Starting MongoDB service
         brew services start mongodb-community
         until echo | mongo 'admin' --eval 'quit(0)'; do sleep 1; done
@@ -69,7 +66,6 @@ jobs:
         action: test
       env:
         POSTGRES_HOST: localhost
-        REDIS_HOST: localhost
         MONGO_HOST: localhost
     - uses: codecov/codecov-action@v2
       if: ${{ matrix.enable_codecov }}
@@ -87,10 +83,6 @@ jobs:
           POSTGRES_USER: ${{ env.POSTGRES_USERNAME }}
           POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ env.POSTGRES_DATABASE }}
-      redis:
-        image: redis
-        ports: 
-          - 6379:6379
       mongo: 
         image: mongo
         ports: 
@@ -122,7 +114,6 @@ jobs:
         action: test
       env:
         POSTGRES_HOST: postgres
-        REDIS_HOST: redis
         MONGO_HOST: mongo
   linux_swift:
     name: ${{ matrix.swift_version }}-${{ matrix.distro }}
@@ -138,10 +129,6 @@ jobs:
           POSTGRES_USER: ${{ env.POSTGRES_USERNAME }}
           POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ env.POSTGRES_DATABASE }}
-      redis:
-        image: redis
-        ports: 
-          - 6379:6379
       mongo: 
         image: mongo
         ports: 
@@ -176,7 +163,6 @@ jobs:
         action: test
       env:
         POSTGRES_HOST: postgres
-        REDIS_HOST: redis
         MONGO_HOST: mongo
   ubuntu_swift_nightly:
     name: nightly-${{ matrix.swift_version }}-${{ matrix.distro }}
@@ -192,10 +178,6 @@ jobs:
           POSTGRES_USER: ${{ env.POSTGRES_USERNAME }}
           POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ env.POSTGRES_DATABASE }}
-      redis:
-        image: redis
-        ports: 
-          - 6379:6379
       mongo: 
         image: mongo
         ports: 
@@ -228,7 +210,6 @@ jobs:
         action: test
       env:
         POSTGRES_HOST: postgres
-        REDIS_HOST: redis
         MONGO_HOST: mongo
   linux_swift_nightly:
     name: nightly-${{ matrix.swift_version }}-${{ matrix.distro }}
@@ -244,10 +225,6 @@ jobs:
           POSTGRES_USER: ${{ env.POSTGRES_USERNAME }}
           POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ env.POSTGRES_DATABASE }}
-      redis:
-        image: redis
-        ports: 
-          - 6379:6379
       mongo: 
         image: mongo
         ports: 
@@ -283,5 +260,4 @@ jobs:
         action: test
       env:
         POSTGRES_HOST: postgres
-        REDIS_HOST: redis
         MONGO_HOST: mongo
