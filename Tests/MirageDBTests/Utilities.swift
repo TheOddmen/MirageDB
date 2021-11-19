@@ -1,5 +1,5 @@
 //
-//  MongoDBTest.swift
+//  Utilities.swift
 //
 //  The MIT License
 //  Copyright (c) 2021 The Oddmen Technology Limited. All rights reserved.
@@ -24,8 +24,7 @@
 //
 
 import MirageDB
-import XCTest
 
-class MDDBTest: XCTestCase {
-    
+func env(_ name: String) -> String? {
+    getenv(name).flatMap { String(cString: $0) }
 }
