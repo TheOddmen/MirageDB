@@ -101,7 +101,7 @@ public struct MDData: Hashable {
     }
     
     public init<Value: MDDataConvertible>(_ elements: [String: Value]) {
-        self.base = .dictionary(OrderedDictionary(uniqueKeysWithValues: elements.lazy.map { ($0.key, $0.value.toMDData()) }))
+        self.base = .dictionary(OrderedDictionary(uniqueKeysWithValues: elements.mapValues { $0.toDBData() }))
     }
     
     public init<Value: MDDataConvertible>(_ elements: OrderedDictionary<String, Value>) {
