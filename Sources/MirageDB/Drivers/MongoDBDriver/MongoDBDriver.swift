@@ -385,7 +385,7 @@ extension MongoDBDriver {
             }
         }
         
-        return connection.connection.mongoQuery().collection(table).createIndex().index(keys).name(index.name).execute().map { _ in }
+        return connection.connection.mongoQuery().collection(table).createIndex().index(keys).name(index.name).unique(index.isUnique).execute().map { _ in }
     }
     
     func dropIndex(_ connection: MDConnection, _ table: String, _ index: String) -> EventLoopFuture<Void> {

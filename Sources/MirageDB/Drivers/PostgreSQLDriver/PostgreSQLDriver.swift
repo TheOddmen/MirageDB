@@ -132,7 +132,13 @@ extension PostgreSQLDriver {
                 }
             }
             
-            let sql: SQLRaw = "CREATE INDEX IF NOT EXISTS \(identifier: index.name) ON \(identifier: table) (\(list.joined(separator: ",")))"
+            let sql: SQLRaw
+            
+            if index.isUnique {
+                sql = "CREATE UNIQUE INDEX IF NOT EXISTS \(identifier: index.name) ON \(identifier: table) (\(list.joined(separator: ",")))"
+            } else {
+                sql = "CREATE INDEX IF NOT EXISTS \(identifier: index.name) ON \(identifier: table) (\(list.joined(separator: ",")))"
+            }
             
             return connection.execute(sql).map { _ in }
             

@@ -29,9 +29,12 @@ public struct MDSQLTableIndex {
     
     public var columns: OrderedDictionary<String, Options>
     
-    public init(name: String, columns: OrderedDictionary<String, Options>) {
+    public var isUnique: Bool
+    
+    public init(name: String, columns: OrderedDictionary<String, Options>, isUnique: Bool) {
         self.name = name
         self.columns = columns
+        self.isUnique = isUnique
     }
 }
 
