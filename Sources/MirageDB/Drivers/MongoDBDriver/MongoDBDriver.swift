@@ -252,11 +252,9 @@ struct MongoDBDriver: MDDriver {
             
             var _update = try update.toBSONDocument()
             
-            if !setOnInsert.isEmpty {
-                var insert = update.compactMapValues { $0.value }.merging(setOnInsert) { _, rhs in rhs }
-                insert["_id"] = MDData(objectIDGenerator())
-                _update["$setOnInsert"] = insert.toBSON()
-            }
+            var setOnInsert = setOnInsert
+            setOnInsert["_id"] = MDData(objectIDGenerator())
+            _update["$setOnInsert"] = setOnInsert.toBSON()
             
             _query = _query.update(_update)
             _query = _query.upsert(true)

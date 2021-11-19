@@ -126,6 +126,8 @@ class MongoDBTest: XCTestCase {
             var obj = MDObject(class: "testUpdateQuery")
             obj = try obj.save(on: connection).wait()
             
+            XCTAssertEqual(obj.id?.count, 10)
+            
             obj["col"] = "text_1"
             
             obj = try obj.save(on: connection).wait()
@@ -177,27 +179,28 @@ class MongoDBTest: XCTestCase {
                     "col": .set("text_1")
                 ]).wait()
             
-            XCTAssertEqual(obj?["col"].string, "text_1")
+            XCTAssertEqual(obj.id?.count, 10)
+            XCTAssertEqual(obj["col"].string, "text_1")
             
             let obj2 = try connection.query()
                 .class("testUpsertQuery")
-                .filter { $0.id == obj?.id }
+                .filter { $0.id == obj.id }
                 .findOneAndUpsert([
                     "col": .set("text_2")
                 ]).wait()
             
-            XCTAssertEqual(obj2?.id, obj?.id)
-            XCTAssertEqual(obj2?["col"].string, "text_2")
+            XCTAssertEqual(obj2.id, obj.id)
+            XCTAssertEqual(obj2["col"].string, "text_2")
             
             let obj3 = try connection.query()
                 .class("testUpsertQuery")
-                .filter { $0.id == obj?.id }
+                .filter { $0.id == obj.id }
                 .findOneAndUpsert([
                     "col": .set("text_3")
                 ], returning: .before).wait()
             
-            XCTAssertEqual(obj3?.id, obj?.id)
-            XCTAssertEqual(obj3?["col"].string, "text_2")
+            XCTAssertEqual(obj3.id, obj.id)
+            XCTAssertEqual(obj3["col"].string, "text_2")
             
         } catch {
             
