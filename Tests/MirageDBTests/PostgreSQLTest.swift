@@ -124,23 +124,25 @@ class PostgreSQLTest: XCTestCase {
             let res1 = try connection.query()
                 .class("testPatternMatchingQuery")
                 .filter { .startsWith($0["col"], "text to ") }
-                .first().wait()
+                .toArray().wait()
             
-            XCTAssertEqual(res1?.id, obj1.id)
+            XCTAssertEqual(res1.count, 1)
+            XCTAssertEqual(res1.first?.id, obj1.id)
             
             let res2 = try connection.query()
                 .class("testPatternMatchingQuery")
                 .filter { .endsWith($0["col"], "ong' string%") }
-                .first().wait()
+                .toArray().wait()
             
-            XCTAssertEqual(res2?.id, obj2.id)
+            XCTAssertEqual(res2.count, 1)
+            XCTAssertEqual(res2.first?.id, obj2.id)
             
             let res3 = try connection.query()
                 .class("testPatternMatchingQuery")
                 .filter { .contains($0["col"], "long' s") }
-                .first().wait()
+                .toArray().wait()
             
-            XCTAssertEqual(res3?.id, obj2.id)
+            XCTAssertEqual(res3.count, 2)
             
         } catch {
             
