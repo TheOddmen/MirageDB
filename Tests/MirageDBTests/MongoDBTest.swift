@@ -82,4 +82,34 @@ class MongoDBTest: XCTestCase {
         }
     }
     
+    func testCreateTable() throws {
+        
+        do {
+            
+            try connection.createTable(MDSQLTable(
+                name: "testCreateTable",
+                columns: [
+                    .init(name: "name", type: .string),
+                    .init(name: "age", type: .integer),
+                ]
+            )).wait()
+            
+            let obj1 = try connection.query()
+                .class("testCreateTable")
+                .insert([
+                    "name": "John",
+                    "age": 10,
+                ]).wait()
+            
+            XCTAssertEqual(obj1.id?.count, 10)
+            XCTAssertEqual(obj1["name"], "John")
+            XCTAssertEqual(obj1["age"], 10)
+            
+        } catch {
+            
+            print(error)
+            throw error
+        }
+    }
+    
 }
