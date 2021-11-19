@@ -25,6 +25,39 @@
 
 extension MDData {
     
+    fileprivate init(fromExtendedJSON data: DBData) throws {
+        switch data.base {
+        case .null: self = nil
+        case let .boolean(value): self.init(value)
+        case let .string(value): self.init(value)
+        case let .signed(value): self.init(value)
+        case let .unsigned(value): self.init(value)
+        case let .number(value): self.init(value)
+        case let .decimal(value): self.init(value)
+        case let .timestamp(value): self.init(value)
+        case let .array(value): try self.init(value.map(MDData.init(fromExtendedJSON:)))
+        case let .dictionary(value): try self.init(value.mapValues(MDData.init(fromExtendedJSON:)))
+        default: throw MDError.unsupportedType
+        }
+    }
+    
+    fileprivate func toExtendedJSON() -> DBData {
+        switch base {
+        case .null: return nil
+        case let .boolean(value): return DBData(value)
+        case let .string(value): return DBData(value)
+        case let .integer(value): return DBData(value)
+        case let .number(value): return DBData(value)
+        case let .decimal(value): return DBData(value)
+        case let .timestamp(value): return DBData(value)
+        case let .array(value): return DBData(value.map { $0.toExtendedJSON() })
+        case let .dictionary(value): return DBData(value.mapValues { $0.toExtendedJSON() })
+        }
+    }
+}
+
+extension MDData {
+    
     init(fromSQLData data: DBData) throws {
         switch data.base {
         case .null: self = nil
@@ -35,8 +68,8 @@ extension MDData {
         case let .number(value): self.init(value)
         case let .decimal(value): self.init(value)
         case let .timestamp(value): self.init(value)
-        case let .array(value): try self.init(value.map(MDData.init))
-        case let .dictionary(value): try self.init(value.mapValues(MDData.init))
+        case let .array(value): try self.init(value.map(MDData.init(fromExtendedJSON:)))
+        case let .dictionary(value): try self.init(value.mapValues(MDData.init(fromExtendedJSON:)))
         default: throw MDError.unsupportedType
         }
     }
@@ -50,8 +83,8 @@ extension MDData {
         case let .number(value): return DBData(value)
         case let .decimal(value): return DBData(value)
         case let .timestamp(value): return DBData(value)
-        case let .array(value): return DBData(value.map { $0.toSQLData() })
-        case let .dictionary(value): return DBData(value.mapValues { $0.toSQLData() })
+        case let .array(value): return DBData(value.map { $0.toExtendedJSON() })
+        case let .dictionary(value): return DBData(value.mapValues { $0.toExtendedJSON() })
         }
     }
 }
