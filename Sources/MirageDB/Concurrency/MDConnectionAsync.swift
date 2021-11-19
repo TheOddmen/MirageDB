@@ -49,7 +49,7 @@ extension MDConnection {
     
     public static func connect(
         config: Database.Configuration,
-        logger: Logger = .init(label: "com.TheOddmen.MDDB"),
+        logger: Logger = .init(label: "com.TheOddmen.MirageDB"),
         driver: DBDriver,
         on eventLoopGroup: EventLoopGroup
     ) async throws -> MDConnection {
@@ -59,7 +59,7 @@ extension MDConnection {
     
     public static func connect(
         url: URL,
-        logger: Logger = .init(label: "com.TheOddmen.MDDB"),
+        logger: Logger = .init(label: "com.TheOddmen.MirageDB"),
         on eventLoopGroup: EventLoopGroup
     ) async throws -> MDConnection {
         
@@ -68,7 +68,7 @@ extension MDConnection {
     
     public static func connect(
         url: URLComponents,
-        logger: Logger = .init(label: "com.TheOddmen.MDDB"),
+        logger: Logger = .init(label: "com.TheOddmen.MirageDB"),
         on eventLoopGroup: EventLoopGroup
     ) async throws -> MDConnection {
         
