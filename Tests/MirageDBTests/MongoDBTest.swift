@@ -112,6 +112,48 @@ class MongoDBTest: XCTestCase {
         }
     }
     
+    func testPatternMatchingQuery() throws {
+        
+        do {
+            
+            try connection.createTable(MDSQLTable(
+                name: "testPatternMatchingQuery",
+                columns: [
+                    .init(name: "col", type: .string),
+                ]
+            )).wait()
+            
+            let obj1 = try connection.query().class("testPatternMatchingQuery").insert(["col": "text to be search"]).wait()
+            let obj2 = try connection.query().class("testPatternMatchingQuery").insert(["col": "long long' string%"]).wait()
+            
+            let obj3 = try connection.query()
+                .class("testPatternMatchingQuery")
+                .filter { .startsWith($0["col"], "text to ") }
+                .first().wait()
+            
+            XCTAssertEqual(obj3?.id, obj1.id)
+            
+            let obj4 = try connection.query()
+                .class("testPatternMatchingQuery")
+                .filter { .endsWith($0["col"], "ong' string%") }
+                .first().wait()
+            
+            XCTAssertEqual(obj4?.id, obj2.id)
+            
+            let obj5 = try connection.query()
+                .class("testPatternMatchingQuery")
+                .filter { .contains($0["col"], "long' s") }
+                .first().wait()
+            
+            XCTAssertEqual(obj5?.id, obj2.id)
+            
+        } catch {
+            
+            print(error)
+            throw error
+        }
+    }
+    
     func testUpdateQuery() throws {
         
         do {
