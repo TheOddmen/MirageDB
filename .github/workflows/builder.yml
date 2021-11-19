@@ -1,0 +1,287 @@
+name: Builder
+on: [push, pull_request]
+env:
+  POSTGRES_DATABASE: postgres
+  POSTGRES_USERNAME: miragedb
+  POSTGRES_PASSWORD: miragedb
+  MONGO_DATABASE: miragedb
+  MONGO_USERNAME: miragedb
+  MONGO_PASSWORD: miragedb
+  MONGO_AUTHSOURCE: admin
+jobs:
+  macos:
+    name: ${{ matrix.name }}
+    runs-on: macOS-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        name: [macOS, macOS(SwiftPM)]
+        include:
+          - name: macOS
+            use_xcodebuild: true
+            sdk: macosx
+            destination: 'platform=macOS'
+            enable_codecov: true
+          - name: macOS(SwiftPM)
+            use_xcodebuild: false
+    env:
+      use_xcodebuild: ${{ matrix.use_xcodebuild }}
+      schemes: miragedb-Package
+      sdk: ${{ matrix.sdk }}
+      destination: ${{ matrix.destination }}
+      enable_codecov: ${{ matrix.enable_codecov }}
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        submodules: recursive
+    - name: Initialize containers 
+      run: |
+        echo ::group::Starting PostgreSQL service
+        export PATH="/usr/local/opt/postgresql/bin:$PATH" PGDATA=/tmp/postgres-test
+        brew install postgresql
+        initdb --locale=C -U $POSTGRES_USERNAME --pwfile=<(echo $POSTGRES_PASSWORD)
+        pg_ctl start --wait
+        echo ::endgroup::
+        echo ::group::Starting Redis service
+        brew install redis && brew services start redis
+        echo ::endgroup::
+        echo ::group::Starting MongoDB service
+        brew services start mongodb-community
+        until echo | mongo 'admin' --eval 'quit(0)'; do sleep 1; done
+        SCRIPT=$(cat <<-EOJS
+          db.createUser({
+            user: "$MONGO_USERNAME",
+            pwd: "$MONGO_PASSWORD",
+            roles: [ { role: 'root', db: "$MONGO_AUTHSOURCE" } ]
+          })
+        EOJS
+        )
+        mongo 'admin' --eval "$SCRIPT"
+        echo ::endgroup::
+      timeout-minutes: 10
+    - name: Build
+      uses: SusanDoggie/swift-action@main
+      with:
+        action: build
+    - name: Run tests
+      uses: SusanDoggie/swift-action@main
+      with:
+        action: test
+      env:
+        POSTGRES_HOST: localhost
+        REDIS_HOST: localhost
+        MONGO_HOST: localhost
+    - uses: codecov/codecov-action@v2
+      if: ${{ matrix.enable_codecov }}
+  ubuntu_swift:
+    name: ${{ matrix.swift_version }}-${{ matrix.distro }}
+    container: 
+      image: docker://swift:${{ matrix.swift_version }}-${{ matrix.distro }}
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        ports: 
+          - 5432:5432
+        env:
+          POSTGRES_USER: ${{ env.POSTGRES_USERNAME }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DATABASE }}
+      redis:
+        image: redis
+        ports: 
+          - 6379:6379
+      mongo: 
+        image: mongo
+        ports: 
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: ${{ env.MONGO_USERNAME }}
+          MONGO_INITDB_ROOT_PASSWORD: ${{ env.MONGO_PASSWORD }}
+          MONGO_INITDB_DATABASE: ${{ env.MONGO_DATABASE }}
+    strategy:
+      fail-fast: false
+      matrix:
+        swift_version: [5.3, 5.4, 5.5]
+        distro: [bionic, focal]
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        submodules: recursive
+    - name: Prepare		
+      run: apt-get update
+    - name: Install libmongoc
+      run: apt-get install -y libmongoc-1.0-0 libssl-dev
+    - name: Build
+      uses: SusanDoggie/swift-action@main
+      with:
+        action: build
+    - name: Run tests
+      uses: SusanDoggie/swift-action@main
+      with:
+        action: test
+      env:
+        POSTGRES_HOST: postgres
+        REDIS_HOST: redis
+        MONGO_HOST: mongo
+  linux_swift:
+    name: ${{ matrix.swift_version }}-${{ matrix.distro }}
+    container:
+      image: docker://swift:${{ matrix.swift_version }}-${{ matrix.distro }}
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        ports: 
+          - 5432:5432
+        env:
+          POSTGRES_USER: ${{ env.POSTGRES_USERNAME }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DATABASE }}
+      redis:
+        image: redis
+        ports: 
+          - 6379:6379
+      mongo: 
+        image: mongo
+        ports: 
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: ${{ env.MONGO_USERNAME }}
+          MONGO_INITDB_ROOT_PASSWORD: ${{ env.MONGO_PASSWORD }}
+          MONGO_INITDB_DATABASE: ${{ env.MONGO_DATABASE }}
+    strategy:
+      fail-fast: false
+      matrix:
+        swift_version: [5.3, 5.4, 5.5]
+        distro: [centos8]
+        include:
+          - distro: centos8
+            allowerasing: --allowerasing
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        submodules: recursive
+    - name: Prepare		
+      run: yum update -y ${{ matrix.allowerasing }}
+    - name: Install libmongoc
+      run: yum install -y mongo-c-driver openssl-devel
+    - name: Build
+      uses: SusanDoggie/swift-action@main
+      with:
+        action: build
+    - name: Run tests
+      uses: SusanDoggie/swift-action@main
+      with:
+        action: test
+      env:
+        POSTGRES_HOST: postgres
+        REDIS_HOST: redis
+        MONGO_HOST: mongo
+  ubuntu_swift_nightly:
+    name: nightly-${{ matrix.swift_version }}-${{ matrix.distro }}
+    container:
+      image: docker://swiftlang/swift:nightly-${{ matrix.swift_version }}-${{ matrix.distro }}
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        ports: 
+          - 5432:5432
+        env:
+          POSTGRES_USER: ${{ env.POSTGRES_USERNAME }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DATABASE }}
+      redis:
+        image: redis
+        ports: 
+          - 6379:6379
+      mongo: 
+        image: mongo
+        ports: 
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: ${{ env.MONGO_USERNAME }}
+          MONGO_INITDB_ROOT_PASSWORD: ${{ env.MONGO_PASSWORD }}
+          MONGO_INITDB_DATABASE: ${{ env.MONGO_DATABASE }}
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        swift_version: [main]
+        distro: [bionic, focal]
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        submodules: recursive
+    - name: Prepare		
+      run: apt-get update
+    - name: Install libmongoc
+      run: apt-get install -y libmongoc-1.0-0 libssl-dev
+    - name: Build
+      uses: SusanDoggie/swift-action@main
+      with:
+        action: build
+    - name: Run tests
+      uses: SusanDoggie/swift-action@main
+      with:
+        action: test
+      env:
+        POSTGRES_HOST: postgres
+        REDIS_HOST: redis
+        MONGO_HOST: mongo
+  linux_swift_nightly:
+    name: nightly-${{ matrix.swift_version }}-${{ matrix.distro }}
+    container:
+      image: docker://swiftlang/swift:nightly-${{ matrix.swift_version }}-${{ matrix.distro }}
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        ports: 
+          - 5432:5432
+        env:
+          POSTGRES_USER: ${{ env.POSTGRES_USERNAME }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DATABASE }}
+      redis:
+        image: redis
+        ports: 
+          - 6379:6379
+      mongo: 
+        image: mongo
+        ports: 
+          - 27017:27017
+        env:
+          MONGO_INITDB_ROOT_USERNAME: ${{ env.MONGO_USERNAME }}
+          MONGO_INITDB_ROOT_PASSWORD: ${{ env.MONGO_PASSWORD }}
+          MONGO_INITDB_DATABASE: ${{ env.MONGO_DATABASE }}
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        swift_version: [main]
+        distro: [centos8]
+        include:
+          - distro: centos8
+            allowerasing: --allowerasing
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        submodules: recursive
+    - name: Prepare		
+      run: yum update -y ${{ matrix.allowerasing }}
+    - name: Install libmongoc
+      run: yum install -y mongo-c-driver openssl-devel
+    - name: Build
+      uses: SusanDoggie/swift-action@main
+      with:
+        action: build
+    - name: Run tests
+      uses: SusanDoggie/swift-action@main
+      with:
+        action: test
+      env:
+        POSTGRES_HOST: postgres
+        REDIS_HOST: redis
+        MONGO_HOST: mongo

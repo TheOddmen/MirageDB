@@ -1,0 +1,40 @@
+#!/bin/bash
+set -e
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+cd $SCRIPT_DIR
+
+export POSTGRES_DATABASE=postgres
+export POSTGRES_USERNAME=doggiedb
+export POSTGRES_PASSWORD=doggiedb
+export MONGO_DATABASE=doggiedb
+export MONGO_USERNAME=doggiedb
+export MONGO_PASSWORD=doggiedb
+export MONGO_AUTHSOURCE=admin
+
+docker run -d --rm --name postgres_test_db \
+  -p 5432:5432 \
+  -e "POSTGRES_USER=${POSTGRES_USERNAME}" \
+  -e "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" \
+  -e "POSTGRES_DB=${POSTGRES_DATABASE}" \
+  postgres
+
+docker run -d --rm --name mongo_test_db \
+  -p 27017:27017 \
+  -e "MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}" \
+  -e "MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}" \
+  -e "MONGO_INITDB_DATABASE=${MONGO_DATABASE}" \
+  mongo
+
+docker run -d --rm --name redis_test_db -p 6379:6379 redis
+
+function cleanup {
+  docker stop postgres_test_db
+  docker stop mongo_test_db
+  docker stop redis_test_db
+}
+
+trap cleanup EXIT
+
+swift test
