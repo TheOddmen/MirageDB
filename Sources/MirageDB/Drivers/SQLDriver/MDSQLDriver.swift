@@ -103,6 +103,20 @@ extension DBQueryUpdateOperation {
 
 extension MDSQLDriver {
     
+    func tables(_ connection: MDConnection) -> EventLoopFuture<[String]> {
+        
+        do {
+            
+            guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
+            
+            return connection.tables()
+            
+        } catch {
+            
+            return connection.eventLoopGroup.next().makeFailedFuture(error)
+        }
+    }
+    
     func count(_ query: MDQuery) -> EventLoopFuture<Int> {
         
         do {

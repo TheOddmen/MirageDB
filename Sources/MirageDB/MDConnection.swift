@@ -64,6 +64,10 @@ extension MDConnection {
     public func databases() -> EventLoopFuture<[String]> {
         return connection.databases()
     }
+    
+    public func tables() -> EventLoopFuture<[String]> {
+        return self.driver.tables(self)
+    }
 }
 
 extension MDConnection {

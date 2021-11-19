@@ -98,6 +98,11 @@ extension Dictionary where Key == String, Value == MDUpdateOperation {
 
 struct MongoDBDriver: MDDriver {
     
+    func tables(_ connection: MDConnection) -> EventLoopFuture<[String]> {
+        
+        return connection.connection.mongoQuery().collections().execute().toArray().map { $0.map { $0.name } }
+    }
+    
     func count(_ query: MDQuery) -> EventLoopFuture<Int> {
         
         do {

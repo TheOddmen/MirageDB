@@ -25,6 +25,8 @@
 
 protocol MDDriver {
     
+    func tables(_ connection: MDConnection) -> EventLoopFuture<[String]>
+    
     func count(_ query: MDQuery) -> EventLoopFuture<Int>
     
     func toArray(_ query: MDQuery) -> EventLoopFuture<[MDObject]>

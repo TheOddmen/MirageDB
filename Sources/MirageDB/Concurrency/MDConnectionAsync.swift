@@ -90,7 +90,10 @@ extension MDConnection {
     public func databases() async throws -> [String] {
         return try await self.databases().get()
     }
-
+    
+    public func tables() async throws -> [String] {
+        return try await self.tables().get()
+    }
 }
 
 #endif
