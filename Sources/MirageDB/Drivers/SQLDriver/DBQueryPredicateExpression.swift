@@ -53,7 +53,7 @@ extension DBQueryPredicateValue {
         switch value {
         case .id: self = .objectId
         case let .key(key): self = .key(key)
-        case let .value(value): self = .value(value.toMDData())
+        case let .value(value): self = .value(value.toMDData().toSQLData())
         }
     }
 }

@@ -25,7 +25,7 @@
 
 extension MDData {
     
-    init(_ data: DBData) throws {
+    init(fromSQLData data: DBData) throws {
         switch data.base {
         case .null: self = nil
         case let .boolean(value): self.init(value)
@@ -40,11 +40,8 @@ extension MDData {
         default: throw MDError.unsupportedType
         }
     }
-}
-
-extension MDData: DBDataConvertible {
     
-    public func toDBData() -> DBData {
+    func toSQLData() -> DBData {
         switch base {
         case .null: return nil
         case let .boolean(value): return DBData(value)
@@ -53,8 +50,8 @@ extension MDData: DBDataConvertible {
         case let .number(value): return DBData(value)
         case let .decimal(value): return DBData(value)
         case let .timestamp(value): return DBData(value)
-        case let .array(value): return DBData(value.map { $0.toDBData() })
-        case let .dictionary(value): return DBData(value.mapValues { $0.toDBData() })
+        case let .array(value): return DBData(value.map { $0.toSQLData() })
+        case let .dictionary(value): return DBData(value.mapValues { $0.toSQLData() })
         }
     }
 }

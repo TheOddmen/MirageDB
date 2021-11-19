@@ -34,7 +34,7 @@ extension MDObject {
     fileprivate init(_ object: DBObject) throws {
         var data: [String: MDData] = [:]
         for key in object.keys where key != "id" {
-            data[key] = try MDData(object[key])
+            data[key] = try MDData(fromSQLData: object[key])
         }
         self.init(class: object.class, id: object["id"].string, data: data)
     }
@@ -54,13 +54,13 @@ extension DBQueryUpdateOperation {
     
     fileprivate init(_ operation: MDUpdateOperation) {
         switch operation {
-        case let .set(value): self = .set(value)
-        case let .increment(value): self = .increment(value)
-        case let .multiply(value): self = .multiply(value)
-        case let .max(value): self = .max(value)
-        case let .min(value): self = .min(value)
-        case let .push(value): self = .push([value])
-        case let .removeAll(value): self = .removeAll(value)
+        case let .set(value): self = .set(value.toSQLData())
+        case let .increment(value): self = .increment(value.toSQLData())
+        case let .multiply(value): self = .multiply(value.toSQLData())
+        case let .max(value): self = .max(value.toSQLData())
+        case let .min(value): self = .min(value.toSQLData())
+        case let .push(value): self = .push([value.toSQLData()])
+        case let .removeAll(value): self = .removeAll(value.map { $0.toSQLData() })
         case .popFirst: self = .popFirst
         case .popLast: self = .popLast
         }
@@ -212,7 +212,7 @@ extension MDSQLDriver {
             }
             
             let update = update.mapValues(DBQueryUpdateOperation.init)
-            var setOnInsert = setOnInsert.mapValues { $0.toDBData() }
+            var setOnInsert = setOnInsert.mapValues { $0.toSQLData() }
             setOnInsert["id"] = DBData(objectIDGenerator())
             
             return _query.upsert(update, setOnInsert: setOnInsert).flatMapThrowing { try $0.map(MDObject.init) }
@@ -268,7 +268,7 @@ extension MDSQLDriver {
     
     func insert(_ connection: MDConnection, _ class: String, _ data: [String: MDData]) -> EventLoopFuture<MDObject> {
         
-        var data = data.mapValues(DBData.init)
+        var data = data.mapValues { $0.toSQLData() }
         data["id"] = DBData(objectIDGenerator())
         
         return connection.connection.query().insert(`class`, data).flatMapThrowing { try MDObject($0) }
