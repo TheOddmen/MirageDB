@@ -106,6 +106,42 @@ class PostgreSQLTest: XCTestCase {
         }
     }
     
+    func testExtendedJSON() throws {
+        
+        do {
+            
+            try connection.createTable(MDSQLTable(
+                name: "testExtendedJSON",
+                columns: [
+                    .init(name: "col", type: .json),
+                ]
+            )).wait()
+            
+            let json: MDData = [
+                "boolean": true,
+                "string": "",
+                "integer": 1,
+                "number": 2.0,
+                "decimal": MDData(3 as Decimal),
+                "timestamp": MDData(Date(timeIntervalSince1970: 10000)),
+                "array": [],
+                "dictionary": [:],
+            ]
+            
+            let obj1 = try connection.query()
+                .class("testExtendedJSON")
+                .insert(["col": json]).wait()
+            
+            XCTAssertEqual(obj1.id?.count, 10)
+            XCTAssertEqual(obj1["col"].dictionary.map(Dictionary.init), json.dictionary.map(Dictionary.init))
+            
+        } catch {
+            
+            print(error)
+            throw error
+        }
+    }
+    
     func testPatternMatchingQuery() throws {
         
         do {
