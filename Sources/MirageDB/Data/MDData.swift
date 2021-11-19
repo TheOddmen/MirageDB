@@ -47,7 +47,7 @@ public struct MDData: Hashable {
         case decimal(Decimal)
         case timestamp(Date)
         case array([MDData])
-        case dictionary(OrderedDictionary<String, MDData>)
+        case dictionary([String: MDData])
     }
     
     let base: Base
@@ -89,11 +89,11 @@ public struct MDData: Hashable {
     }
     
     public init<Value: MDDataConvertible>(_ elements: [String: Value]) {
-        self.base = .dictionary(OrderedDictionary(uniqueKeysWithValues: elements.mapValues { $0.toMDData() }))
+        self.base = .dictionary(elements.mapValues { $0.toMDData() })
     }
     
     public init<Value: MDDataConvertible>(_ elements: OrderedDictionary<String, Value>) {
-        self.base = .dictionary(elements.mapValues { $0.toMDData() })
+        self.base = .dictionary(Dictionary(elements.mapValues { $0.toMDData() }))
     }
 }
 
@@ -146,7 +146,7 @@ extension MDData: ExpressibleByArrayLiteral {
 extension MDData: ExpressibleByDictionaryLiteral {
     
     public init(dictionaryLiteral elements: (String, MDData) ...) {
-        self.init(OrderedDictionary(uniqueKeysWithValues: elements))
+        self.init(Dictionary(uniqueKeysWithValues: elements))
     }
 }
 
@@ -416,7 +416,7 @@ extension MDData {
         }
     }
     
-    public var dictionary: OrderedDictionary<String, MDData>? {
+    public var dictionary: Dictionary<String, MDData>? {
         switch self.base {
         case let .dictionary(value): return value
         default: return nil
@@ -457,10 +457,10 @@ extension MDData {
         }
     }
     
-    public var keys: OrderedSet<String> {
+    public var keys: Dictionary<String, MDData>.Keys {
         switch self.base {
         case let .dictionary(value): return value.keys
-        default: return []
+        default: return [:].keys
         }
     }
     

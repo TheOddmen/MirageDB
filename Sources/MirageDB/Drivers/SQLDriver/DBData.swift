@@ -23,21 +23,21 @@
 //  THE SOFTWARE.
 //
 
-private func decodeInt32(_ obj: OrderedDictionary<String, DBData>) -> Int32? {
+private func decodeInt32(_ obj: [String: DBData]) -> Int32? {
     guard obj.count == 1 else { return nil }
     guard obj.keys.first == "$numberInt" else { return nil }
     guard let value = obj["$numberInt"]?.string else { return nil }
     return Int32(value)
 }
 
-private func decodeInt64(_ obj: OrderedDictionary<String, DBData>) -> Int64? {
+private func decodeInt64(_ obj: [String: DBData]) -> Int64? {
     guard obj.count == 1 else { return nil }
     guard obj.keys.first == "$numberLong" else { return nil }
     guard let value = obj["$numberLong"]?.string else { return nil }
     return Int64(value)
 }
 
-private func decodeDouble(_ obj: OrderedDictionary<String, DBData>) -> Double? {
+private func decodeDouble(_ obj: [String: DBData]) -> Double? {
     
     guard obj.count == 1 else { return nil }
     guard obj.keys.first == "$numberDouble" else { return nil }
@@ -51,14 +51,14 @@ private func decodeDouble(_ obj: OrderedDictionary<String, DBData>) -> Double? {
     }
 }
 
-private func decodeDecimal(_ obj: OrderedDictionary<String, DBData>) -> Decimal? {
+private func decodeDecimal(_ obj: [String: DBData]) -> Decimal? {
     guard obj.count == 1 else { return nil }
     guard obj.keys.first == "$numberDecimal" else { return nil }
     guard let value = obj["$numberDecimal"]?.string else { return nil }
     return Decimal(string: value)
 }
 
-private func decodeDate(_ obj: OrderedDictionary<String, DBData>) -> Date? {
+private func decodeDate(_ obj: [String: DBData]) -> Date? {
     guard obj.count == 1 else { return nil }
     guard obj.keys.first == "$date" else { return nil }
     guard let value = obj["$date"]?.dictionary else { return nil }

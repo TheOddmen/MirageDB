@@ -139,7 +139,7 @@ class MongoDBTest: XCTestCase {
                 .insert(["col": json]).wait()
             
             XCTAssertEqual(obj1.id?.count, 10)
-            XCTAssertEqual(obj1["col"].dictionary.map(Dictionary.init), json.dictionary.map(Dictionary.init))
+            XCTAssertEqual(obj1["col"], json)
             
         } catch {
             
