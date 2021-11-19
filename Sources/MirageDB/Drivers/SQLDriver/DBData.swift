@@ -23,9 +23,60 @@
 //  THE SOFTWARE.
 //
 
+private func decodeInt32(_ obj: OrderedDictionary<String, DBData>) -> Int32? {
+    guard obj.count == 1 else { return nil }
+    guard obj.keys.first == "$numberInt" else { return nil }
+    guard let value = obj["$numberInt"]?.string else { return nil }
+    return Int32(value)
+}
+
+private func decodeInt64(_ obj: OrderedDictionary<String, DBData>) -> Int64? {
+    guard obj.count == 1 else { return nil }
+    guard obj.keys.first == "$numberLong" else { return nil }
+    guard let value = obj["$numberLong"]?.string else { return nil }
+    return Int64(value)
+}
+
+private func decodeDouble(_ obj: OrderedDictionary<String, DBData>) -> Double? {
+    
+    guard obj.count == 1 else { return nil }
+    guard obj.keys.first == "$numberDouble" else { return nil }
+    guard let value = obj["$numberDouble"]?.string else { return nil }
+    
+    switch value {
+    case "Infinity": return .infinity
+    case "-Infinity": return -.infinity
+    case "NaN": return .nan
+    default: return Double(value)
+    }
+}
+
+private func decodeDecimal(_ obj: OrderedDictionary<String, DBData>) -> Decimal? {
+    guard obj.count == 1 else { return nil }
+    guard obj.keys.first == "$numberDecimal" else { return nil }
+    guard let value = obj["$numberDecimal"]?.string else { return nil }
+    return Decimal(string: value)
+}
+
+private func decodeDate(_ obj: OrderedDictionary<String, DBData>) -> Date? {
+    guard obj.count == 1 else { return nil }
+    guard obj.keys.first == "$date" else { return nil }
+    guard let value = obj["$date"]?.dictionary else { return nil }
+    guard let millis = decodeInt64(value) else { return nil }
+    return Date(timeIntervalSince1970: Double(millis) / 1000)
+}
+
 extension MDData {
     
-    fileprivate init(fromExtendedJSON data: DBData) throws {
+    private static let extendedJSONTypes = [
+        "$numberInt": { decodeInt32($0).map(MDData.init) },
+        "$numberLong": { decodeInt64($0).map(MDData.init) },
+        "$numberDouble": { decodeDouble($0).map(MDData.init) },
+        "$numberDecimal": { decodeDecimal($0).map(MDData.init) },
+        "$date": { decodeDate($0).map(MDData.init) },
+    ]
+    
+    private init(fromExtendedJSON data: DBData) throws {
         switch data.base {
         case .null: self = nil
         case let .boolean(value): self.init(value)
@@ -36,20 +87,32 @@ extension MDData {
         case let .decimal(value): self.init(value)
         case let .timestamp(value): self.init(value)
         case let .array(value): try self.init(value.map(MDData.init(fromExtendedJSON:)))
-        case let .dictionary(value): try self.init(value.mapValues(MDData.init(fromExtendedJSON:)))
+        case let .dictionary(obj):
+            
+            if let key = obj.keys.first,
+               let decoder = MDData.extendedJSONTypes[key],
+               let value = decoder(obj) {
+                
+                self = value
+                
+            } else {
+                
+                try self.init(obj.mapValues(MDData.init(fromExtendedJSON:)))
+            }
+            
         default: throw MDError.unsupportedType
         }
     }
     
-    fileprivate func toExtendedJSON() -> DBData {
+    private func toExtendedJSON() -> DBData {
         switch base {
         case .null: return nil
         case let .boolean(value): return DBData(value)
         case let .string(value): return DBData(value)
-        case let .integer(value): return DBData(value)
+        case let .integer(value): return ["$numberLong": "\(value)"]
         case let .number(value): return DBData(value)
-        case let .decimal(value): return DBData(value)
-        case let .timestamp(value): return DBData(value)
+        case let .decimal(value): return ["$numberDecimal": "\(value)"]
+        case let .timestamp(value): return ["$date": ["$numberLong": "\(Int64(value.timeIntervalSince1970 * 1000))"]]
         case let .array(value): return DBData(value.map { $0.toExtendedJSON() })
         case let .dictionary(value): return DBData(value.mapValues { $0.toExtendedJSON() })
         }
