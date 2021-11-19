@@ -124,6 +124,7 @@ extension MDConnection {
     public func createTable(_ table: MDSQLTable) -> EventLoopFuture<Void> {
         switch self.driver {
         case let driver as MDSQLDriver: return driver.createTable(self, table)
+        case let driver as MongoDBDriver: return driver.createTable(self, table)
         default: return self.eventLoopGroup.next().makeSucceededVoidFuture()
         }
     }
