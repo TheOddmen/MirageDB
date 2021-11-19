@@ -51,6 +51,9 @@ extension MongoPredicateExpression {
                 .greaterThan(MongoPredicateValue(to), MongoPredicateValue(x)),
             ])
             
+        case let .startsWith(value, pattern): self = .startsWith(MongoPredicateKey(value), pattern)
+        case let .endsWith(value, pattern): self = .endsWith(MongoPredicateKey(value), pattern)
+        case let .contains(value, pattern): self = .contains(MongoPredicateKey(value), pattern)
         case let .and(list): self = try .and(list.map(MongoPredicateExpression.init))
         case let .or(list): self = try .or(list.map(MongoPredicateExpression.init))
         }
@@ -64,6 +67,16 @@ extension MongoPredicateValue {
         case .id: self = .key("_id")
         case let .key(key): self = .key(key)
         case let .value(value): self = .value(BSON(value.toMDData()))
+        }
+    }
+}
+
+extension MongoPredicateKey {
+    
+    fileprivate init(_ value: MDPredicateKey) {
+        switch value {
+        case .id: self.init(key: "_id")
+        case let .key(key): self.init(key: key)
         }
     }
 }

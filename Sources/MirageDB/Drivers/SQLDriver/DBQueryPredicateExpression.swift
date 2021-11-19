@@ -38,6 +38,9 @@ extension DBQueryPredicateExpression {
         case let .notContainsIn(lhs, rhs): self = .notContainsIn(DBQueryPredicateValue(lhs), DBQueryPredicateValue(rhs))
         case let .between(x, from, to): self = .between(DBQueryPredicateValue(x), DBQueryPredicateValue(from), DBQueryPredicateValue(to))
         case let .notBetween(x, from, to): self = .notBetween(DBQueryPredicateValue(x), DBQueryPredicateValue(from), DBQueryPredicateValue(to))
+        case let .startsWith(value, pattern): self = .startsWith(DBQueryPredicateKey(value), pattern)
+        case let .endsWith(value, pattern): self = .endsWith(DBQueryPredicateKey(value), pattern)
+        case let .contains(value, pattern): self = .contains(DBQueryPredicateKey(value), pattern)
         case let .and(list): self = .and(list.map(DBQueryPredicateExpression.init))
         case let .or(list): self = .or(list.map(DBQueryPredicateExpression.init))
         }
@@ -51,6 +54,16 @@ extension DBQueryPredicateValue {
         case .id: self = .objectId
         case let .key(key): self = .key(key)
         case let .value(value): self = .value(value.toMDData())
+        }
+    }
+}
+
+extension DBQueryPredicateKey {
+    
+    fileprivate init(_ value: MDPredicateKey) {
+        switch value {
+        case .id: self = .objectId
+        case let .key(key): self = .key(key)
         }
     }
 }

@@ -47,6 +47,12 @@ public indirect enum MDPredicateExpression {
     
     case notBetween(MDPredicateValue, MDPredicateValue, MDPredicateValue)
     
+    case startsWith(MDPredicateKey, String)
+    
+    case endsWith(MDPredicateKey, String)
+    
+    case contains(MDPredicateKey, String)
+    
     case and([MDPredicateExpression])
     
     case or([MDPredicateExpression])
