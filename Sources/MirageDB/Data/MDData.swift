@@ -32,8 +32,6 @@ public enum MDDataType: Hashable {
     case number
     case decimal
     case timestamp
-    case date
-    case time
     case array
     case dictionary
 }
@@ -48,8 +46,6 @@ public struct MDData: Hashable {
         case number(Double)
         case decimal(Decimal)
         case timestamp(Date)
-        case date(MDDate)
-        case time(MDTime)
         case array([MDData])
         case dictionary(OrderedDictionary<String, MDData>)
     }
@@ -82,14 +78,6 @@ public struct MDData: Hashable {
     
     public init(_ value: Date) {
         self.base = .timestamp(value)
-    }
-    
-    public init(_ value: MDDate) {
-        self.base = .date(value)
-    }
-    
-    public init(_ value: MDTime) {
-        self.base = .time(value)
     }
     
     public init<Wrapped: MDDataConvertible>(_ value: Wrapped?) {
@@ -173,8 +161,6 @@ extension MDData: CustomStringConvertible {
         case let .number(value): return "\(value)"
         case let .decimal(value): return "\(value)"
         case let .timestamp(value): return "\(value)"
-        case let .date(value): return "\(value)"
-        case let .time(value): return "\(value)"
         case let .array(value): return "\(value)"
         case let .dictionary(value): return "\(value)"
         }
@@ -192,8 +178,6 @@ extension MDData {
         case .number: return .number
         case .decimal: return .decimal
         case .timestamp: return .timestamp
-        case .date: return .date
-        case .time: return .time
         case .array: return .array
         case .dictionary: return .dictionary
         }
@@ -253,20 +237,6 @@ extension MDData {
     public var isTimestamp: Bool {
         switch self.base {
         case .timestamp: return true
-        default: return false
-        }
-    }
-    
-    public var isDate: Bool {
-        switch self.base {
-        case .date: return true
-        default: return false
-        }
-    }
-    
-    public var isTime: Bool {
-        switch self.base {
-        case .time: return true
         default: return false
         }
     }
@@ -435,20 +405,6 @@ extension MDData {
     public var timestamp: Date? {
         switch self.base {
         case let .timestamp(value): return value
-        default: return nil
-        }
-    }
-    
-    public var date: MDDate? {
-        switch self.base {
-        case let .date(value): return value
-        default: return nil
-        }
-    }
-    
-    public var time: MDTime? {
-        switch self.base {
-        case let .time(value): return value
         default: return nil
         }
     }

@@ -35,14 +35,6 @@ extension MDData {
         case let .number(value): self.init(value)
         case let .decimal(value): self.init(value)
         case let .timestamp(value): self.init(value)
-        case let .date(value):
-            if value.containsDate(), let date = MDDate(value) {
-                self.init(date)
-            } else if value.containsTime(), let time = MDTime(value) {
-                self.init(time)
-            } else {
-                throw MDError.unsupportedType
-            }
         case let .array(value): try self.init(value.map(MDData.init))
         case let .dictionary(value): try self.init(value.mapValues(MDData.init))
         default: throw MDError.unsupportedType
@@ -61,8 +53,6 @@ extension MDData: DBDataConvertible {
         case let .number(value): return DBData(value)
         case let .decimal(value): return DBData(value)
         case let .timestamp(value): return DBData(value)
-        case let .date(value): return DBData(value.dateComponents)
-        case let .time(value): return DBData(value.dateComponents)
         case let .array(value): return DBData(value.map { $0.toDBData() })
         case let .dictionary(value): return DBData(value.mapValues { $0.toDBData() })
         }

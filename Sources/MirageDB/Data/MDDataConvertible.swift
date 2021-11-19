@@ -115,20 +115,6 @@ extension Date: MDDataConvertible {
     }
 }
 
-extension MDDate: MDDataConvertible {
-    
-    public func toMDData() -> MDData {
-        return MDData(self)
-    }
-}
-
-extension MDTime: MDDataConvertible {
-    
-    public func toMDData() -> MDData {
-        return MDData(self)
-    }
-}
-
 extension Array: MDDataConvertible where Element: MDDataConvertible {
     
     public func toMDData() -> MDData {

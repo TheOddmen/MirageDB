@@ -78,8 +78,6 @@ extension MDData: BSONConvertible {
         case let .number(value): return BSON(value)
         case let .decimal(value): return BSON(value)
         case let .timestamp(value): return BSON(value)
-        case let .date(value): return BSON(value.dateComponents)
-        case let .time(value): return BSON(value.dateComponents)
         case let .array(value): return BSON(value.map { $0.toBSON() })
         case let .dictionary(value): return BSON(value.mapValues { $0.toBSON() })
         }
