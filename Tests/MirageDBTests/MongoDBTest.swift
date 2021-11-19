@@ -112,4 +112,98 @@ class MongoDBTest: XCTestCase {
         }
     }
     
+    func testUpdateQuery() throws {
+        
+        do {
+            
+            try connection.createTable(MDSQLTable(
+                name: "testUpdateQuery",
+                columns: [
+                    .init(name: "col", type: .string),
+                ]
+            )).wait()
+            
+            var obj = MDObject(class: "testUpdateQuery")
+            obj = try obj.save(on: connection).wait()
+            
+            obj["col"] = "text_1"
+            
+            obj = try obj.save(on: connection).wait()
+            
+            XCTAssertEqual(obj["col"].string, "text_1")
+            
+            let obj2 = try connection.query()
+                .class("testUpdateQuery")
+                .filter { $0.id == obj.id }
+                .findOneAndUpdate([
+                    "col": .set("text_2")
+                ]).wait()
+            
+            XCTAssertEqual(obj2?.id, obj.id)
+            XCTAssertEqual(obj2?["col"].string, "text_2")
+            
+            let obj3 = try connection.query()
+                .class("testUpdateQuery")
+                .filter { $0.id == obj.id }
+                .findOneAndUpdate([
+                    "col": .set("text_3")
+                ], returning: .before).wait()
+            
+            XCTAssertEqual(obj3?.id, obj.id)
+            XCTAssertEqual(obj3?["col"].string, "text_2")
+            
+        } catch {
+            
+            print(error)
+            throw error
+        }
+    }
+    
+    func testUpsertQuery() throws {
+        
+        do {
+            
+            try connection.createTable(MDSQLTable(
+                name: "testUpsertQuery",
+                columns: [
+                    .init(name: "col", type: .string),
+                ]
+            )).wait()
+            
+            let obj = try connection.query()
+                .class("testUpsertQuery")
+                .filter { $0["col"] == "text_1" }
+                .findOneAndUpsert([
+                    "col": .set("text_1")
+                ]).wait()
+            
+            XCTAssertEqual(obj?["col"].string, "text_1")
+            
+            let obj2 = try connection.query()
+                .class("testUpsertQuery")
+                .filter { $0.id == obj?.id }
+                .findOneAndUpsert([
+                    "col": .set("text_2")
+                ]).wait()
+            
+            XCTAssertEqual(obj2?.id, obj?.id)
+            XCTAssertEqual(obj2?["col"].string, "text_2")
+            
+            let obj3 = try connection.query()
+                .class("testUpsertQuery")
+                .filter { $0.id == obj?.id }
+                .findOneAndUpsert([
+                    "col": .set("text_3")
+                ], returning: .before).wait()
+            
+            XCTAssertEqual(obj3?.id, obj?.id)
+            XCTAssertEqual(obj3?["col"].string, "text_2")
+            
+        } catch {
+            
+            print(error)
+            throw error
+        }
+    }
+    
 }
