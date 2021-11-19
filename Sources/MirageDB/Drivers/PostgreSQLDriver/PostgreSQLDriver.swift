@@ -38,8 +38,6 @@ extension MDSQLDataType {
         case .number: return "DOUBLE PRECISION"
         case .decimal: return "DECIMAL"
         case .timestamp: return "TIMESTAMP"
-        case .date: return "DATE"
-        case .time: return "TIME"
         case .json: return "JSONB"
         }
     }

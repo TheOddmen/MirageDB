@@ -39,9 +39,5 @@ public enum MDSQLDataType {
     
     case timestamp
     
-    case date
-    
-    case time
-    
     case json
 }
