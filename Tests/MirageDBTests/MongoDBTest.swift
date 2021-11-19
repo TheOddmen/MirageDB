@@ -209,6 +209,40 @@ class MongoDBTest: XCTestCase {
         }
     }
     
+    func testIncludesQuery() throws {
+        
+        do {
+            
+            try connection.createTable(MDSQLTable(
+                name: "testIncludesQuery",
+                columns: [
+                    .init(name: "dummy1", type: .integer),
+                    .init(name: "dummy2", type: .integer),
+                    .init(name: "dummy3", type: .integer),
+                    .init(name: "dummy4", type: .integer),
+                ]
+            )).wait()
+            
+            let obj = try connection.query()
+                .class("testIncludesQuery")
+                .filter { $0["dummy1"] == 1 }
+                .includes(["dummy1", "dummy2"])
+                .findOneAndUpsert([
+                    "dummy1": .set(1),
+                    "dummy2": .set(2),
+                    "dummy3": .set(3),
+                    "dummy4": .set(4),
+                ]).wait()
+            
+            XCTAssertEqual(obj?.keys, ["dummy1", "dummy2"])
+            
+        } catch {
+            
+            print(error)
+            throw error
+        }
+    }
+    
     func testQueryNumberOperation() throws {
         
         do {
