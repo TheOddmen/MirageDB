@@ -203,4 +203,41 @@ class PostgreSQLTest: XCTestCase {
         }
     }
     
+    func testQueryNumberOperation() throws {
+        
+        do {
+            
+            try connection.createTable(MDSQLTable(
+                name: "testQueryNumberOperation",
+                columns: [
+                    .init(name: "col_1", type: .integer),
+                    .init(name: "col_2", type: .decimal),
+                    .init(name: "col_3", type: .number),
+                ]
+            )).wait()
+            
+            var obj = MDObject(class: "testQueryNumberOperation")
+            obj["col_1"] = 1
+            obj["col_2"] = 1
+            obj["col_3"] = 1
+            
+            obj = try obj.save(on: connection).wait()
+            
+            obj.increment("col_1", by: 2)
+            obj.increment("col_2", by: 2)
+            obj.increment("col_3", by: 2)
+            
+            obj = try obj.save(on: connection).wait()
+            
+            XCTAssertEqual(obj["col_1"].intValue, 3)
+            XCTAssertEqual(obj["col_2"].intValue, 3)
+            XCTAssertEqual(obj["col_3"].intValue, 3)
+            
+        } catch {
+            
+            print(error)
+            throw error
+        }
+    }
+    
 }
