@@ -249,7 +249,7 @@ extension MDSQLDriver {
             var setOnInsert = setOnInsert.mapValues { $0.toDBData() }
             setOnInsert["id"] = DBData(objectIDGenerator())
             
-            return _query.upsert(update, setOnInsert: setOnInsert).flatMapThrowing { try MDObject($0) }
+            return _query.upsert(update, setOnInsert: setOnInsert).flatMapThrowing { try $0.map(MDObject.init) }
             
         } catch {
             

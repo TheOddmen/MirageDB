@@ -60,9 +60,8 @@ extension MDObject {
 
 extension MDObject {
     
-    public var keys: [String] {
-        let keys = Array(data.keys) + mutated.keys
-        return Array(keys.uniqued())
+    public var keys: Set<String> {
+        return Set(data.keys).union(mutated.keys)
     }
     
     public subscript(_ key: String) -> MDData {

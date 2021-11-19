@@ -81,11 +81,11 @@ extension MDQuery {
         return try await self.findOneAndUpdate(update, returning: returning).get()
     }
     
-    public func findOneAndUpsert(_ update: [String: MDUpdateOperation] = [:], setOnInsert: [String: MDData] = [:], returning: MDQueryReturning = .after) async throws -> MDObject {
+    public func findOneAndUpsert(_ update: [String: MDUpdateOperation] = [:], setOnInsert: [String: MDData] = [:], returning: MDQueryReturning = .after) async throws -> MDObject? {
         return try await self.findOneAndUpsert(update, setOnInsert: setOnInsert, returning: returning).get()
     }
     
-    public func findOneAndUpsert<T: MDDataConvertible>(_ update: [String: T], setOnInsert: [String: MDData], returning: MDQueryReturning = .after) async throws -> MDObject {
+    public func findOneAndUpsert<T: MDDataConvertible>(_ update: [String: T], setOnInsert: [String: MDData], returning: MDQueryReturning = .after) async throws -> MDObject? {
         return try await self.findOneAndUpsert(update, setOnInsert: setOnInsert, returning: returning).get()
     }
 }

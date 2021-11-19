@@ -171,17 +171,11 @@ extension MDQuery {
         return self.findOneAndUpdate(update.mapValues { .set($0.toMDData()) }, returning: returning)
     }
     
-    public func findOneAndUpsert(_ update: [String: MDUpdateOperation] = [:], setOnInsert: [String: MDData] = [:], returning: MDQueryReturning = .after) -> EventLoopFuture<MDObject> {
-        
-        return self.connection.driver.findOneAndUpsert(self, update, setOnInsert, returning).flatMapThrowing {
-            
-            guard let object = $0 else { throw MDError.unknown }
-            
-            return object
-        }
+    public func findOneAndUpsert(_ update: [String: MDUpdateOperation] = [:], setOnInsert: [String: MDData] = [:], returning: MDQueryReturning = .after) -> EventLoopFuture<MDObject?> {
+        return self.connection.driver.findOneAndUpsert(self, update, setOnInsert, returning)
     }
     
-    public func findOneAndUpsert<T: MDDataConvertible>(_ update: [String: T], setOnInsert: [String: MDData], returning: MDQueryReturning = .after) -> EventLoopFuture<MDObject> {
+    public func findOneAndUpsert<T: MDDataConvertible>(_ update: [String: T], setOnInsert: [String: MDData], returning: MDQueryReturning = .after) -> EventLoopFuture<MDObject?> {
         return self.findOneAndUpsert(update.mapValues { .set($0.toMDData()) }, setOnInsert: setOnInsert, returning: returning)
     }
 }
