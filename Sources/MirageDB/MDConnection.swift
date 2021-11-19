@@ -122,49 +122,26 @@ extension MDConnection {
 extension MDConnection {
     
     public func createTable(_ table: MDSQLTable) -> EventLoopFuture<Void> {
-        switch self.driver {
-        case let driver as MDSQLDriver: return driver.createTable(self, table)
-        case let driver as MongoDBDriver: return driver.createTable(self, table)
-        default: return self.eventLoopGroup.next().makeSucceededVoidFuture()
-        }
+        return self.driver.createTable(self, table)
     }
     
     public func dropTable(_ table: String) -> EventLoopFuture<Void> {
-        switch self.driver {
-        case let driver as MDSQLDriver: return driver.dropTable(self, table)
-        case let driver as MongoDBDriver: return driver.dropTable(self, table)
-        default: return self.eventLoopGroup.next().makeSucceededVoidFuture()
-        }
+        return self.driver.dropTable(self, table)
     }
     
     public func addColumns(_ table: String, _ columns: [MDSQLTableColumn]) -> EventLoopFuture<Void> {
-        switch self.driver {
-        case let driver as MDSQLDriver: return driver.addColumns(self, table, columns)
-        default: return self.eventLoopGroup.next().makeSucceededVoidFuture()
-        }
+        return self.driver.addColumns(self, table, columns)
     }
     
     public func dropColumns(_ table: String, _ columns: [String]) -> EventLoopFuture<Void> {
-        switch self.driver {
-        case let driver as MDSQLDriver: return driver.dropColumns(self, table, columns)
-        case let driver as MongoDBDriver: return driver.dropColumns(self, table, columns)
-        default: return self.eventLoopGroup.next().makeSucceededVoidFuture()
-        }
+        return self.driver.dropColumns(self, table, columns)
     }
     
     public func addIndex(_ table: String, _ index: MDSQLTableIndex) -> EventLoopFuture<Void> {
-        switch self.driver {
-        case let driver as MDSQLDriver: return driver.addIndex(self, table, index)
-        case let driver as MongoDBDriver: return driver.addIndex(self, table, index)
-        default: return self.eventLoopGroup.next().makeSucceededVoidFuture()
-        }
+        return self.driver.addIndex(self, table, index)
     }
     
     public func dropIndex(_ table: String, _ index: String) -> EventLoopFuture<Void> {
-        switch self.driver {
-        case let driver as MDSQLDriver: return driver.dropIndex(self, table, index)
-        case let driver as MongoDBDriver: return driver.dropIndex(self, table, index)
-        default: return self.eventLoopGroup.next().makeSucceededVoidFuture()
-        }
+        return self.driver.dropIndex(self, table, index)
     }
 }

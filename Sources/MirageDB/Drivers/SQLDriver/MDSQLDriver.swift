@@ -27,40 +27,6 @@ import DoggieDB
 
 protocol MDSQLDriver: MDDriver {
     
-    func createTable(
-        _ connection: MDConnection,
-        _ table: MDSQLTable
-    ) -> EventLoopFuture<Void>
-    
-    func dropTable(
-        _ connection: MDConnection,
-        _ table: String
-    ) -> EventLoopFuture<Void>
-    
-    func addColumns(
-        _ connection: MDConnection,
-        _ table: String,
-        _ columns: [MDSQLTableColumn]
-    ) -> EventLoopFuture<Void>
-    
-    func dropColumns(
-        _ connection: MDConnection,
-        _ table: String,
-        _ columns: [String]
-    ) -> EventLoopFuture<Void>
-    
-    func addIndex(
-        _ connection: MDConnection,
-        _ table: String,
-        _ index: MDSQLTableIndex
-    ) -> EventLoopFuture<Void>
-    
-    func dropIndex(
-        _ connection: MDConnection,
-        _ table: String,
-        _ index: String
-    ) -> EventLoopFuture<Void>
-    
 }
 
 extension MDObject {
