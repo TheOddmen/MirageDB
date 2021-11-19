@@ -6,11 +6,11 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $SCRIPT_DIR
 
 export POSTGRES_DATABASE=postgres
-export POSTGRES_USERNAME=doggiedb
-export POSTGRES_PASSWORD=doggiedb
-export MONGO_DATABASE=doggiedb
-export MONGO_USERNAME=doggiedb
-export MONGO_PASSWORD=doggiedb
+export POSTGRES_USERNAME=miragedb
+export POSTGRES_PASSWORD=miragedb
+export MONGO_DATABASE=miragedb
+export MONGO_USERNAME=miragedb
+export MONGO_PASSWORD=miragedb
 export MONGO_AUTHSOURCE=admin
 
 docker run -d --rm --name postgres_test_db \
