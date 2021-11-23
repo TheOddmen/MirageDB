@@ -33,6 +33,7 @@ let package = Package(
     ],
     products: [
         .library(name: "MirageDB", targets: ["MirageDB"]),
+        .library(name: "MirageDBVapor", targets: ["MirageDBVapor"]),
     ],
     dependencies: [
         .package(url: "https://github.com/vapor/vapor.git", from: "4.50.0"),
@@ -43,9 +44,15 @@ let package = Package(
         .target(
             name: "MirageDB",
             dependencies: [
-                .product(name: "Vapor", package: "vapor"),
                 .product(name: "DoggieDB", package: "DoggieDB"),
                 .product(name: "DBMongo", package: "DoggieDB"),
+            ]
+        ),
+        .target(
+            name: "MirageDBVapor",
+            dependencies: [
+                .target(name: "MirageDB"),
+                .product(name: "Vapor", package: "vapor"),
             ]
         ),
         .testTarget(

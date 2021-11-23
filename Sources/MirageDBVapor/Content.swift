@@ -1,5 +1,5 @@
 //
-//  Exported.swift
+//  Content.swift
 //
 //  The MIT License
 //  Copyright (c) 2021 The Oddmen Technology Limited. All rights reserved.
@@ -23,8 +23,18 @@
 //  THE SOFTWARE.
 //
 
-@_exported import DoggieCore
+extension ExtendedJSONEncoder: ContentEncoder {
+    
+    public func encode<E: Encodable>(_ encodable: E, to body: inout ByteBuffer, headers: inout HTTPHeaders) throws {
+        headers.contentType = .json
+        try body.writeBytes(self.encode(encodable))
+    }
+}
 
-@_exported import DoggieDB
-
-@_exported import DBMongo
+extension ExtendedJSONDecoder: ContentDecoder {
+    
+    public func decode<D: Decodable>(_ decodable: D.Type, from body: ByteBuffer, headers: HTTPHeaders) throws -> D {
+        let data = body.getData(at: body.readerIndex, length: body.readableBytes) ?? Data()
+        return try self.decode(D.self, from: data)
+    }
+}

@@ -1,5 +1,5 @@
 //
-//  Exported.swift
+//  EventLoopConnectionPool.swift
 //
 //  The MIT License
 //  Copyright (c) 2021 The Oddmen Technology Limited. All rights reserved.
@@ -23,8 +23,32 @@
 //  THE SOFTWARE.
 //
 
-@_exported import DoggieCore
+public class MDConnectionPoolItem: ConnectionPoolItem {
+    
+    public let connection: MDConnection
+    
+    init(connection: MDConnection) {
+        self.connection = connection
+    }
+    
+    public var eventLoop: EventLoop {
+        return connection.eventLoopGroup.next()
+    }
+    
+    public var isClosed: Bool {
+        return connection.isClosed
+    }
+    
+    public func close() -> EventLoopFuture<Void> {
+        return connection.close()
+    }
+}
 
-@_exported import DoggieDB
-
-@_exported import DBMongo
+public struct MDConnectionPoolSource: ConnectionPoolSource {
+    
+    let generator: (Logger, EventLoop) -> EventLoopFuture<MDConnection>
+    
+    public func makeConnection(logger: Logger, on eventLoop: EventLoop) -> EventLoopFuture<MDConnectionPoolItem> {
+        return generator(logger, eventLoop).map { MDConnectionPoolItem(connection: $0) }
+    }
+}

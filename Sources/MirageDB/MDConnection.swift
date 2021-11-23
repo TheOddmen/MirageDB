@@ -50,6 +50,10 @@ extension MDConnection {
         return connection.isClosed
     }
     
+    public func bind(to eventLoop: EventLoop) -> MDConnection {
+        return MDConnection(connection: connection.bind(to: eventLoop))
+    }
+    
     public func close() -> EventLoopFuture<Void> {
         return connection.close()
     }
