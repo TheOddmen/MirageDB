@@ -23,8 +23,6 @@
 //  THE SOFTWARE.
 //
 
-import DoggieDB
-
 protocol MDSQLDriver: MDDriver {
     
 }
