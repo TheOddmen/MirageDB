@@ -41,10 +41,6 @@ extension Application {
     
     struct Lifecycle: LifecycleHandler {
         
-        func willBoot(_ application: Application) throws {
-            
-        }
-        
         func shutdown(_ application: Application) {
             application.databases.shutdown()
         }
