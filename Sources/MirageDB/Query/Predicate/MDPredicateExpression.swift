@@ -62,6 +62,10 @@ public enum MDPredicateValue {
     
     case id
     
+    case createdAt
+    
+    case updatedAt
+    
     case key(String)
     
     case value(MDDataConvertible)
@@ -72,6 +76,8 @@ extension MDPredicateValue {
     static func key(_ key: MDPredicateKey) -> MDPredicateValue {
         switch key {
         case .id: return .id
+        case .createdAt: return .createdAt
+        case .updatedAt: return .updatedAt
         case let .key(key): return .key(key)
         }
     }

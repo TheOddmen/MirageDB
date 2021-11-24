@@ -34,6 +34,10 @@ public enum MDPredicateKey {
     
     case id
     
+    case createdAt
+    
+    case updatedAt
+    
     case key(String)
 }
 
