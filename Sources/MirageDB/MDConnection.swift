@@ -50,6 +50,10 @@ extension MDConnection {
         return connection.isClosed
     }
     
+    public var logger: Logger {
+        return connection.logger
+    }
+    
     public func bind(to eventLoop: EventLoop) -> MDConnection {
         return MDConnection(connection: connection.bind(to: eventLoop))
     }
