@@ -181,10 +181,9 @@ extension Databases {
         return self.lock.withLock { Set(self.configurations.keys) }
     }
     
-    public func shutdown() {
+    func shutdown() {
         self.lock.lock()
         defer { self.lock.unlock() }
-        print("shutdown")
         for driver in self.pools.values {
             driver.shutdown()
         }
@@ -194,11 +193,7 @@ extension Databases {
 
 extension Databases {
     
-    public func database(
-        _ id: DatabaseID? = nil,
-        logger: Logger,
-        on eventLoopGroup: EventLoopGroup
-    ) -> DatabasePool {
+    public func database(_ id: DatabaseID? = nil) -> DatabasePool {
         
         self.lock.lock()
         defer { self.lock.unlock() }

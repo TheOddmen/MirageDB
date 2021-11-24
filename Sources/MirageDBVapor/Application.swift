@@ -69,7 +69,7 @@ extension Application {
     }
     
     public func database(_ id: DatabaseID? = nil) -> DatabasePool {
-        return self.databases.database(id, logger: self.logger, on: self.eventLoopGroup.next())
+        return self.databases.database(id)
     }
     
     public var databases: Databases {
