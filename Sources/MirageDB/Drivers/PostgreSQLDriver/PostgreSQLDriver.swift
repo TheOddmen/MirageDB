@@ -45,7 +45,7 @@ extension MDSQLDataType {
 
 extension PostgreSQLDriver {
     
-    func createTable(_ connection: MDConnection, _ table: MDSQLTable) -> EventLoopFuture<Void> {
+    func _createTable(_ connection: MDConnection, _ table: MDSQLTable) -> EventLoopFuture<Void> {
         
         do {
             

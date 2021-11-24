@@ -25,6 +25,17 @@
 
 protocol MDSQLDriver: MDDriver {
     
+    func _createTable(_ connection: MDConnection, _ table: MDSQLTable) -> EventLoopFuture<Void>
+}
+
+extension MDSQLDriver {
+    
+    func createTable(_ connection: MDConnection, _ table: MDSQLTable) -> EventLoopFuture<Void> {
+        var table = table
+        table.columns.append(MDSQLTableColumn(name: "created_at", type: .timestamp))
+        table.columns.append(MDSQLTableColumn(name: "updated_at", type: .timestamp))
+        return self._createTable(connection, table)
+    }
 }
 
 extension MDObject {
@@ -34,7 +45,13 @@ extension MDObject {
         for key in object.keys where key != "id" {
             data[key] = try MDData(fromSQLData: object[key])
         }
-        self.init(class: object.class, id: object["id"].string, data: data)
+        self.init(
+            class: object.class,
+            id: object["id"].string,
+            createdAt: object["created_at"].date,
+            updatedAt: object["updated_at"].date,
+            data: data
+        )
     }
 }
 
@@ -177,9 +194,14 @@ extension MDSQLDriver {
                 _query = _query.includes(includes)
             }
             
-            let update = update.mapValues(DBQueryUpdateOperation.init)
+            let now = Date()
             
-            return _query.update(update).flatMapThrowing { try $0.map(MDObject.init) }
+            var update = update
+            update["updated_at"] = .set(MDData(now))
+            
+            let _update = update.mapValues(DBQueryUpdateOperation.init)
+            
+            return _query.update(_update).flatMapThrowing { try $0.map(MDObject.init) }
             
         } catch {
             
@@ -209,11 +231,18 @@ extension MDSQLDriver {
                 _query = _query.includes(includes)
             }
             
-            let update = update.mapValues(DBQueryUpdateOperation.init)
+            let now = Date()
+            
+            var update = update
+            update["updated_at"] = .set(MDData(now))
+            
+            let _update = update.mapValues(DBQueryUpdateOperation.init)
+            
             var setOnInsert = setOnInsert.mapValues { $0.toSQLData() }
             setOnInsert["id"] = DBData(objectIDGenerator())
+            setOnInsert["created_at"] = DBData(now)
             
-            return _query.upsert(update, setOnInsert: setOnInsert).flatMapThrowing { try $0.map(MDObject.init) }
+            return _query.upsert(_update, setOnInsert: setOnInsert).flatMapThrowing { try $0.map(MDObject.init) }
             
         } catch {
             
@@ -266,8 +295,12 @@ extension MDSQLDriver {
     
     func insert(_ connection: MDConnection, _ class: String, _ data: [String: MDData]) -> EventLoopFuture<MDObject> {
         
+        let now = Date()
+        
         var data = data.mapValues { $0.toSQLData() }
         data["id"] = DBData(objectIDGenerator())
+        data["created_at"] = DBData(now)
+        data["updated_at"] = DBData(now)
         
         return connection.connection.query().insert(`class`, data).flatMapThrowing { try MDObject($0) }
     }

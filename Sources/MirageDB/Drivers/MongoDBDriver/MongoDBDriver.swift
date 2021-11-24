@@ -32,7 +32,13 @@ extension MDObject {
         for (key, value) in object where key != "_id" {
             data[key] = try MDData(value)
         }
-        self.init(class: `class`, id: object["_id"]?.stringValue, data: data)
+        self.init(
+            class: `class`,
+            id: object["_id"]?.stringValue,
+            createdAt: object["created_at"]?.dateValue,
+            updatedAt: object["updated_at"]?.dateValue,
+            data: data
+        )
     }
 }
 
@@ -216,6 +222,11 @@ struct MongoDBDriver: MDDriver {
             
             var _query = query.connection.connection.mongoQuery().collection(`class`).findOneAndUpdate().filter(filter)
             
+            let now = Date()
+            
+            var update = update
+            update["updated_at"] = .set(MDData(now))
+            
             _query = try _query.update(update.toBSONDocument())
             
             switch returning {
@@ -250,10 +261,16 @@ struct MongoDBDriver: MDDriver {
             
             var _query = query.connection.connection.mongoQuery().collection(`class`).findOneAndUpdate().filter(filter)
             
+            let now = Date()
+            
+            var update = update
+            update["updated_at"] = .set(MDData(now))
+            
             var _update = try update.toBSONDocument()
             
             var setOnInsert = setOnInsert
             setOnInsert["_id"] = MDData(objectIDGenerator())
+            setOnInsert["created_at"] = MDData(now)
             _update["$setOnInsert"] = setOnInsert.toBSON()
             
             _query = _query.update(_update)
@@ -328,8 +345,12 @@ struct MongoDBDriver: MDDriver {
     
     func insert(_ connection: MDConnection, _ class: String, _ values: [String: MDData]) -> EventLoopFuture<MDObject> {
         
+        let now = Date()
+        
         var data = values
         data["_id"] = MDData(objectIDGenerator())
+        data["created_at"] = MDData(now)
+        data["updated_at"] = MDData(now)
         
         let _values = BSONDocument(data.mapValues { $0.toBSON() })
         
@@ -341,7 +362,13 @@ struct MongoDBDriver: MDDriver {
                 
                 guard let id = result?.insertedID.stringValue else { throw MDError.unknown }
                 
-                return MDObject(class: `class`, id: id, data: values)
+                return MDObject(
+                    class: `class`,
+                    id: id,
+                    createdAt: now,
+                    updatedAt: now,
+                    data: values
+                )
             }
     }
     

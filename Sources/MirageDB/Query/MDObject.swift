@@ -29,19 +29,33 @@ public struct MDObject: Hashable, Equatable, Identifiable {
     
     public let id: String?
     
+    public let createdAt: Date?
+    
+    public let updatedAt: Date?
+    
     var data: [String: MDData]
     
     var mutated: [String: MDUpdateOperation] = [:]
     
-    init(class: String, id: String?, data: [String: MDData]) {
+    init(
+        class: String,
+        id: String?,
+        createdAt: Date?,
+        updatedAt: Date?,
+        data: [String: MDData]
+    ) {
         self.class = `class`
         self.id = id
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
         self.data = data
     }
     
     public init(class: String, id: String? = nil) {
         self.class = `class`
         self.id = id
+        self.createdAt = nil
+        self.updatedAt = nil
         self.data = [:]
     }
 }

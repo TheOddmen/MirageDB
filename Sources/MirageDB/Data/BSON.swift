@@ -59,7 +59,6 @@ extension MDData {
         case let .double(value): self.init(value)
         case let .string(value): self.init(value)
         case let .objectID(value): self.init(value.hex)
-        case let .timestamp(value): self.init(Date(timeIntervalSince1970: TimeInterval(value.timestamp + value.increment)))
         case let .array(value): try self.init(value.map(MDData.init))
         case let .document(value): try self.init(Dictionary(value))
         default: throw MDError.unsupportedType
