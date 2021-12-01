@@ -201,7 +201,7 @@ extension Databases {
         let id = id ?? self._requireDefaultID()
         let configuration = self._requireConfiguration(for: id)
         
-        var logger = logger
+        var logger = self.logger
         logger[metadataKey: "database-id"] = .string(id.string)
         
         if let existing = self.pools[id] {
