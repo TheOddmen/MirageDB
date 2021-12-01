@@ -387,10 +387,10 @@ extension MDData {
     
     public var decimalValue: Decimal? {
         switch self.base {
-        case let .integer(value): return Decimal(value)
-        case let .number(value): return Decimal(value)
+        case let .integer(value): return Decimal(exactly: value)
+        case let .number(value): return Decimal(exactly: value)
         case let .decimal(value): return value
-        case let .string(string): return Decimal(string: string)
+        case let .string(string): return Decimal(exactly: string)
         default: return nil
         }
     }

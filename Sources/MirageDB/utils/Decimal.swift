@@ -23,6 +23,22 @@
 //  THE SOFTWARE.
 //
 
+extension Decimal {
+    
+    public init?(exactly value: Double) {
+        self.init(value)
+        guard self.doubleValue == value else { return nil }
+    }
+}
+
+extension Decimal {
+    
+    public init?(exactly value: String) {
+        self.init(string: value)
+        guard self.description == value else { return nil }
+    }
+}
+
 extension Double {
     
     public init?(exactly value: Decimal) {
