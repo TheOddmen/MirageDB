@@ -58,6 +58,10 @@ extension MDConnection {
         return MDConnection(connection: connection.bind(to: eventLoop))
     }
     
+    public func boot() -> EventLoopFuture<Void> {
+        return eventLoopGroup.next().makeSucceededVoidFuture()
+    }
+    
     public func close() -> EventLoopFuture<Void> {
         return connection.close()
     }
