@@ -99,10 +99,6 @@ public class DatabasePool {
         return self.pool.withConnection { closure($0.connection) }
     }
     
-    func boot() -> EventLoopFuture<Void> {
-        return self.withConnection { $0.boot() }
-    }
-    
     func shutdown() {
         if let connection = self.connection {
             connection.flatMap { $0.close() }.whenComplete { _ in self.pool.shutdown() }
@@ -183,10 +179,6 @@ extension Databases {
     
     public func ids() -> Set<DatabaseID> {
         return self.lock.withLock { Set(self.configurations.keys) }
-    }
-    
-    func boot() throws {
-        try eventLoopGroup.next().flatten(self.ids().map { self.database($0).boot() }).wait()
     }
     
     func shutdown() {
