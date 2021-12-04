@@ -177,6 +177,7 @@ extension MDObject {
             return connection.query()
                 .class(self.class)
                 .filter { $0.id == id }
+                .includes(self.keys)
                 .findOneAndUpdate(mutated)
                 .flatMapThrowing { object in
                     guard let object = object else { throw MDError.objectNotFound }
@@ -196,6 +197,7 @@ extension MDObject {
             return connection.query()
                 .class(self.class)
                 .filter { $0.id == id }
+                .includes(self.keys)
                 .findOneAndDelete()
                 .flatMapThrowing { object in
                     guard let object = object else { throw MDError.objectNotFound }

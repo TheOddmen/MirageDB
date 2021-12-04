@@ -101,6 +101,30 @@ class PostgreSQLTest: XCTestCase {
         }
     }
     
+    func testSetNil() throws {
+        
+        do {
+            
+            var obj = try connection.query()
+                .class("testSetNil")
+                .insert(["col": 1]).wait()
+            
+            XCTAssertEqual(obj.id?.count, 10)
+            XCTAssertEqual(obj["col"], 1)
+            
+            obj.set("col", nil)
+            
+            obj = try obj.save(on: connection).wait()
+            
+            XCTAssertEqual(obj["col"], nil)
+            
+        } catch {
+            
+            print(error)
+            throw error
+        }
+    }
+    
     func testExtendedJSON() throws {
         
         do {
