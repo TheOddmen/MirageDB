@@ -93,29 +93,6 @@ extension PostgreSQLDriver {
         }
     }
     
-    func columnsOfTable(_ connection: MDConnection, _ table: String) -> EventLoopFuture<[String: MDSQLDataType]> {
-        
-        do {
-            
-            guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
-            
-            return connection.columns(of: table).map { columns in
-                
-                var result: [String: MDSQLDataType] = [:]
-                
-                for column in columns {
-                    result[column.name] = MDSQLDataType(type: column.type)
-                }
-                
-                return result
-            }
-            
-        } catch {
-            
-            return connection.eventLoopGroup.next().makeFailedFuture(error)
-        }
-    }
-    
     func addColumns(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
         
         do {

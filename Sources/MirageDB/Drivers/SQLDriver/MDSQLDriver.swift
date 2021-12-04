@@ -31,11 +31,6 @@ protocol MDSQLDriver: MDDriver {
         _ columns: [String: MDSQLDataType]
     ) -> EventLoopFuture<Void>
     
-    func columnsOfTable(
-        _ connection: MDConnection,
-        _ table: String
-    ) -> EventLoopFuture<[String: MDSQLDataType]>
-    
     func addColumns(
         _ connection: MDConnection,
         _ table: String,
@@ -275,19 +270,7 @@ extension MDSQLDriver {
             
             return self.enforceFieldExists(query.connection, `class`, columns).flatMap {
                 
-                if columns.count == update.count {
-                    
-                    return _query.update(_update.mapValues(DBQueryUpdateOperation.init)).flatMapThrowing { try $0.map(MDObject.init) }
-                    
-                } else {
-                    
-                    return self.columnsOfTable(query.connection, `class`).flatMap { _columns in
-                        
-                        _update = _update.filter { _columns.keys.contains($0.key.lowercased()) }
-                        
-                        return _query.update(_update.mapValues(DBQueryUpdateOperation.init)).flatMapThrowing { try $0.map(MDObject.init) }
-                    }
-                }
+                _query.update(_update.mapValues(DBQueryUpdateOperation.init)).flatMapThrowing { try $0.map(MDObject.init) }
             }
             
         } catch {
@@ -331,20 +314,7 @@ extension MDSQLDriver {
             
             return self.enforceFieldExists(query.connection, `class`, columns).flatMap {
                 
-                if update.keys.allSatisfy({ columns.keys.contains($0) }) && setOnInsert.keys.allSatisfy({ columns.keys.contains($0) }) {
-                    
-                    return _query.upsert(_update.mapValues(DBQueryUpdateOperation.init), setOnInsert: _setOnInsert).flatMapThrowing { try $0.map(MDObject.init) }
-                    
-                } else {
-                    
-                    return self.columnsOfTable(query.connection, `class`).flatMap { _columns in
-                        
-                        _update = _update.filter { _columns.keys.contains($0.key.lowercased()) }
-                        _setOnInsert = _setOnInsert.filter { _columns.keys.contains($0.key.lowercased()) }
-                        
-                        return _query.upsert(_update.mapValues(DBQueryUpdateOperation.init), setOnInsert: _setOnInsert).flatMapThrowing { try $0.map(MDObject.init) }
-                    }
-                }
+                _query.upsert(_update.mapValues(DBQueryUpdateOperation.init), setOnInsert: _setOnInsert).flatMapThrowing { try $0.map(MDObject.init) }
             }
             
         } catch {
