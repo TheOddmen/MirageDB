@@ -25,16 +25,65 @@
 
 protocol MDSQLDriver: MDDriver {
     
-    func _createTable(_ connection: MDConnection, _ table: MDSQLTable) -> EventLoopFuture<Void>
+    func createTable(
+        _ connection: MDConnection,
+        _ table: String,
+        _ columns: [String: MDSQLDataType]
+    ) -> EventLoopFuture<Void>
+    
+    func columnsOfTable(
+        _ connection: MDConnection,
+        _ table: String
+    ) -> EventLoopFuture<[String: MDSQLDataType]>
+    
+    func addColumns(
+        _ connection: MDConnection,
+        _ table: String,
+        _ columns: [String: MDSQLDataType]
+    ) -> EventLoopFuture<Void>
+    
+    func _createTable(
+        _ connection: MDConnection,
+        _ table: String,
+        _ columns: [String: MDSQLDataType]
+    ) -> EventLoopFuture<Void>
 }
 
 extension MDSQLDriver {
     
-    func createTable(_ connection: MDConnection, _ table: MDSQLTable) -> EventLoopFuture<Void> {
-        var table = table
-        table.columns.append(MDSQLTableColumn(name: "created_at", type: .timestamp))
-        table.columns.append(MDSQLTableColumn(name: "updated_at", type: .timestamp))
-        return self._createTable(connection, table)
+    func createTable(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
+        var columns = columns
+        columns["created_at"] = .timestamp
+        columns["updated_at"] = .timestamp
+        return self._createTable(connection, table, columns)
+    }
+}
+
+extension MDData {
+    
+    var sql_type: MDSQLDataType? {
+        switch self.type {
+        case .null: return nil
+        case .boolean: return .boolean
+        case .string: return .string
+        case .integer: return .integer
+        case .number: return .number
+        case .decimal: return .decimal
+        case .timestamp: return .timestamp
+        case .array: return .json
+        case .dictionary: return .json
+        }
+    }
+}
+
+extension MDUpdateOperation {
+    
+    var sql_type: MDSQLDataType? {
+        switch self {
+        case let .set(data): return data.sql_type
+        case .push, .removeAll, .popFirst, .popLast: return .json
+        default: return nil
+        }
     }
 }
 
@@ -97,6 +146,29 @@ extension MDSQLDriver {
             return connection.eventLoopGroup.next().makeFailedFuture(error)
         }
     }
+    
+    func enforceFieldExists(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
+        
+        return self.tables(connection).flatMap { tables in
+            
+            if tables.contains(table.lowercased()) {
+                
+                if columns.isEmpty {
+                    
+                    return connection.eventLoopGroup.next().makeSucceededVoidFuture()
+                }
+                
+                return self.addColumns(connection, table, columns)
+                
+            } else {
+                
+                return self.createTable(connection, table, columns)
+            }
+        }
+    }
+}
+
+extension MDSQLDriver {
     
     func count(_ query: MDQuery) -> EventLoopFuture<Int> {
         
@@ -196,12 +268,27 @@ extension MDSQLDriver {
             
             let now = Date()
             
-            var update = update
-            update["updated_at"] = .set(MDData(now))
+            let columns = update.compactMapValues { $0.sql_type }
             
-            let _update = update.mapValues(DBQueryUpdateOperation.init)
+            var _update = update
+            _update["updated_at"] = .set(MDData(now))
             
-            return _query.update(_update).flatMapThrowing { try $0.map(MDObject.init) }
+            return self.enforceFieldExists(query.connection, `class`, columns).flatMap {
+                
+                if columns.count == update.count {
+                    
+                    return _query.update(_update.mapValues(DBQueryUpdateOperation.init)).flatMapThrowing { try $0.map(MDObject.init) }
+                    
+                } else {
+                    
+                    return self.columnsOfTable(query.connection, `class`).flatMap { _columns in
+                        
+                        _update = _update.filter { _columns.keys.contains($0.key.lowercased()) }
+                        
+                        return _query.update(_update.mapValues(DBQueryUpdateOperation.init)).flatMapThrowing { try $0.map(MDObject.init) }
+                    }
+                }
+            }
             
         } catch {
             
@@ -233,16 +320,32 @@ extension MDSQLDriver {
             
             let now = Date()
             
-            var update = update
-            update["updated_at"] = .set(MDData(now))
+            let columns = update.compactMapValues { $0.sql_type }.merging(setOnInsert.compactMapValues { $0.sql_type }) { _, rhs in rhs }
             
-            let _update = update.mapValues(DBQueryUpdateOperation.init)
+            var _update = update
+            _update["updated_at"] = .set(MDData(now))
             
-            var setOnInsert = setOnInsert.mapValues { $0.toSQLData() }
-            setOnInsert["id"] = DBData(objectIDGenerator())
-            setOnInsert["created_at"] = DBData(now)
+            var _setOnInsert = setOnInsert.mapValues { $0.toSQLData() }
+            _setOnInsert["id"] = DBData(objectIDGenerator())
+            _setOnInsert["created_at"] = DBData(now)
             
-            return _query.upsert(_update, setOnInsert: setOnInsert).flatMapThrowing { try $0.map(MDObject.init) }
+            return self.enforceFieldExists(query.connection, `class`, columns).flatMap {
+                
+                if update.keys.allSatisfy({ columns.keys.contains($0) }) && setOnInsert.keys.allSatisfy({ columns.keys.contains($0) }) {
+                    
+                    return _query.upsert(_update.mapValues(DBQueryUpdateOperation.init), setOnInsert: _setOnInsert).flatMapThrowing { try $0.map(MDObject.init) }
+                    
+                } else {
+                    
+                    return self.columnsOfTable(query.connection, `class`).flatMap { _columns in
+                        
+                        _update = _update.filter { _columns.keys.contains($0.key.lowercased()) }
+                        _setOnInsert = _setOnInsert.filter { _columns.keys.contains($0.key.lowercased()) }
+                        
+                        return _query.upsert(_update.mapValues(DBQueryUpdateOperation.init), setOnInsert: _setOnInsert).flatMapThrowing { try $0.map(MDObject.init) }
+                    }
+                }
+            }
             
         } catch {
             
@@ -297,12 +400,17 @@ extension MDSQLDriver {
         
         let now = Date()
         
-        var data = data.mapValues { $0.toSQLData() }
-        data["id"] = DBData(objectIDGenerator())
-        data["created_at"] = DBData(now)
-        data["updated_at"] = DBData(now)
+        let columns = data.compactMapValues { $0.sql_type }
         
-        return connection.connection.query().insert(`class`, data).flatMapThrowing { try MDObject($0) }
+        var _data = data.compactMapValues { $0.isNil ? nil : $0.toSQLData() }
+        _data["id"] = DBData(objectIDGenerator())
+        _data["created_at"] = DBData(now)
+        _data["updated_at"] = DBData(now)
+        
+        return self.enforceFieldExists(connection, `class`, columns).flatMap {
+            
+            connection.connection.query().insert(`class`, _data).flatMapThrowing { try MDObject($0) }
+        }
     }
     
     func withTransaction<T>(_ connection: MDConnection, _ transactionBody: @escaping () throws -> EventLoopFuture<T>) -> EventLoopFuture<T> {

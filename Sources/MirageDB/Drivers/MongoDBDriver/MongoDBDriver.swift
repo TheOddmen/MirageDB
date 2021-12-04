@@ -380,16 +380,6 @@ struct MongoDBDriver: MDDriver {
 
 extension MongoDBDriver {
     
-    func createTable(_ connection: MDConnection, _ table: MDSQLTable) -> EventLoopFuture<Void> {
-        
-        return connection.connection.mongoQuery().createCollection(table.name).execute().map { _ in }
-    }
-    
-    func addColumns(_ connection: MDConnection, _ table: String, _ columns: [MDSQLTableColumn]) -> EventLoopFuture<Void> {
-        
-        return connection.eventLoopGroup.next().makeSucceededVoidFuture()
-    }
-    
     func dropTable(_ connection: MDConnection, _ table: String) -> EventLoopFuture<Void> {
         
         return connection.connection.mongoQuery().collection(table).drop().execute()

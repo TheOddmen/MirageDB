@@ -28,25 +28,6 @@
 @available(macOS 12, iOS 15, watchOS 8, tvOS 15, *)
 extension MDConnection {
     
-    public func withTransaction<T>(
-        _ transactionBody: @escaping (MDConnection) async throws -> T
-    ) async throws -> T {
-        
-        let promise = self.eventLoopGroup.next().makePromise(of: T.self)
-        
-        return try await self.withTransaction { connection in
-            
-            promise.completeWithTask { try await transactionBody(connection) }
-            
-            return promise.futureResult
-            
-        }.get()
-    }
-}
-
-@available(macOS 12, iOS 15, watchOS 8, tvOS 15, *)
-extension MDConnection {
-    
     public static func connect(
         config: Database.Configuration,
         logger: Logger = .init(label: "com.TheOddmen.MirageDB"),
@@ -93,6 +74,37 @@ extension MDConnection {
     
     public func tables() async throws -> [String] {
         return try await self.tables().get()
+    }
+}
+
+@available(macOS 12, iOS 15, watchOS 8, tvOS 15, *)
+extension MDConnection {
+    
+    public func withTransaction<T>(
+        _ transactionBody: @escaping (MDConnection) async throws -> T
+    ) async throws -> T {
+        
+        let promise = self.eventLoopGroup.next().makePromise(of: T.self)
+        
+        return try await self.withTransaction { connection in
+            
+            promise.completeWithTask { try await transactionBody(connection) }
+            
+            return promise.futureResult
+            
+        }.get()
+    }
+}
+
+@available(macOS 12, iOS 15, watchOS 8, tvOS 15, *)
+extension MDConnection {
+    
+    public func addIndex(_ table: String, _ index: MDSQLTableIndex) async throws {
+        return try await self.addIndex(table, index).get()
+    }
+    
+    public func dropIndex(_ table: String, _ index: String) async throws {
+        return try await self.dropIndex(table, index).get()
     }
 }
 

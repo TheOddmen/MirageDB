@@ -25,20 +25,9 @@
 
 protocol MDDriver {
     
-    func createTable(
-        _ connection: MDConnection,
-        _ table: MDSQLTable
-    ) -> EventLoopFuture<Void>
-    
     func dropTable(
         _ connection: MDConnection,
         _ table: String
-    ) -> EventLoopFuture<Void>
-    
-    func addColumns(
-        _ connection: MDConnection,
-        _ table: String,
-        _ columns: [MDSQLTableColumn]
     ) -> EventLoopFuture<Void>
     
     func dropColumns(

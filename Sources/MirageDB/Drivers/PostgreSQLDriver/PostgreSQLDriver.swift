@@ -29,6 +29,20 @@ struct PostgreSQLDriver: MDSQLDriver {
 
 extension MDSQLDataType {
     
+    init?(type: String) {
+        switch type.uppercased() {
+        case "CHARACTER VARYING(10)": self = .id
+        case "BOOLEAN": self = .boolean
+        case "TEXT": self = .string
+        case "INTEGER": self = .integer
+        case "DOUBLE PRECISION": self = .number
+        case "NUMERIC": self = .decimal
+        case "TIMESTAMP WITHOUT TIME ZONE": self = .timestamp
+        case "JSONB": self = .json
+        default: return nil
+        }
+    }
+    
     fileprivate var postgresType: SQLRaw {
         switch self {
         case .id: return "VARCHAR(10)"
@@ -36,7 +50,7 @@ extension MDSQLDataType {
         case .string: return "TEXT"
         case .integer: return "INTEGER"
         case .number: return "DOUBLE PRECISION"
-        case .decimal: return "DECIMAL"
+        case .decimal: return "NUMERIC"
         case .timestamp: return "TIMESTAMP"
         case .json: return "JSONB"
         }
@@ -45,15 +59,15 @@ extension MDSQLDataType {
 
 extension PostgreSQLDriver {
     
-    func _createTable(_ connection: MDConnection, _ table: MDSQLTable) -> EventLoopFuture<Void> {
+    func _createTable(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
         
         do {
             
             guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
             
-            let list: [SQLRaw] = ["id VARCHAR(10) NOT NULL PRIMARY KEY"] + table.columns.map { "\(identifier: $0.name) \($0.type.postgresType)" }
+            let list: [SQLRaw] = ["id VARCHAR(10) NOT NULL PRIMARY KEY"] + columns.map { "\(identifier: $0.key) \($0.value.postgresType)" }
             
-            let sql: SQLRaw = "CREATE TABLE IF NOT EXISTS \(identifier: table.name) (\(list.joined(separator: ",")))"
+            let sql: SQLRaw = "CREATE TABLE IF NOT EXISTS \(identifier: table) (\(list.joined(separator: ",")))"
             
             return connection.execute(sql).map { _ in }
             
@@ -79,13 +93,36 @@ extension PostgreSQLDriver {
         }
     }
     
-    func addColumns(_ connection: MDConnection, _ table: String, _ columns: [MDSQLTableColumn]) -> EventLoopFuture<Void> {
+    func columnsOfTable(_ connection: MDConnection, _ table: String) -> EventLoopFuture<[String: MDSQLDataType]> {
         
         do {
             
             guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
             
-            let list: [SQLRaw] = columns.map { "ADD COLUMN IF NOT EXISTS \(identifier: $0.name) \($0.type.postgresType)" }
+            return connection.columns(of: table).map { columns in
+                
+                var result: [String: MDSQLDataType] = [:]
+                
+                for column in columns {
+                    result[column.name] = MDSQLDataType(type: column.type)
+                }
+                
+                return result
+            }
+            
+        } catch {
+            
+            return connection.eventLoopGroup.next().makeFailedFuture(error)
+        }
+    }
+    
+    func addColumns(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
+        
+        do {
+            
+            guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
+            
+            let list: [SQLRaw] = columns.map { "ADD COLUMN IF NOT EXISTS \(identifier: $0.key) \($0.value.postgresType)" }
             
             let sql: SQLRaw = "ALTER TABLE IF EXISTS \(identifier: table) \(list.joined(separator: ","))"
             

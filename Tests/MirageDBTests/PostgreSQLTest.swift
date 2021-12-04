@@ -51,7 +51,10 @@ class PostgreSQLTest: XCTestCase {
                 ]
             }
             
-            self.connection = try MDConnection.connect(url: url, on: eventLoopGroup).wait()
+            var logger = Logger(label: "com.TheOddmen.MirageDB")
+            logger.logLevel = .debug
+            
+            self.connection = try MDConnection.connect(url: url, logger: logger, on: eventLoopGroup).wait()
             
             print("POSTGRES:", try connection.version().wait())
             
@@ -80,14 +83,6 @@ class PostgreSQLTest: XCTestCase {
         
         do {
             
-            try connection.createTable(MDSQLTable(
-                name: "testCreateTable",
-                columns: [
-                    .init(name: "name", type: .string),
-                    .init(name: "age", type: .integer),
-                ]
-            )).wait()
-            
             let obj1 = try connection.query()
                 .class("testCreateTable")
                 .insert([
@@ -109,13 +104,6 @@ class PostgreSQLTest: XCTestCase {
     func testExtendedJSON() throws {
         
         do {
-            
-            try connection.createTable(MDSQLTable(
-                name: "testExtendedJSON",
-                columns: [
-                    .init(name: "col", type: .json),
-                ]
-            )).wait()
             
             let json: MDData = [
                 "boolean": true,
@@ -145,13 +133,6 @@ class PostgreSQLTest: XCTestCase {
     func testPatternMatchingQuery() throws {
         
         do {
-            
-            try connection.createTable(MDSQLTable(
-                name: "testPatternMatchingQuery",
-                columns: [
-                    .init(name: "col", type: .string),
-                ]
-            )).wait()
             
             let obj1 = try connection.query().class("testPatternMatchingQuery").insert(["col": "text to be search"]).wait()
             let obj2 = try connection.query().class("testPatternMatchingQuery").insert(["col": "long long' string%"]).wait()
@@ -190,13 +171,6 @@ class PostgreSQLTest: XCTestCase {
     func testUpdateQuery() throws {
         
         do {
-            
-            try connection.createTable(MDSQLTable(
-                name: "testUpdateQuery",
-                columns: [
-                    .init(name: "col", type: .string),
-                ]
-            )).wait()
             
             var obj = MDObject(class: "testUpdateQuery")
             obj = try obj.save(on: connection).wait()
@@ -240,13 +214,6 @@ class PostgreSQLTest: XCTestCase {
         
         do {
             
-            try connection.createTable(MDSQLTable(
-                name: "testUpsertQuery",
-                columns: [
-                    .init(name: "col", type: .string),
-                ]
-            )).wait()
-            
             let obj = try connection.query()
                 .class("testUpsertQuery")
                 .filter { $0["col"] == "text_1" }
@@ -288,16 +255,6 @@ class PostgreSQLTest: XCTestCase {
         
         do {
             
-            try connection.createTable(MDSQLTable(
-                name: "testIncludesQuery",
-                columns: [
-                    .init(name: "dummy1", type: .integer),
-                    .init(name: "dummy2", type: .integer),
-                    .init(name: "dummy3", type: .integer),
-                    .init(name: "dummy4", type: .integer),
-                ]
-            )).wait()
-            
             let obj = try connection.query()
                 .class("testIncludesQuery")
                 .filter { $0["dummy1"] == 1 }
@@ -321,15 +278,6 @@ class PostgreSQLTest: XCTestCase {
     func testQueryNumberOperation() throws {
         
         do {
-            
-            try connection.createTable(MDSQLTable(
-                name: "testQueryNumberOperation",
-                columns: [
-                    .init(name: "col_1", type: .integer),
-                    .init(name: "col_2", type: .decimal),
-                    .init(name: "col_3", type: .number),
-                ]
-            )).wait()
             
             var obj = MDObject(class: "testQueryNumberOperation")
             obj["col_1"] = 1
