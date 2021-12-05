@@ -84,9 +84,11 @@ extension MDUpdateOperation {
 
 extension MDObject {
     
+    fileprivate static let _default_fields = ["id", "created_at", "updated_at"]
+    
     fileprivate init(_ object: DBObject) throws {
         var data: [String: MDData] = [:]
-        for key in object.keys where key != "id" && key != "created_at" && key != "updated_at" {
+        for key in object.keys where !MDObject._default_fields.contains(key) {
             data[key] = try MDData(fromSQLData: object[key])
         }
         self.init(
@@ -201,7 +203,7 @@ extension MDSQLDriver {
             _query = _query.limit(query.limit)
         }
         if !query.includes.isEmpty {
-            _query = _query.includes(query.includes.union(["id", "created_at", "updated_at"]))
+            _query = _query.includes(query.includes.union(MDObject._default_fields))
         }
         
         return _query
@@ -258,7 +260,7 @@ extension MDSQLDriver {
                 _query = _query.sort(query.sort.mapValues(DBQuerySortOrder.init))
             }
             if !query.includes.isEmpty {
-                _query = _query.includes(query.includes.union(["id", "created_at", "updated_at"]))
+                _query = _query.includes(query.includes.union(MDObject._default_fields))
             }
             
             let now = Date()
@@ -298,7 +300,7 @@ extension MDSQLDriver {
                 _query = _query.sort(query.sort.mapValues(DBQuerySortOrder.init))
             }
             if !query.includes.isEmpty {
-                _query = _query.includes(query.includes.union(["id", "created_at", "updated_at"]))
+                _query = _query.includes(query.includes.union(MDObject._default_fields))
             }
             
             let now = Date()
@@ -337,7 +339,7 @@ extension MDSQLDriver {
                 _query = _query.sort(query.sort.mapValues(DBQuerySortOrder.init))
             }
             if !query.includes.isEmpty {
-                _query = _query.includes(query.includes.union(["id", "created_at", "updated_at"]))
+                _query = _query.includes(query.includes.union(MDObject._default_fields))
             }
             
             return _query.delete().flatMapThrowing { try $0.map(MDObject.init) }
