@@ -90,8 +90,7 @@ class MongoDBTest: XCTestCase {
         do {
             
             let obj1 = try connection.query()
-                .class("testCreateTable")
-                .insert([
+                .insert("testCreateTable", [
                     "name": "John",
                     "age": 10,
                 ]).wait()
@@ -111,9 +110,7 @@ class MongoDBTest: XCTestCase {
         
         do {
             
-            var obj = try connection.query()
-                .class("testSetNil")
-                .insert(["col": 1]).wait()
+            var obj = try connection.query().insert("testSetNil", ["col": 1]).wait()
             
             XCTAssertEqual(obj.id?.count, 10)
             XCTAssertEqual(obj["col"], 1)
@@ -146,9 +143,7 @@ class MongoDBTest: XCTestCase {
                 "dictionary": [:],
             ]
             
-            let obj1 = try connection.query()
-                .class("testExtendedJSON")
-                .insert(["col": json]).wait()
+            let obj1 = try connection.query().insert("testExtendedJSON", ["col": json]).wait()
             
             XCTAssertEqual(obj1.id?.count, 10)
             XCTAssertEqual(obj1["col"], json)
@@ -164,12 +159,12 @@ class MongoDBTest: XCTestCase {
         
         do {
             
-            let obj1 = try connection.query().class("testPatternMatchingQuery").insert(["col": "text to be search"]).wait()
-            let obj2 = try connection.query().class("testPatternMatchingQuery").insert(["col": "long long' string%"]).wait()
-            _ = try connection.query().class("testPatternMatchingQuery").insert(["col": "long long' string%, hello"]).wait()
+            let obj1 = try connection.query().insert("testPatternMatchingQuery", ["col": "text to be search"]).wait()
+            let obj2 = try connection.query().insert("testPatternMatchingQuery", ["col": "long long' string%"]).wait()
+            _ = try connection.query().insert("testPatternMatchingQuery", ["col": "long long' string%, hello"]).wait()
             
             let res1 = try connection.query()
-                .class("testPatternMatchingQuery")
+                .find("testPatternMatchingQuery")
                 .filter { .startsWith($0["col"], "text to ") }
                 .toArray().wait()
             
@@ -177,7 +172,7 @@ class MongoDBTest: XCTestCase {
             XCTAssertEqual(res1.first?.id, obj1.id)
             
             let res2 = try connection.query()
-                .class("testPatternMatchingQuery")
+                .find("testPatternMatchingQuery")
                 .filter { .endsWith($0["col"], "ong' string%") }
                 .toArray().wait()
             
@@ -185,7 +180,7 @@ class MongoDBTest: XCTestCase {
             XCTAssertEqual(res2.first?.id, obj2.id)
             
             let res3 = try connection.query()
-                .class("testPatternMatchingQuery")
+                .find("testPatternMatchingQuery")
                 .filter { .contains($0["col"], "long' s") }
                 .toArray().wait()
             
@@ -214,9 +209,9 @@ class MongoDBTest: XCTestCase {
             XCTAssertEqual(obj["col"].string, "text_1")
             
             let obj2 = try connection.query()
-                .class("testUpdateQuery")
+                .findOne("testUpdateQuery")
                 .filter { $0.id == obj.id }
-                .findOneAndUpdate([
+                .update([
                     "col": .set("text_2")
                 ]).wait()
             
@@ -224,11 +219,12 @@ class MongoDBTest: XCTestCase {
             XCTAssertEqual(obj2?["col"].string, "text_2")
             
             let obj3 = try connection.query()
-                .class("testUpdateQuery")
+                .findOne("testUpdateQuery")
                 .filter { $0.id == obj.id }
-                .findOneAndUpdate([
+                .returning(.before)
+                .update([
                     "col": .set("text_3")
-                ], returning: .before).wait()
+                ]).wait()
             
             XCTAssertEqual(obj3?.id, obj.id)
             XCTAssertEqual(obj3?["col"].string, "text_2")
@@ -245,9 +241,9 @@ class MongoDBTest: XCTestCase {
         do {
             
             let obj = try connection.query()
-                .class("testUpsertQuery")
+                .findOne("testUpsertQuery")
                 .filter { $0["col"] == "text_1" }
-                .findOneAndUpsert([
+                .upsert([
                     "col": .set("text_1")
                 ]).wait()
             
@@ -255,9 +251,9 @@ class MongoDBTest: XCTestCase {
             XCTAssertEqual(obj?["col"].string, "text_1")
             
             let obj2 = try connection.query()
-                .class("testUpsertQuery")
+                .findOne("testUpsertQuery")
                 .filter { $0.id == obj?.id }
-                .findOneAndUpsert([
+                .upsert([
                     "col": .set("text_2")
                 ]).wait()
             
@@ -265,11 +261,12 @@ class MongoDBTest: XCTestCase {
             XCTAssertEqual(obj2?["col"].string, "text_2")
             
             let obj3 = try connection.query()
-                .class("testUpsertQuery")
+                .findOne("testUpsertQuery")
                 .filter { $0.id == obj?.id }
-                .findOneAndUpsert([
+                .returning(.before)
+                .upsert([
                     "col": .set("text_3")
-                ], returning: .before).wait()
+                ]).wait()
             
             XCTAssertEqual(obj3?.id, obj?.id)
             XCTAssertEqual(obj3?["col"].string, "text_2")
@@ -286,10 +283,10 @@ class MongoDBTest: XCTestCase {
         do {
             
             let obj = try connection.query()
-                .class("testIncludesQuery")
+                .findOne("testIncludesQuery")
                 .filter { $0["dummy1"] == 1 }
                 .includes(["dummy1", "dummy2"])
-                .findOneAndUpsert([
+                .upsert([
                     "dummy1": .set(1),
                     "dummy2": .set(2),
                     "dummy3": .set(3),

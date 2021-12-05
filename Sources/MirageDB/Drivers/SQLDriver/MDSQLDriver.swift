@@ -86,7 +86,7 @@ extension MDObject {
     
     fileprivate init(_ object: DBObject) throws {
         var data: [String: MDData] = [:]
-        for key in object.keys where key != "id" {
+        for key in object.keys where key != "id" && key != "created_at" && key != "updated_at" {
             data[key] = try MDData(fromSQLData: object[key])
         }
         self.init(
@@ -165,7 +165,7 @@ extension MDSQLDriver {
 
 extension MDSQLDriver {
     
-    func count(_ query: MDQuery) -> EventLoopFuture<Int> {
+    func count(_ query: MDQueryFindExpression) -> EventLoopFuture<Int> {
         
         do {
             
@@ -183,7 +183,7 @@ extension MDSQLDriver {
         }
     }
     
-    func _find(_ query: MDQuery) throws -> DBQueryFindExpression {
+    func _find(_ query: MDQueryFindExpression) throws -> DBQueryFindExpression {
         
         guard let `class` = query.class else { throw MDError.classNotSet }
         
@@ -191,23 +191,23 @@ extension MDSQLDriver {
         
         _query = _query.filter(query.filters.map(DBQueryPredicateExpression.init))
         
-        if let sort = query.sort {
-            _query = _query.sort(sort.mapValues(DBQuerySortOrder.init))
+        if !query.sort.isEmpty {
+            _query = _query.sort(query.sort.mapValues(DBQuerySortOrder.init))
         }
-        if let skip = query.skip {
-            _query = _query.skip(skip)
+        if query.skip > 0 {
+            _query = _query.skip(query.skip)
         }
-        if let limit = query.limit {
-            _query = _query.limit(limit)
+        if query.limit != .max {
+            _query = _query.limit(query.limit)
         }
-        if let includes = query.includes {
-            _query = _query.includes(includes)
+        if !query.includes.isEmpty {
+            _query = _query.includes(query.includes.union(["id", "created_at", "updated_at"]))
         }
         
         return _query
     }
     
-    func toArray(_ query: MDQuery) -> EventLoopFuture<[MDObject]> {
+    func toArray(_ query: MDQueryFindExpression) -> EventLoopFuture<[MDObject]> {
         
         do {
             
@@ -221,7 +221,7 @@ extension MDSQLDriver {
         }
     }
     
-    func forEach(_ query: MDQuery, _ body: @escaping (MDObject) throws -> Void) -> EventLoopFuture<Void> {
+    func forEach(_ query: MDQueryFindExpression, _ body: @escaping (MDObject) throws -> Void) -> EventLoopFuture<Void> {
         
         do {
             
@@ -235,11 +235,11 @@ extension MDSQLDriver {
         }
     }
     
-    func first(_ query: MDQuery) -> EventLoopFuture<MDObject?> {
+    func first(_ query: MDQueryFindExpression) -> EventLoopFuture<MDObject?> {
         return self.toArray(query.limit(1)).map { $0.first }
     }
     
-    func findOneAndUpdate(_ query: MDQuery, _ update: [String : MDUpdateOperation], _ returning: MDQueryReturning) -> EventLoopFuture<MDObject?> {
+    func findOneAndUpdate(_ query: MDQueryFindOneExpression, _ update: [String : MDUpdateOperation]) -> EventLoopFuture<MDObject?> {
         
         do {
             
@@ -249,16 +249,16 @@ extension MDSQLDriver {
             
             _query = _query.filter(query.filters.map(DBQueryPredicateExpression.init))
             
-            switch returning {
+            switch query.returning {
             case .before: _query = _query.returning(.before)
             case .after: _query = _query.returning(.after)
             }
             
-            if let sort = query.sort {
-                _query = _query.sort(sort.mapValues(DBQuerySortOrder.init))
+            if !query.sort.isEmpty {
+                _query = _query.sort(query.sort.mapValues(DBQuerySortOrder.init))
             }
-            if let includes = query.includes {
-                _query = _query.includes(includes)
+            if !query.includes.isEmpty {
+                _query = _query.includes(query.includes.union(["id", "created_at", "updated_at"]))
             }
             
             let now = Date()
@@ -279,7 +279,7 @@ extension MDSQLDriver {
         }
     }
     
-    func findOneAndUpsert(_ query: MDQuery, _ update: [String : MDUpdateOperation], _ setOnInsert: [String : MDData], _ returning: MDQueryReturning) -> EventLoopFuture<MDObject?> {
+    func findOneAndUpsert(_ query: MDQueryFindOneExpression, _ update: [String : MDUpdateOperation], _ setOnInsert: [String : MDData]) -> EventLoopFuture<MDObject?> {
         
         do {
             
@@ -289,16 +289,16 @@ extension MDSQLDriver {
             
             _query = _query.filter(query.filters.map(DBQueryPredicateExpression.init))
             
-            switch returning {
+            switch query.returning {
             case .before: _query = _query.returning(.before)
             case .after: _query = _query.returning(.after)
             }
             
-            if let sort = query.sort {
-                _query = _query.sort(sort.mapValues(DBQuerySortOrder.init))
+            if !query.sort.isEmpty {
+                _query = _query.sort(query.sort.mapValues(DBQuerySortOrder.init))
             }
-            if let includes = query.includes {
-                _query = _query.includes(includes)
+            if !query.includes.isEmpty {
+                _query = _query.includes(query.includes.union(["id", "created_at", "updated_at"]))
             }
             
             let now = Date()
@@ -323,7 +323,7 @@ extension MDSQLDriver {
         }
     }
     
-    func findOneAndDelete(_ query: MDQuery) -> EventLoopFuture<MDObject?> {
+    func findOneAndDelete(_ query: MDQueryFindOneExpression) -> EventLoopFuture<MDObject?> {
         
         do {
             
@@ -333,11 +333,11 @@ extension MDSQLDriver {
             
             _query = _query.filter(query.filters.map(DBQueryPredicateExpression.init))
             
-            if let sort = query.sort {
-                _query = _query.sort(sort.mapValues(DBQuerySortOrder.init))
+            if !query.sort.isEmpty {
+                _query = _query.sort(query.sort.mapValues(DBQuerySortOrder.init))
             }
-            if let includes = query.includes {
-                _query = _query.includes(includes)
+            if !query.includes.isEmpty {
+                _query = _query.includes(query.includes.union(["id", "created_at", "updated_at"]))
             }
             
             return _query.delete().flatMapThrowing { try $0.map(MDObject.init) }
@@ -348,7 +348,7 @@ extension MDSQLDriver {
         }
     }
     
-    func deleteAll(_ query: MDQuery) -> EventLoopFuture<Int?> {
+    func deleteAll(_ query: MDQueryFindExpression) -> EventLoopFuture<Int?> {
         
         do {
             

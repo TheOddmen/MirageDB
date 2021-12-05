@@ -50,33 +50,31 @@ protocol MDDriver {
     
     func tables(_ connection: MDConnection) -> EventLoopFuture<[String]>
     
-    func count(_ query: MDQuery) -> EventLoopFuture<Int>
+    func count(_ query: MDQueryFindExpression) -> EventLoopFuture<Int>
     
-    func toArray(_ query: MDQuery) -> EventLoopFuture<[MDObject]>
+    func toArray(_ query: MDQueryFindExpression) -> EventLoopFuture<[MDObject]>
     
     func forEach(
-        _ query: MDQuery,
+        _ query: MDQueryFindExpression,
         _ body: @escaping (MDObject) throws -> Void
     ) -> EventLoopFuture<Void>
     
-    func first(_ query: MDQuery) -> EventLoopFuture<MDObject?>
+    func first(_ query: MDQueryFindExpression) -> EventLoopFuture<MDObject?>
     
     func findOneAndUpdate(
-        _ query: MDQuery,
-        _ update: [String: MDUpdateOperation],
-        _ returning: MDQueryReturning
+        _ query: MDQueryFindOneExpression,
+        _ update: [String: MDUpdateOperation]
     ) -> EventLoopFuture<MDObject?>
     
     func findOneAndUpsert(
-        _ query: MDQuery,
+        _ query: MDQueryFindOneExpression,
         _ update: [String: MDUpdateOperation],
-        _ setOnInsert: [String: MDData],
-        _ returning: MDQueryReturning
+        _ setOnInsert: [String: MDData]
     ) -> EventLoopFuture<MDObject?>
     
-    func findOneAndDelete(_ query: MDQuery) -> EventLoopFuture<MDObject?>
+    func findOneAndDelete(_ query: MDQueryFindOneExpression) -> EventLoopFuture<MDObject?>
     
-    func deleteAll(_ query: MDQuery) -> EventLoopFuture<Int?>
+    func deleteAll(_ query: MDQueryFindExpression) -> EventLoopFuture<Int?>
     
     func insert(
         _ connection: MDConnection,
