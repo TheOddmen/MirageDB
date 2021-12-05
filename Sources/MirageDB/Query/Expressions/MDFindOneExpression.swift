@@ -58,11 +58,11 @@ extension MDFindOneExpression {
 
 extension MDFindOneExpression {
     
-    public func upsert(_ update: [String: MDDataConvertible], setOnInsert: [String: MDDataConvertible] = [:]) -> EventLoopFuture<MDObject?> {
+    public func upsert(_ update: [String: MDDataConvertible], setOnInsert: [String: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
         return self.upsert(update.mapValues { .set($0.toMDData()) }, setOnInsert: setOnInsert)
     }
     
-    public func upsert(_ update: [String: MDUpdateOption], setOnInsert: [String: MDDataConvertible] = [:]) -> EventLoopFuture<MDObject?> {
+    public func upsert(_ update: [String: MDUpdateOption] = [:], setOnInsert: [String: MDDataConvertible] = [:]) -> EventLoopFuture<MDObject?> {
         return self.connection.driver.findOneAndUpsert(self, update, setOnInsert.mapValues { $0.toMDData() })
     }
 }
