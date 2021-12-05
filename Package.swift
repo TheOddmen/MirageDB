@@ -37,14 +37,13 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/vapor/vapor.git", from: "4.50.0"),
-        .package(url: "https://github.com/SusanDoggie/DoggieDB.git", from: "0.0.39"),
+        .package(url: "https://github.com/SusanDoggie/DoggieDB.git", from: "0.0.40"),
     ],
     targets: [
         .target(
             name: "MirageDB",
             dependencies: [
                 .product(name: "DoggieDB", package: "DoggieDB"),
-                .product(name: "DBMongo", package: "DoggieDB"),
             ]
         ),
         .target(
