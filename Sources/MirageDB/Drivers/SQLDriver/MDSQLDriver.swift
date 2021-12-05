@@ -148,7 +148,9 @@ extension MDSQLDriver {
         
         return self.tables(connection).flatMap { tables in
             
-            if tables.contains(table.lowercased()) {
+            let _table = table.lowercased()
+            
+            if tables.contains(where: { $0.lowercased() == _table }) {
                 
                 if columns.isEmpty {
                     
