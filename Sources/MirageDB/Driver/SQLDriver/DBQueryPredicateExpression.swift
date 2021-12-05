@@ -1,5 +1,5 @@
 //
-//  DBQueryPredicateExpression.swift
+//  DBPredicateExpression.swift
 //
 //  The MIT License
 //  Copyright (c) 2021 The Oddmen Technology Limited. All rights reserved.
@@ -23,31 +23,31 @@
 //  THE SOFTWARE.
 //
 
-extension DBQueryPredicateExpression {
+extension DBPredicateExpression {
     
     init(_ expression: MDPredicateExpression) {
         switch expression {
-        case let .not(expr): self = .not(DBQueryPredicateExpression(expr))
-        case let .equal(lhs, rhs): self = .equal(DBQueryPredicateValue(lhs), DBQueryPredicateValue(rhs))
-        case let .notEqual(lhs, rhs): self = .notEqual(DBQueryPredicateValue(lhs), DBQueryPredicateValue(rhs))
-        case let .lessThan(lhs, rhs): self = .lessThan(DBQueryPredicateValue(lhs), DBQueryPredicateValue(rhs))
-        case let .greaterThan(lhs, rhs): self = .greaterThan(DBQueryPredicateValue(lhs), DBQueryPredicateValue(rhs))
-        case let .lessThanOrEqualTo(lhs, rhs): self = .lessThanOrEqualTo(DBQueryPredicateValue(lhs), DBQueryPredicateValue(rhs))
-        case let .greaterThanOrEqualTo(lhs, rhs): self = .greaterThanOrEqualTo(DBQueryPredicateValue(lhs), DBQueryPredicateValue(rhs))
-        case let .containsIn(lhs, rhs): self = .containsIn(DBQueryPredicateValue(lhs), DBQueryPredicateValue(rhs))
-        case let .notContainsIn(lhs, rhs): self = .notContainsIn(DBQueryPredicateValue(lhs), DBQueryPredicateValue(rhs))
-        case let .between(x, from, to): self = .between(DBQueryPredicateValue(x), DBQueryPredicateValue(from), DBQueryPredicateValue(to))
-        case let .notBetween(x, from, to): self = .notBetween(DBQueryPredicateValue(x), DBQueryPredicateValue(from), DBQueryPredicateValue(to))
-        case let .startsWith(value, pattern): self = .startsWith(DBQueryPredicateKey(value), pattern)
-        case let .endsWith(value, pattern): self = .endsWith(DBQueryPredicateKey(value), pattern)
-        case let .contains(value, pattern): self = .contains(DBQueryPredicateKey(value), pattern)
-        case let .and(list): self = .and(list.map(DBQueryPredicateExpression.init))
-        case let .or(list): self = .or(list.map(DBQueryPredicateExpression.init))
+        case let .not(expr): self = .not(DBPredicateExpression(expr))
+        case let .equal(lhs, rhs): self = .equal(DBPredicateValue(lhs), DBPredicateValue(rhs))
+        case let .notEqual(lhs, rhs): self = .notEqual(DBPredicateValue(lhs), DBPredicateValue(rhs))
+        case let .lessThan(lhs, rhs): self = .lessThan(DBPredicateValue(lhs), DBPredicateValue(rhs))
+        case let .greaterThan(lhs, rhs): self = .greaterThan(DBPredicateValue(lhs), DBPredicateValue(rhs))
+        case let .lessThanOrEqualTo(lhs, rhs): self = .lessThanOrEqualTo(DBPredicateValue(lhs), DBPredicateValue(rhs))
+        case let .greaterThanOrEqualTo(lhs, rhs): self = .greaterThanOrEqualTo(DBPredicateValue(lhs), DBPredicateValue(rhs))
+        case let .containsIn(lhs, rhs): self = .containsIn(DBPredicateValue(lhs), DBPredicateValue(rhs))
+        case let .notContainsIn(lhs, rhs): self = .notContainsIn(DBPredicateValue(lhs), DBPredicateValue(rhs))
+        case let .between(x, from, to): self = .between(DBPredicateValue(x), DBPredicateValue(from), DBPredicateValue(to))
+        case let .notBetween(x, from, to): self = .notBetween(DBPredicateValue(x), DBPredicateValue(from), DBPredicateValue(to))
+        case let .startsWith(value, pattern): self = .startsWith(DBPredicateKey(value), pattern)
+        case let .endsWith(value, pattern): self = .endsWith(DBPredicateKey(value), pattern)
+        case let .contains(value, pattern): self = .contains(DBPredicateKey(value), pattern)
+        case let .and(list): self = .and(list.map(DBPredicateExpression.init))
+        case let .or(list): self = .or(list.map(DBPredicateExpression.init))
         }
     }
 }
 
-extension DBQueryPredicateValue {
+extension DBPredicateValue {
     
     fileprivate init(_ value: MDPredicateValue) {
         switch value {
@@ -60,7 +60,7 @@ extension DBQueryPredicateValue {
     }
 }
 
-extension DBQueryPredicateKey {
+extension DBPredicateKey {
     
     fileprivate init(_ value: MDPredicateKey) {
         switch value {

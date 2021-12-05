@@ -101,7 +101,7 @@ extension MDObject {
     }
 }
 
-extension DBQuerySortOrder {
+extension DBSortOrderOption {
     
     fileprivate init(_ order: MDSortOrderOption) {
         switch order {
@@ -111,7 +111,7 @@ extension DBQuerySortOrder {
     }
 }
 
-extension DBQueryUpdateOperation {
+extension DBUpdateOption {
     
     fileprivate init(_ operation: MDUpdateOption) {
         switch operation {
@@ -177,7 +177,7 @@ extension MDSQLDriver {
             
             var _query = query.connection.connection.query().find(`class`)
             
-            _query = _query.filter(query.filters.map(DBQueryPredicateExpression.init))
+            _query = _query.filter(query.filters.map(DBPredicateExpression.init))
             
             return _query.count()
             
@@ -187,16 +187,16 @@ extension MDSQLDriver {
         }
     }
     
-    func _find(_ query: MDFindExpression) throws -> DBQueryFindExpression {
+    func _find(_ query: MDFindExpression) throws -> DBFindExpression {
         
         guard let `class` = query.class else { throw MDError.classNotSet }
         
         var _query = query.connection.connection.query().find(`class`)
         
-        _query = _query.filter(query.filters.map(DBQueryPredicateExpression.init))
+        _query = _query.filter(query.filters.map(DBPredicateExpression.init))
         
         if !query.sort.isEmpty {
-            _query = _query.sort(query.sort.mapValues(DBQuerySortOrder.init))
+            _query = _query.sort(query.sort.mapValues(DBSortOrderOption.init))
         }
         if query.skip > 0 {
             _query = _query.skip(query.skip)
@@ -251,7 +251,7 @@ extension MDSQLDriver {
             
             var _query = query.connection.connection.query().findOne(`class`)
             
-            _query = _query.filter(query.filters.map(DBQueryPredicateExpression.init))
+            _query = _query.filter(query.filters.map(DBPredicateExpression.init))
             
             switch query.returning {
             case .before: _query = _query.returning(.before)
@@ -259,7 +259,7 @@ extension MDSQLDriver {
             }
             
             if !query.sort.isEmpty {
-                _query = _query.sort(query.sort.mapValues(DBQuerySortOrder.init))
+                _query = _query.sort(query.sort.mapValues(DBSortOrderOption.init))
             }
             if !query.includes.isEmpty {
                 _query = _query.includes(query.includes.union(MDObject._default_fields))
@@ -274,7 +274,7 @@ extension MDSQLDriver {
             
             return self.enforceFieldExists(query.connection, `class`, columns).flatMap {
                 
-                _query.update(_update.mapValues(DBQueryUpdateOperation.init)).flatMapThrowing { try $0.map(MDObject.init) }
+                _query.update(_update.mapValues(DBUpdateOption.init)).flatMapThrowing { try $0.map(MDObject.init) }
             }
             
         } catch {
@@ -291,7 +291,7 @@ extension MDSQLDriver {
             
             var _query = query.connection.connection.query().findOne(`class`)
             
-            _query = _query.filter(query.filters.map(DBQueryPredicateExpression.init))
+            _query = _query.filter(query.filters.map(DBPredicateExpression.init))
             
             switch query.returning {
             case .before: _query = _query.returning(.before)
@@ -299,7 +299,7 @@ extension MDSQLDriver {
             }
             
             if !query.sort.isEmpty {
-                _query = _query.sort(query.sort.mapValues(DBQuerySortOrder.init))
+                _query = _query.sort(query.sort.mapValues(DBSortOrderOption.init))
             }
             if !query.includes.isEmpty {
                 _query = _query.includes(query.includes.union(MDObject._default_fields))
@@ -318,7 +318,7 @@ extension MDSQLDriver {
             
             return self.enforceFieldExists(query.connection, `class`, columns).flatMap {
                 
-                _query.upsert(_update.mapValues(DBQueryUpdateOperation.init), setOnInsert: _setOnInsert).flatMapThrowing { try $0.map(MDObject.init) }
+                _query.upsert(_update.mapValues(DBUpdateOption.init), setOnInsert: _setOnInsert).flatMapThrowing { try $0.map(MDObject.init) }
             }
             
         } catch {
@@ -335,10 +335,10 @@ extension MDSQLDriver {
             
             var _query = query.connection.connection.query().findOne(`class`)
             
-            _query = _query.filter(query.filters.map(DBQueryPredicateExpression.init))
+            _query = _query.filter(query.filters.map(DBPredicateExpression.init))
             
             if !query.sort.isEmpty {
-                _query = _query.sort(query.sort.mapValues(DBQuerySortOrder.init))
+                _query = _query.sort(query.sort.mapValues(DBSortOrderOption.init))
             }
             if !query.includes.isEmpty {
                 _query = _query.includes(query.includes.union(MDObject._default_fields))
@@ -360,7 +360,7 @@ extension MDSQLDriver {
             
             var _query = query.connection.connection.query().find(`class`)
             
-            _query = _query.filter(query.filters.map(DBQueryPredicateExpression.init))
+            _query = _query.filter(query.filters.map(DBPredicateExpression.init))
             
             return _query.delete()
             
