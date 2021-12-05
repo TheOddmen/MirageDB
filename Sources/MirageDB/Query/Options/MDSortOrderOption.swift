@@ -1,5 +1,5 @@
 //
-//  MDQueryReturning.swift
+//  MDSortOrderOption.swift
 //
 //  The MIT License
 //  Copyright (c) 2021 The Oddmen Technology Limited. All rights reserved.
@@ -23,9 +23,9 @@
 //  THE SOFTWARE.
 //
 
-public enum MDQueryReturning {
+public enum MDSortOrderOption {
     
-    case before
+    case ascending
     
-    case after
+    case descending
 }

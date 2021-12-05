@@ -71,7 +71,7 @@ extension MDData {
     }
 }
 
-extension MDUpdateOperation {
+extension MDUpdateOption {
     
     var sql_type: MDSQLDataType? {
         switch self {
@@ -103,7 +103,7 @@ extension MDObject {
 
 extension DBQuerySortOrder {
     
-    fileprivate init(_ order: MDSortOrder) {
+    fileprivate init(_ order: MDSortOrderOption) {
         switch order {
         case .ascending: self = .ascending
         case .descending: self = .descending
@@ -113,7 +113,7 @@ extension DBQuerySortOrder {
 
 extension DBQueryUpdateOperation {
     
-    fileprivate init(_ operation: MDUpdateOperation) {
+    fileprivate init(_ operation: MDUpdateOption) {
         switch operation {
         case let .set(value): self = .set(value.toSQLData())
         case let .increment(value): self = .increment(value.toSQLData())
@@ -169,7 +169,7 @@ extension MDSQLDriver {
 
 extension MDSQLDriver {
     
-    func count(_ query: MDQueryFindExpression) -> EventLoopFuture<Int> {
+    func count(_ query: MDFindExpression) -> EventLoopFuture<Int> {
         
         do {
             
@@ -187,7 +187,7 @@ extension MDSQLDriver {
         }
     }
     
-    func _find(_ query: MDQueryFindExpression) throws -> DBQueryFindExpression {
+    func _find(_ query: MDFindExpression) throws -> DBQueryFindExpression {
         
         guard let `class` = query.class else { throw MDError.classNotSet }
         
@@ -211,7 +211,7 @@ extension MDSQLDriver {
         return _query
     }
     
-    func toArray(_ query: MDQueryFindExpression) -> EventLoopFuture<[MDObject]> {
+    func toArray(_ query: MDFindExpression) -> EventLoopFuture<[MDObject]> {
         
         do {
             
@@ -225,7 +225,7 @@ extension MDSQLDriver {
         }
     }
     
-    func forEach(_ query: MDQueryFindExpression, _ body: @escaping (MDObject) throws -> Void) -> EventLoopFuture<Void> {
+    func forEach(_ query: MDFindExpression, _ body: @escaping (MDObject) throws -> Void) -> EventLoopFuture<Void> {
         
         do {
             
@@ -239,11 +239,11 @@ extension MDSQLDriver {
         }
     }
     
-    func first(_ query: MDQueryFindExpression) -> EventLoopFuture<MDObject?> {
+    func first(_ query: MDFindExpression) -> EventLoopFuture<MDObject?> {
         return self.toArray(query.limit(1)).map { $0.first }
     }
     
-    func findOneAndUpdate(_ query: MDQueryFindOneExpression, _ update: [String : MDUpdateOperation]) -> EventLoopFuture<MDObject?> {
+    func findOneAndUpdate(_ query: MDFindOneExpression, _ update: [String : MDUpdateOption]) -> EventLoopFuture<MDObject?> {
         
         do {
             
@@ -283,7 +283,7 @@ extension MDSQLDriver {
         }
     }
     
-    func findOneAndUpsert(_ query: MDQueryFindOneExpression, _ update: [String : MDUpdateOperation], _ setOnInsert: [String : MDData]) -> EventLoopFuture<MDObject?> {
+    func findOneAndUpsert(_ query: MDFindOneExpression, _ update: [String : MDUpdateOption], _ setOnInsert: [String : MDData]) -> EventLoopFuture<MDObject?> {
         
         do {
             
@@ -327,7 +327,7 @@ extension MDSQLDriver {
         }
     }
     
-    func findOneAndDelete(_ query: MDQueryFindOneExpression) -> EventLoopFuture<MDObject?> {
+    func findOneAndDelete(_ query: MDFindOneExpression) -> EventLoopFuture<MDObject?> {
         
         do {
             
@@ -352,7 +352,7 @@ extension MDSQLDriver {
         }
     }
     
-    func deleteAll(_ query: MDQueryFindExpression) -> EventLoopFuture<Int?> {
+    func deleteAll(_ query: MDFindExpression) -> EventLoopFuture<Int?> {
         
         do {
             

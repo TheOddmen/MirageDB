@@ -44,14 +44,14 @@ extension MDObject {
     }
 }
 
-extension MDQueryFindExpression {
+extension MDFindExpression {
     
     fileprivate func filterBSONDocument() throws -> BSONDocument {
         return try filters.reduce { $0 && $1 }.map { try MongoPredicateExpression($0) }?.toBSONDocument() ?? [:]
     }
 }
 
-extension MDQueryFindOneExpression {
+extension MDFindOneExpression {
     
     fileprivate func filterBSONDocument() throws -> BSONDocument {
         return try filters.reduce { $0 && $1 }.map { try MongoPredicateExpression($0) }?.toBSONDocument() ?? [:]
@@ -60,7 +60,7 @@ extension MDQueryFindOneExpression {
 
 extension DBMongoSortOrder {
     
-    fileprivate init(_ order: MDSortOrder) {
+    fileprivate init(_ order: MDSortOrderOption) {
         switch order {
         case .ascending: self = .ascending
         case .descending: self = .descending
@@ -68,7 +68,7 @@ extension DBMongoSortOrder {
     }
 }
 
-extension Dictionary where Key == String, Value == MDUpdateOperation {
+extension Dictionary where Key == String, Value == MDUpdateOption {
     
     func toBSONDocument() throws -> BSONDocument {
         
@@ -118,7 +118,7 @@ struct MongoDBDriver: MDDriver {
         return connection.connection.mongoQuery().collections().execute().toArray().map { $0.map { $0.name } }
     }
     
-    func count(_ query: MDQueryFindExpression) -> EventLoopFuture<Int> {
+    func count(_ query: MDFindExpression) -> EventLoopFuture<Int> {
         
         do {
             
@@ -136,7 +136,7 @@ struct MongoDBDriver: MDDriver {
         }
     }
     
-    func _find(_ query: MDQueryFindExpression) throws -> DBMongoFindExpression<BSONDocument> {
+    func _find(_ query: MDFindExpression) throws -> DBMongoFindExpression<BSONDocument> {
         
         guard let `class` = query.class else { throw MDError.classNotSet }
         
@@ -161,7 +161,7 @@ struct MongoDBDriver: MDDriver {
         return _query
     }
     
-    func toArray(_ query: MDQueryFindExpression) -> EventLoopFuture<[MDObject]> {
+    func toArray(_ query: MDFindExpression) -> EventLoopFuture<[MDObject]> {
         
         do {
             
@@ -177,7 +177,7 @@ struct MongoDBDriver: MDDriver {
         }
     }
     
-    func forEach(_ query: MDQueryFindExpression, _ body: @escaping (MDObject) throws -> Void) -> EventLoopFuture<Void> {
+    func forEach(_ query: MDFindExpression, _ body: @escaping (MDObject) throws -> Void) -> EventLoopFuture<Void> {
         
         do {
             
@@ -193,7 +193,7 @@ struct MongoDBDriver: MDDriver {
         }
     }
     
-    func first(_ query: MDQueryFindExpression) -> EventLoopFuture<MDObject?> {
+    func first(_ query: MDFindExpression) -> EventLoopFuture<MDObject?> {
         
         do {
             
@@ -219,7 +219,7 @@ struct MongoDBDriver: MDDriver {
         }
     }
     
-    func findOneAndUpdate(_ query: MDQueryFindOneExpression, _ update: [String : MDUpdateOperation]) -> EventLoopFuture<MDObject?> {
+    func findOneAndUpdate(_ query: MDFindOneExpression, _ update: [String : MDUpdateOption]) -> EventLoopFuture<MDObject?> {
         
         do {
             
@@ -257,7 +257,7 @@ struct MongoDBDriver: MDDriver {
         }
     }
     
-    func findOneAndUpsert(_ query: MDQueryFindOneExpression, _ update: [String : MDUpdateOperation], _ setOnInsert: [String : MDData]) -> EventLoopFuture<MDObject?> {
+    func findOneAndUpsert(_ query: MDFindOneExpression, _ update: [String : MDUpdateOption], _ setOnInsert: [String : MDData]) -> EventLoopFuture<MDObject?> {
         
         do {
             
@@ -303,7 +303,7 @@ struct MongoDBDriver: MDDriver {
         }
     }
     
-    func findOneAndDelete(_ query: MDQueryFindOneExpression) -> EventLoopFuture<MDObject?> {
+    func findOneAndDelete(_ query: MDFindOneExpression) -> EventLoopFuture<MDObject?> {
         
         do {
             
@@ -329,7 +329,7 @@ struct MongoDBDriver: MDDriver {
         }
     }
     
-    func deleteAll(_ query: MDQueryFindExpression) -> EventLoopFuture<Int?> {
+    func deleteAll(_ query: MDFindExpression) -> EventLoopFuture<Int?> {
         
         do {
             

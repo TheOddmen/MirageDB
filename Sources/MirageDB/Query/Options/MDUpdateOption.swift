@@ -1,5 +1,5 @@
 //
-//  MDQuery.swift
+//  MDUpdateOption.swift
 //
 //  The MIT License
 //  Copyright (c) 2021 The Oddmen Technology Limited. All rights reserved.
@@ -23,25 +23,32 @@
 //  THE SOFTWARE.
 //
 
-public struct MDQuery {
+public enum MDUpdateOption {
     
-    public let connection: MDConnection
+    case set(MDData)
     
-    init(connection: MDConnection) {
-        self.connection = connection
-    }
+    case increment(MDData)
+    
+    case multiply(MDData)
+    
+    case max(MDData)
+    
+    case min(MDData)
+    
+    case push(MDData)
+    
+    case removeAll([MDData])
+    
+    case popFirst
+    
+    case popLast
+    
 }
 
-extension MDConnection {
+extension MDUpdateOption {
     
-    public func query() -> MDQuery {
-        return MDQuery(connection: self)
-    }
-}
-
-extension MDQuery {
-    
-    public func insert(_ class: String, _ data: [String: MDData]) -> EventLoopFuture<MDObject> {
-        return self.connection.driver.insert(connection, `class`, data)
+    var value: MDData? {
+        guard case let .set(value) = self else { return nil }
+        return value
     }
 }

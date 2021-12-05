@@ -1,5 +1,5 @@
 //
-//  MDUpdateOperation.swift
+//  MDReturningOption.swift
 //
 //  The MIT License
 //  Copyright (c) 2021 The Oddmen Technology Limited. All rights reserved.
@@ -23,32 +23,9 @@
 //  THE SOFTWARE.
 //
 
-public enum MDUpdateOperation {
+public enum MDReturningOption {
     
-    case set(MDData)
+    case before
     
-    case increment(MDData)
-    
-    case multiply(MDData)
-    
-    case max(MDData)
-    
-    case min(MDData)
-    
-    case push(MDData)
-    
-    case removeAll([MDData])
-    
-    case popFirst
-    
-    case popLast
-    
-}
-
-extension MDUpdateOperation {
-    
-    var value: MDData? {
-        guard case let .set(value) = self else { return nil }
-        return value
-    }
+    case after
 }

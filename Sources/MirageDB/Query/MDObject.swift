@@ -35,7 +35,7 @@ public struct MDObject: Hashable, Equatable, Identifiable {
     
     var data: [String: MDData]
     
-    var mutated: [String: MDUpdateOperation] = [:]
+    var mutated: [String: MDUpdateOption] = [:]
     
     init(
         class: String,

@@ -1,5 +1,5 @@
 //
-//  MDQueryFindOneExpression.swift
+//  MDFindExpression.swift
 //
 //  The MIT License
 //  Copyright (c) 2021 The Oddmen Technology Limited. All rights reserved.
@@ -23,7 +23,7 @@
 //  THE SOFTWARE.
 //
 
-public struct MDQueryFindOneExpression: MDQueryProtocol {
+public struct MDFindExpression: MDExpressionProtocol {
     
     public let connection: MDConnection
     
@@ -31,50 +31,56 @@ public struct MDQueryFindOneExpression: MDQueryProtocol {
     
     var filters: [MDPredicateExpression] = []
     
-    var sort: OrderedDictionary<String, MDSortOrder> = [:]
+    var sort: OrderedDictionary<String, MDSortOrderOption> = [:]
+    
+    var skip: Int = 0
+    
+    var limit: Int = .max
     
     var includes: Set<String> = []
-    
-    var returning: MDQueryReturning = .after
 }
 
 extension MDQuery {
     
-    public func findOne(_ class: String) -> MDQueryFindOneExpression {
-        return MDQueryFindOneExpression(connection: connection, class: `class`)
+    public func find(_ class: String) -> MDFindExpression {
+        return MDFindExpression(connection: connection, class: `class`)
     }
 }
 
-extension MDQueryFindOneExpression {
+extension MDFindExpression {
     
-    public func update(_ update: [String: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
-        return self.update(update.mapValues { .set($0.toMDData()) })
-    }
-    
-    public func update(_ update: [String: MDUpdateOperation]) -> EventLoopFuture<MDObject?> {
-        return self.connection.driver.findOneAndUpdate(self, update)
+    public func count() -> EventLoopFuture<Int> {
+        return self.connection.driver.count(self)
     }
 }
 
-extension MDQueryFindOneExpression {
+extension MDFindExpression {
     
-    public func upsert(_ update: [String: MDDataConvertible], setOnInsert: [String: MDDataConvertible] = [:]) -> EventLoopFuture<MDObject?> {
-        return self.upsert(update.mapValues { .set($0.toMDData()) }, setOnInsert: setOnInsert)
+    public func toArray() -> EventLoopFuture<[MDObject]> {
+        return self.connection.driver.toArray(self)
     }
     
-    public func upsert(_ update: [String: MDUpdateOperation], setOnInsert: [String: MDDataConvertible] = [:]) -> EventLoopFuture<MDObject?> {
-        return self.connection.driver.findOneAndUpsert(self, update, setOnInsert.mapValues { $0.toMDData() })
+    public func forEach(_ body: @escaping (MDObject) -> Void) -> EventLoopFuture<Void> {
+        return self.connection.driver.forEach(self, body)
+    }
+    
+    public func forEach(_ body: @escaping (MDObject) throws -> Void) -> EventLoopFuture<Void> {
+        return self.connection.driver.forEach(self, body)
+    }
+    
+    public func first() -> EventLoopFuture<MDObject?> {
+        return self.connection.driver.first(self)
     }
 }
 
-extension MDQueryFindOneExpression {
+extension MDFindExpression {
     
-    public func delete() -> EventLoopFuture<MDObject?> {
-        return self.connection.driver.findOneAndDelete(self)
+    public func delete() -> EventLoopFuture<Int?> {
+        return self.connection.driver.deleteAll(self)
     }
 }
 
-extension MDQueryFindOneExpression {
+extension MDFindExpression {
     
     public func filter(_ filter: MDPredicateExpression) -> Self {
         var result = self
@@ -94,7 +100,19 @@ extension MDQueryFindOneExpression {
         return result
     }
     
-    public func sort(_ sort: OrderedDictionary<String, MDSortOrder>) -> Self {
+    public func skip(_ skip: Int) -> Self {
+        var result = self
+        result.skip = skip
+        return result
+    }
+    
+    public func limit(_ limit: Int) -> Self {
+        var result = self
+        result.limit = limit
+        return result
+    }
+    
+    public func sort(_ sort: OrderedDictionary<String, MDSortOrderOption>) -> Self {
         var result = self
         result.sort = sort
         return result
@@ -109,12 +127,6 @@ extension MDQueryFindOneExpression {
     public func includes<S: Sequence>(_ keys: S) -> Self where S.Element == String {
         var result = self
         result.includes = includes.union(keys)
-        return result
-    }
-    
-    public func returning(_ returning: MDQueryReturning) -> Self {
-        var result = self
-        result.returning = returning
         return result
     }
 }

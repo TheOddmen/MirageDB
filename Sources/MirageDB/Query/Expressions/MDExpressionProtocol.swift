@@ -1,5 +1,5 @@
 //
-//  MDSortOrder.swift
+//  MDExpressionProtocol.swift
 //
 //  The MIT License
 //  Copyright (c) 2021 The Oddmen Technology Limited. All rights reserved.
@@ -23,9 +23,14 @@
 //  THE SOFTWARE.
 //
 
-public enum MDSortOrder {
+public protocol MDExpressionProtocol {
     
-    case ascending
+    var connection: MDConnection { get }
+}
+
+extension MDExpressionProtocol {
     
-    case descending
+    public var eventLoopGroup: EventLoopGroup {
+        return connection.eventLoopGroup
+    }
 }
