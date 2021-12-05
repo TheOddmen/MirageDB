@@ -33,7 +33,7 @@ protocol MDDriver {
     func dropColumns(
         _ connection: MDConnection,
         _ table: String,
-        _ columns: [String]
+        _ columns: Set<String>
     ) -> EventLoopFuture<Void>
     
     func addIndex(

@@ -103,7 +103,7 @@ extension MDConnection {
         return try await self.dropTable(table).get()
     }
     
-    public func dropColumns(_ table: String, _ columns: [String]) async throws {
+    public func dropColumns(_ table: String, _ columns: Set<String>) async throws {
         return try await self.dropColumns(table, columns).get()
     }
     

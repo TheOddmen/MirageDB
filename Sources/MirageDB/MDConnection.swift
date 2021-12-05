@@ -133,7 +133,7 @@ extension MDConnection {
         return self.driver.dropTable(self, table)
     }
     
-    public func dropColumns(_ table: String, _ columns: [String]) -> EventLoopFuture<Void> {
+    public func dropColumns(_ table: String, _ columns: Set<String>) -> EventLoopFuture<Void> {
         return self.driver.dropColumns(self, table, columns)
     }
     

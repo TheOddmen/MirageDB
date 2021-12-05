@@ -385,7 +385,7 @@ extension MongoDBDriver {
         return connection.connection.mongoQuery().collection(table).drop().execute()
     }
     
-    func dropColumns(_ connection: MDConnection, _ table: String, _ columns: [String]) -> EventLoopFuture<Void> {
+    func dropColumns(_ connection: MDConnection, _ table: String, _ columns: Set<String>) -> EventLoopFuture<Void> {
         
         var unset: BSONDocument = [:]
         
