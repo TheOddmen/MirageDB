@@ -129,6 +129,14 @@ extension MDConnection {
 
 extension MDConnection {
     
+    public func createTable(_ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
+        return self.driver.createTable(self, table, columns)
+    }
+    
+    public func addColumns(_ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
+        return self.driver.addColumns(self, table, columns)
+    }
+    
     public func dropTable(_ table: String) -> EventLoopFuture<Void> {
         return self.driver.dropTable(self, table)
     }
