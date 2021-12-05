@@ -129,6 +129,14 @@ extension MDConnection {
 
 extension MDConnection {
     
+    public func dropTable(_ table: String) -> EventLoopFuture<Void> {
+        return self.driver.dropTable(self, table)
+    }
+    
+    public func dropColumns(_ table: String, _ columns: [String]) -> EventLoopFuture<Void> {
+        return self.driver.dropColumns(self, table, columns)
+    }
+    
     public func addIndex(_ table: String, _ index: MDSQLTableIndex) -> EventLoopFuture<Void> {
         return self.driver.addIndex(self, table, index)
     }

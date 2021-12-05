@@ -99,6 +99,14 @@ extension MDConnection {
 @available(macOS 12, iOS 15, watchOS 8, tvOS 15, *)
 extension MDConnection {
     
+    public func dropTable(_ table: String) async throws {
+        return try await self.dropTable(table).get()
+    }
+    
+    public func dropColumns(_ table: String, _ columns: [String]) async throws {
+        return try await self.dropColumns(table, columns).get()
+    }
+    
     public func addIndex(_ table: String, _ index: MDSQLTableIndex) async throws {
         return try await self.addIndex(table, index).get()
     }
