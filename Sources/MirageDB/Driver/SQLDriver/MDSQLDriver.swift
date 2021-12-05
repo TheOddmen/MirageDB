@@ -132,13 +132,21 @@ extension MDSQLDriver {
         }
     }
     
-    func enforceFieldExists(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
+    func checkTableExists(_ connection: MDConnection, _ table: String) -> EventLoopFuture<Bool> {
         
-        return self.tables(connection).flatMap { tables in
+        return self.tables(connection).map { tables in
             
             let _table = table.lowercased()
             
-            if tables.contains(where: { $0.lowercased() == _table }) {
+            return tables.contains(where: { $0.lowercased() == _table })
+        }
+    }
+    
+    func enforceFieldExists(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
+        
+        return self.checkTableExists(connection, table).flatMap { tableExists in
+            
+            if tableExists {
                 
                 if columns.isEmpty {
                     
@@ -167,7 +175,17 @@ extension MDSQLDriver {
             
             _query = _query.filter(query.filters.map(DBPredicateExpression.init))
             
-            return _query.count()
+            return self.checkTableExists(query.connection, `class`).flatMap { tableExists in
+                
+                if tableExists {
+                    
+                    return _query.count()
+                    
+                } else {
+                    
+                    return query.connection.eventLoopGroup.next().makeSucceededFuture(0)
+                }
+            }
             
         } catch {
             
@@ -203,9 +221,21 @@ extension MDSQLDriver {
         
         do {
             
+            guard let `class` = query.class else { throw MDError.classNotSet }
+            
             let _query = try self._find(query)
             
-            return _query.toArray().flatMapThrowing { try $0.map(MDObject.init) }
+            return self.checkTableExists(query.connection, `class`).flatMap { tableExists in
+                
+                if tableExists {
+                    
+                    return _query.toArray().flatMapThrowing { try $0.map(MDObject.init) }
+                    
+                } else {
+                    
+                    return query.connection.eventLoopGroup.next().makeSucceededFuture([])
+                }
+            }
             
         } catch {
             
@@ -217,9 +247,21 @@ extension MDSQLDriver {
         
         do {
             
+            guard let `class` = query.class else { throw MDError.classNotSet }
+            
             let _query = try self._find(query)
             
-            return _query.forEach { try body(MDObject($0)) }.map { _ in }
+            return self.checkTableExists(query.connection, `class`).flatMap { tableExists in
+                
+                if tableExists {
+                    
+                    return _query.forEach { try body(MDObject($0)) }.map { _ in }
+                    
+                } else {
+                    
+                    return query.connection.eventLoopGroup.next().makeSucceededVoidFuture()
+                }
+            }
             
         } catch {
             
