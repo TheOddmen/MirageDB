@@ -1,5 +1,5 @@
 //
-//  Decimal.swift
+//  UUID.swift
 //
 //  The MIT License
 //  Copyright (c) 2021 The Oddmen Technology Limited. All rights reserved.
@@ -23,50 +23,26 @@
 //  THE SOFTWARE.
 //
 
-extension Decimal {
+extension UUID {
     
-    init?(exactly value: Double) {
-        self.init(value)
-        guard self.doubleValue == value else { return nil }
+    init?(hexString: String) {
+        
+        guard hexString.count == 32 else { return nil }
+        
+        var hex = hexString[...]
+        
+        var uuidString = ""
+        uuidString.append(contentsOf: hex.popFirst(8))
+        uuidString.append("-")
+        uuidString.append(contentsOf: hex.popFirst(4))
+        uuidString.append("-")
+        uuidString.append(contentsOf: hex.popFirst(4))
+        uuidString.append("-")
+        uuidString.append(contentsOf: hex.popFirst(4))
+        uuidString.append("-")
+        uuidString.append(contentsOf: hex)
+        
+        self.init(uuidString: uuidString)
     }
 }
 
-extension Decimal {
-    
-    init?(exactly value: String) {
-        self.init(string: value)
-        guard self.description == value else { return nil }
-    }
-}
-
-extension Double {
-    
-    init?(exactly value: Decimal) {
-        self = NSDecimalNumber(decimal: value).doubleValue
-        guard Decimal(self) == value else { return nil }
-    }
-}
-
-extension UInt64 {
-    
-    init?(exactly value: Decimal) {
-        self = NSDecimalNumber(decimal: value).uint64Value
-        guard Decimal(self) == value else { return nil }
-    }
-}
-
-extension Int64 {
-    
-    init?(exactly value: Decimal) {
-        self = NSDecimalNumber(decimal: value).int64Value
-        guard Decimal(self) == value else { return nil }
-    }
-}
-
-extension Int {
-    
-    init?(exactly value: Decimal) {
-        self = NSDecimalNumber(decimal: value).intValue
-        guard Decimal(self) == value else { return nil }
-    }
-}

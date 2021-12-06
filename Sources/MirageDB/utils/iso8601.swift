@@ -1,5 +1,5 @@
 //
-//  Decimal.swift
+//  iso8601.swift
 //
 //  The MIT License
 //  Copyright (c) 2021 The Oddmen Technology Limited. All rights reserved.
@@ -23,50 +23,19 @@
 //  THE SOFTWARE.
 //
 
-extension Decimal {
+extension String {
     
-    init?(exactly value: Double) {
-        self.init(value)
-        guard self.doubleValue == value else { return nil }
-    }
-}
-
-extension Decimal {
-    
-    init?(exactly value: String) {
-        self.init(string: value)
-        guard self.description == value else { return nil }
-    }
-}
-
-extension Double {
-    
-    init?(exactly value: Decimal) {
-        self = NSDecimalNumber(decimal: value).doubleValue
-        guard Decimal(self) == value else { return nil }
-    }
-}
-
-extension UInt64 {
-    
-    init?(exactly value: Decimal) {
-        self = NSDecimalNumber(decimal: value).uint64Value
-        guard Decimal(self) == value else { return nil }
-    }
-}
-
-extension Int64 {
-    
-    init?(exactly value: Decimal) {
-        self = NSDecimalNumber(decimal: value).int64Value
-        guard Decimal(self) == value else { return nil }
-    }
-}
-
-extension Int {
-    
-    init?(exactly value: Decimal) {
-        self = NSDecimalNumber(decimal: value).intValue
-        guard Decimal(self) == value else { return nil }
+    var iso8601: Date? {
+        
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = .withInternetDateTime
+        
+        if let date = formatter.date(from: self) {
+            return date
+        }
+        
+        formatter.formatOptions.formUnion(.withFractionalSeconds)
+        
+        return formatter.date(from: self)
     }
 }
