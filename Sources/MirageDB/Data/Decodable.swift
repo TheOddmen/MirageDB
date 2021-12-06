@@ -327,6 +327,7 @@ extension MDData._Decoder: SingleValueDecodingContainer {
     
     func decode<T: Decodable>(_ type: T.Type) throws -> T {
         switch type {
+        case is MDData.Type: return self as! T
         case is Bool.Type: return try self._decode(Bool.self) as! T
         case is Float.Type: return try self._decode(Float.self) as! T
         case is Double.Type: return try self._decode(Double.self) as! T
@@ -344,6 +345,9 @@ extension MDData._Decoder: SingleValueDecodingContainer {
         case is String.Type: return try self._decode(String.self) as! T
         case is UUID.Type: return try self._decode(UUID.self) as! T
         case is Date.Type: return try self._decode(Date.self) as! T
+        case is Json.Type:
+            guard let json = Json(value) else { throw MDError.unsupportedType }
+            return json as! T
         default: throw Database.Error.unsupportedType
         }
     }
