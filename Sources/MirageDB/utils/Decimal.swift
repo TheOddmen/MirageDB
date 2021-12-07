@@ -34,7 +34,7 @@ extension Decimal {
 extension Decimal {
     
     init?(exactly value: String) {
-        self.init(string: value)
+        self.init(string: value, locale: Locale(identifier: "en_US"))
         guard self.description == value else { return nil }
     }
 }
