@@ -1,8 +1,8 @@
 //
-//  MDUpdateOption.swift
+//  MDUpsertOption.swift
 //
 //  The MIT License
-//  Copyright (c) 2021 The Oddmen Technology Limited. All rights reserved.
+//  Copyright (c) 2015 - 2021 Susan Cheng. All rights reserved.
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,11 @@
 //  THE SOFTWARE.
 //
 
-public enum MDUpdateOption {
+public enum MDUpsertOption {
     
     case set(MDDataConvertible)
+    
+    case setOnInsert(MDDataConvertible)
     
     case increment(MDDataConvertible)
     
@@ -45,10 +47,27 @@ public enum MDUpdateOption {
     
 }
 
-extension MDUpdateOption {
+extension MDUpsertOption {
     
-    var value: MDData? {
-        guard case let .set(value) = self else { return nil }
-        return value.toMDData()
+    var update: MDUpdateOption? {
+        switch self {
+        case let .set(value): return .set(value)
+        case let .increment(value): return .increment(value)
+        case let .multiply(value): return .multiply(value)
+        case let .min(value): return .min(value)
+        case let .max(value): return .max(value)
+        case let .push(value): return .push(value)
+        case let .removeAll(value): return .removeAll(value)
+        case .popFirst: return .popFirst
+        case .popLast: return .popLast
+        default: return nil
+        }
+    }
+    
+    var setOnInsert: MDDataConvertible? {
+        switch self {
+        case let .setOnInsert(value): return value
+        default: return nil
+        }
     }
 }

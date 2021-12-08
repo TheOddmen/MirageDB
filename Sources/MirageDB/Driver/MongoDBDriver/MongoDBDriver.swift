@@ -85,13 +85,13 @@ extension Dictionary where Key == String, Value == MDUpdateOption {
         for (key, value) in self {
             switch value {
             case .set(nil): unset[key] = ""
-            case let .set(value): set[key] = value.toBSON()
-            case let .increment(value): inc[key] = value.toBSON()
-            case let .multiply(value): mul[key] = value.toBSON()
-            case let .max(value): max[key] = value.toBSON()
-            case let .min(value): min[key] = value.toBSON()
-            case let .push(value): push[key] = value.toBSON()
-            case let .removeAll(value): pullAll[key] = value.toBSON()
+            case let .set(value): set[key] = value.toMDData().toBSON()
+            case let .increment(value): inc[key] = value.toMDData().toBSON()
+            case let .multiply(value): mul[key] = value.toMDData().toBSON()
+            case let .max(value): max[key] = value.toMDData().toBSON()
+            case let .min(value): min[key] = value.toMDData().toBSON()
+            case let .push(value): push[key] = value.toMDData().toBSON()
+            case let .removeAll(value): pullAll[key] = value.map { $0.toMDData() }.toBSON()
             case .popFirst: pop[key] = -1
             case .popLast: pop[key] = 1
             }
@@ -107,6 +107,23 @@ extension Dictionary where Key == String, Value == MDUpdateOption {
         if !push.isEmpty { update["$push"] = BSON(push) }
         if !pullAll.isEmpty { update["$pullAll"] = BSON(pullAll) }
         if !pop.isEmpty { update["$pop"] = BSON(pop) }
+        return update
+    }
+}
+
+extension Dictionary where Key == String, Value == MDUpsertOption {
+    
+    fileprivate func toBSONDocument() throws -> BSONDocument {
+        
+        var update = try self.compactMapValues { $0.update }.toBSONDocument()
+        var setOnInsert: BSONDocument = [:]
+        
+        for case let (key, .setOnInsert(value)) in self where value.toMDData() != nil {
+            
+            setOnInsert[key] = value.toMDData().toBSON()
+        }
+        
+        if !setOnInsert.isEmpty { update["$setOnInsert"] = BSON(setOnInsert) }
         return update
     }
 }
@@ -232,7 +249,7 @@ struct MongoDBDriver: MDDriver {
             let now = Date()
             
             var update = update
-            update["updated_at"] = .set(MDData(now))
+            update["updated_at"] = .set(now)
             
             _query = try _query.update(update.toBSONDocument())
             
@@ -257,7 +274,7 @@ struct MongoDBDriver: MDDriver {
         }
     }
     
-    func findOneAndUpsert(_ query: MDFindOneExpression, _ update: [String : MDUpdateOption], _ setOnInsert: [String : MDData]) -> EventLoopFuture<MDObject?> {
+    func findOneAndUpsert(_ query: MDFindOneExpression, _ upsert: [String : MDUpsertOption]) -> EventLoopFuture<MDObject?> {
         
         do {
             
@@ -269,17 +286,12 @@ struct MongoDBDriver: MDDriver {
             
             let now = Date()
             
-            var update = update
-            update["updated_at"] = .set(MDData(now))
+            var upsert = upsert
+            upsert["_id"] = .setOnInsert(objectIDGenerator())
+            upsert["created_at"] = .setOnInsert(now)
+            upsert["updated_at"] = .set(now)
             
-            var _update = try update.toBSONDocument()
-            
-            var setOnInsert = setOnInsert
-            setOnInsert["_id"] = MDData(objectIDGenerator())
-            setOnInsert["created_at"] = MDData(now)
-            _update["$setOnInsert"] = setOnInsert.toBSON()
-            
-            _query = _query.update(_update)
+            _query = try _query.update(upsert.toBSONDocument())
             _query = _query.upsert(true)
             
             switch query.returning {

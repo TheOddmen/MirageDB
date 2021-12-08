@@ -98,13 +98,13 @@ extension MDFindOneExpression {
 extension MDFindOneExpression {
     
     @discardableResult
-    public func upsert(_ update: [String : MDDataConvertible], setOnInsert: [String : MDDataConvertible]) async throws -> MDObject? {
-        return try await self.upsert(update, setOnInsert: setOnInsert).get()
+    public func upsert(_ upsert: [String : MDDataConvertible]) async throws -> MDObject? {
+        return try await self.upsert(upsert).get()
     }
     
     @discardableResult
-    public func upsert(_ update: [String : MDUpdateOption] = [:], setOnInsert: [String : MDDataConvertible] = [:]) async throws -> MDObject? {
-        return try await self.upsert(update, setOnInsert: setOnInsert).get()
+    public func upsert(_ upsert: [String : MDUpsertOption]) async throws -> MDObject? {
+        return try await self.upsert(upsert).get()
     }
 }
 

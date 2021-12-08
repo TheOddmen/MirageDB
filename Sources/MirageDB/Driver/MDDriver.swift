@@ -80,8 +80,7 @@ protocol MDDriver {
     
     func findOneAndUpsert(
         _ query: MDFindOneExpression,
-        _ update: [String: MDUpdateOption],
-        _ setOnInsert: [String: MDData]
+        _ upsert: [String: MDUpsertOption]
     ) -> EventLoopFuture<MDObject?>
     
     func findOneAndDelete(_ query: MDFindOneExpression) -> EventLoopFuture<MDObject?>

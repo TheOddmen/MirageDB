@@ -63,7 +63,19 @@ extension MDUpdateOption {
     
     var sql_type: MDSQLDataType? {
         switch self {
-        case let .set(data): return data.sql_type
+        case let .set(data): return data.toMDData().sql_type
+        case .push, .removeAll, .popFirst, .popLast: return .json
+        default: return nil
+        }
+    }
+}
+
+extension MDUpsertOption {
+    
+    var sql_type: MDSQLDataType? {
+        switch self {
+        case let .set(data): return data.toMDData().sql_type
+        case let .setOnInsert(data): return data.toMDData().sql_type
         case .push, .removeAll, .popFirst, .popLast: return .json
         default: return nil
         }
@@ -103,13 +115,31 @@ extension DBUpdateOption {
     
     fileprivate init(_ operation: MDUpdateOption) {
         switch operation {
-        case let .set(value): self = .set(value.toSQLData())
-        case let .increment(value): self = .increment(value.toSQLData())
-        case let .multiply(value): self = .multiply(value.toSQLData())
-        case let .max(value): self = .max(value.toSQLData())
-        case let .min(value): self = .min(value.toSQLData())
-        case let .push(value): self = .push([value.toSQLData()])
-        case let .removeAll(value): self = .removeAll(value.map { $0.toSQLData() })
+        case let .set(value): self = .set(value.toMDData().toSQLData())
+        case let .increment(value): self = .increment(value.toMDData().toSQLData())
+        case let .multiply(value): self = .multiply(value.toMDData().toSQLData())
+        case let .max(value): self = .max(value.toMDData().toSQLData())
+        case let .min(value): self = .min(value.toMDData().toSQLData())
+        case let .push(value): self = .push([value.toMDData().toSQLData()])
+        case let .removeAll(value): self = .removeAll(value.map { $0.toMDData().toSQLData() })
+        case .popFirst: self = .popFirst
+        case .popLast: self = .popLast
+        }
+    }
+}
+
+extension DBUpsertOption {
+    
+    fileprivate init(_ operation: MDUpsertOption) {
+        switch operation {
+        case let .set(value): self = .set(value.toMDData().toSQLData())
+        case let .setOnInsert(value): self = .setOnInsert(value.toMDData().toSQLData())
+        case let .increment(value): self = .increment(value.toMDData().toSQLData())
+        case let .multiply(value): self = .multiply(value.toMDData().toSQLData())
+        case let .max(value): self = .max(value.toMDData().toSQLData())
+        case let .min(value): self = .min(value.toMDData().toSQLData())
+        case let .push(value): self = .push([value.toMDData().toSQLData()])
+        case let .removeAll(value): self = .removeAll(value.map { $0.toMDData().toSQLData() })
         case .popFirst: self = .popFirst
         case .popLast: self = .popLast
         }
@@ -300,7 +330,7 @@ extension MDSQLDriver {
             let columns = update.compactMapValues { $0.sql_type }
             
             var _update = update
-            _update["updated_at"] = .set(MDData(now))
+            _update["updated_at"] = .set(now)
             
             return self.enforceFieldExists(query.connection, `class`, columns).flatMap {
                 
@@ -313,7 +343,7 @@ extension MDSQLDriver {
         }
     }
     
-    func findOneAndUpsert(_ query: MDFindOneExpression, _ update: [String : MDUpdateOption], _ setOnInsert: [String : MDData]) -> EventLoopFuture<MDObject?> {
+    func findOneAndUpsert(_ query: MDFindOneExpression, _ upsert: [String : MDUpsertOption]) -> EventLoopFuture<MDObject?> {
         
         do {
             
@@ -337,18 +367,16 @@ extension MDSQLDriver {
             
             let now = Date()
             
-            let columns = update.compactMapValues { $0.sql_type }.merging(setOnInsert.compactMapValues { $0.sql_type }) { _, rhs in rhs }
+            let columns = upsert.compactMapValues { $0.sql_type }
             
-            var _update = update
-            _update["updated_at"] = .set(MDData(now))
-            
-            var _setOnInsert = setOnInsert.mapValues { $0.toSQLData() }
-            _setOnInsert["id"] = DBData(objectIDGenerator())
-            _setOnInsert["created_at"] = DBData(now)
+            var _upsert = upsert
+            _upsert["id"] = .setOnInsert(objectIDGenerator())
+            _upsert["created_at"] = .setOnInsert(now)
+            _upsert["updated_at"] = .set(now)
             
             return self.enforceFieldExists(query.connection, `class`, columns).flatMap {
                 
-                _query.upsert(_update.mapValues(DBUpdateOption.init), setOnInsert: _setOnInsert).flatMapThrowing { try $0.map(MDObject.init) }
+                _query.upsert(_upsert.mapValues(DBUpsertOption.init)).flatMapThrowing { try $0.map(MDObject.init) }
             }
             
         } catch {
