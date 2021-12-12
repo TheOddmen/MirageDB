@@ -44,7 +44,7 @@ extension MDData: Encodable {
     
     public func encode(to encoder: Encoder) throws {
         
-        switch self.base {
+        switch self {
         case .null:
             
             var container = encoder.singleValueContainer()

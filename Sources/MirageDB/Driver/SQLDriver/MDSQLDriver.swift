@@ -45,7 +45,7 @@ extension MDSQLDriver {
 extension MDData {
     
     var sql_type: MDSQLDataType? {
-        switch self.type {
+        switch self {
         case .null: return nil
         case .boolean: return .boolean
         case .string: return .string

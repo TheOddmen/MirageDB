@@ -40,7 +40,7 @@ extension MDData {
 extension Json {
     
     public init?(_ value: MDData) {
-        switch value.base {
+        switch value {
         case .null: self = nil
         case let .boolean(value): self.init(value)
         case let .string(value): self.init(value)

@@ -77,7 +77,7 @@ extension MDData {
     ]
     
     private init(fromExtendedJSON data: DBData) throws {
-        switch data.base {
+        switch data {
         case .null: self = nil
         case let .boolean(value): self.init(value)
         case let .string(value): self.init(value)
@@ -105,7 +105,7 @@ extension MDData {
     }
     
     private func toExtendedJSON() -> DBData {
-        switch base {
+        switch self {
         case .null: return nil
         case let .boolean(value): return DBData(value)
         case let .string(value): return DBData(value)
@@ -122,7 +122,7 @@ extension MDData {
 extension MDData {
     
     init(fromSQLData data: DBData) throws {
-        switch data.base {
+        switch data {
         case .null: self = nil
         case let .boolean(value): self.init(value)
         case let .string(value): self.init(value)
@@ -138,7 +138,7 @@ extension MDData {
     }
     
     func toSQLData() -> DBData {
-        switch base {
+        switch self {
         case .null: return nil
         case let .boolean(value): return DBData(value)
         case let .string(value): return DBData(value)

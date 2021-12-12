@@ -69,7 +69,7 @@ extension MDData {
 extension MDData: BSONConvertible {
     
     public func toBSON() -> BSON {
-        switch base {
+        switch self {
         case .null: return .undefined
         case let .boolean(value): return BSON(value)
         case let .string(value): return BSON(value)

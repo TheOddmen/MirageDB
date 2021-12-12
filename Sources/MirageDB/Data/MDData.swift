@@ -23,61 +23,55 @@
 //  THE SOFTWARE.
 //
 
-public enum MDDataType: Hashable {
+public enum MDData: Hashable {
     
     case null
-    case boolean
-    case string
-    case integer
-    case number
-    case decimal
-    case timestamp
-    case array
-    case dictionary
+    
+    case boolean(Bool)
+    
+    case string(String)
+    
+    case integer(Int64)
+    
+    case number(Double)
+    
+    case decimal(Decimal)
+    
+    case timestamp(Date)
+    
+    case array([MDData])
+    
+    case dictionary([String: MDData])
 }
 
-public struct MDData: Hashable {
-    
-    enum Base: Hashable {
-        case null
-        case boolean(Bool)
-        case string(String)
-        case integer(Int64)
-        case number(Double)
-        case decimal(Decimal)
-        case timestamp(Date)
-        case array([MDData])
-        case dictionary([String: MDData])
-    }
-    
-    let base: Base
+extension MDData {
     
     public init(_ value: Bool) {
-        self.base = .boolean(value)
+        self = .boolean(value)
     }
     
     public init(_ value: String) {
-        self.base = .string(value)
+        self = .string(value)
     }
     
     public init<S: StringProtocol>(_ value: S) {
-        self.base = .string(String(value))
+        self = .string(String(value))
     }
     
     public init<T: FixedWidthInteger>(_ value: T) {
-        self.base = .integer(Int64(value))
+        self = .integer(Int64(value))
     }
     
     public init<T: BinaryFloatingPoint>(_ value: T) {
-        self.base = .number(Double(value))
+        self = .number(Double(value))
     }
     
     public init(_ value: Decimal) {
-        self.base = .decimal(value)
+        self = .decimal(value)
     }
     
     public init(_ value: Date) {
-        self.base = .timestamp(value)
+        self = .timestamp(value)
     }
     
     public init<Wrapped: MDDataConvertible>(_ value: Wrapped?) {
@@ -85,22 +79,22 @@ public struct MDData: Hashable {
     }
     
     public init<S: Sequence>(_ elements: S) where S.Element: MDDataConvertible {
-        self.base = .array(elements.map { $0.toMDData() })
+        self = .array(elements.map { $0.toMDData() })
     }
     
     public init<Value: MDDataConvertible>(_ elements: [String: Value]) {
-        self.base = .dictionary(elements.mapValues { $0.toMDData() })
+        self = .dictionary(elements.mapValues { $0.toMDData() })
     }
     
     public init<Value: MDDataConvertible>(_ elements: OrderedDictionary<String, Value>) {
-        self.base = .dictionary(Dictionary(elements.mapValues { $0.toMDData() }))
+        self = .dictionary(Dictionary(elements.mapValues { $0.toMDData() }))
     }
 }
 
 extension MDData: ExpressibleByNilLiteral {
     
     public init(nilLiteral value: Void) {
-        self.base = .null
+        self = .null
     }
 }
 
@@ -153,7 +147,7 @@ extension MDData: ExpressibleByDictionaryLiteral {
 extension MDData: CustomStringConvertible {
     
     public var description: String {
-        switch self.base {
+        switch self {
         case .null: return "nil"
         case let .boolean(value): return "\(value)"
         case let .string(value): return "\"\(value.escaped(asASCII: false))\""
@@ -169,64 +163,50 @@ extension MDData: CustomStringConvertible {
 
 extension MDData {
     
-    public var type: MDDataType {
-        switch self.base {
-        case .null: return .null
-        case .boolean: return .boolean
-        case .string: return .string
-        case .integer: return .integer
-        case .number: return .number
-        case .decimal: return .decimal
-        case .timestamp: return .timestamp
-        case .array: return .array
-        case .dictionary: return .dictionary
-        }
-    }
-    
     public var isNil: Bool {
-        switch self.base {
+        switch self {
         case .null: return true
         default: return false
         }
     }
     
     public var isBool: Bool {
-        switch self.base {
+        switch self {
         case .boolean: return true
         default: return false
         }
     }
     
     public var isString: Bool {
-        switch self.base {
+        switch self {
         case .string: return true
         default: return false
         }
     }
     
     public var isInteger: Bool {
-        switch self.base {
+        switch self {
         case .integer: return true
         default: return false
         }
     }
     
     public var isNumber: Bool {
-        switch self.base {
+        switch self {
         case .number: return true
         default: return false
         }
     }
     
     public var isDecimal: Bool {
-        switch self.base {
+        switch self {
         case .decimal: return true
         default: return false
         }
     }
     
     public var isNumeric: Bool {
-        switch self.base {
+        switch self {
         case .integer: return true
         case .number: return true
         case .decimal: return true
@@ -235,21 +215,21 @@ extension MDData {
     }
     
     public var isTimestamp: Bool {
-        switch self.base {
+        switch self {
         case .timestamp: return true
         default: return false
         }
     }
     
     public var isArray: Bool {
-        switch self.base {
+        switch self {
         case .array: return true
         default: return false
         }
     }
     
     public var isObject: Bool {
-        switch self.base {
+        switch self {
         case .dictionary: return true
         default: return false
         }
@@ -259,14 +239,14 @@ extension MDData {
 extension MDData {
     
     public var boolValue: Bool? {
-        switch self.base {
+        switch self {
         case let .boolean(value): return value
         default: return nil
         }
     }
     
     public var int8Value: Int8? {
-        switch self.base {
+        switch self {
         case let .integer(value): return Int8(exactly: value)
         case let .number(value): return Int8(exactly: value)
         case let .decimal(value): return Int64(exactly: value).flatMap { Int8(exactly: $0) }
@@ -276,7 +256,7 @@ extension MDData {
     }
     
     public var uint8Value: UInt8? {
-        switch self.base {
+        switch self {
         case let .integer(value): return UInt8(exactly: value)
         case let .number(value): return UInt8(exactly: value)
         case let .decimal(value): return UInt64(exactly: value).flatMap { UInt8(exactly: $0) }
@@ -286,7 +266,7 @@ extension MDData {
     }
     
     public var int16Value: Int16? {
-        switch self.base {
+        switch self {
         case let .integer(value): return Int16(exactly: value)
         case let .number(value): return Int16(exactly: value)
         case let .decimal(value): return Int64(exactly: value).flatMap { Int16(exactly: $0) }
@@ -296,7 +276,7 @@ extension MDData {
     }
     
     public var uint16Value: UInt16? {
-        switch self.base {
+        switch self {
         case let .integer(value): return UInt16(exactly: value)
         case let .number(value): return UInt16(exactly: value)
         case let .decimal(value): return UInt64(exactly: value).flatMap { UInt16(exactly: $0) }
@@ -306,7 +286,7 @@ extension MDData {
     }
     
     public var int32Value: Int32? {
-        switch self.base {
+        switch self {
         case let .integer(value): return Int32(exactly: value)
         case let .number(value): return Int32(exactly: value)
         case let .decimal(value): return Int64(exactly: value).flatMap { Int32(exactly: $0) }
@@ -316,7 +296,7 @@ extension MDData {
     }
     
     public var uint32Value: UInt32? {
-        switch self.base {
+        switch self {
         case let .integer(value): return UInt32(exactly: value)
         case let .number(value): return UInt32(exactly: value)
         case let .decimal(value): return UInt64(exactly: value).flatMap { UInt32(exactly: $0) }
@@ -326,7 +306,7 @@ extension MDData {
     }
     
     public var int64Value: Int64? {
-        switch self.base {
+        switch self {
         case let .integer(value): return value
         case let .number(value): return Int64(exactly: value)
         case let .decimal(value): return Int64(exactly: value)
@@ -336,7 +316,7 @@ extension MDData {
     }
     
     public var uint64Value: UInt64? {
-        switch self.base {
+        switch self {
         case let .integer(value): return UInt64(exactly: value)
         case let .number(value): return UInt64(exactly: value)
         case let .decimal(value): return UInt64(exactly: value)
@@ -346,7 +326,7 @@ extension MDData {
     }
     
     public var intValue: Int? {
-        switch self.base {
+        switch self {
         case let .integer(value): return Int(exactly: value)
         case let .number(value): return Int(exactly: value)
         case let .decimal(value): return Int64(exactly: value).flatMap { Int(exactly: $0) }
@@ -356,7 +336,7 @@ extension MDData {
     }
     
     public var uintValue: UInt? {
-        switch self.base {
+        switch self {
         case let .integer(value): return UInt(exactly: value)
         case let .number(value): return UInt(exactly: value)
         case let .decimal(value): return UInt64(exactly: value).flatMap { UInt(exactly: $0) }
@@ -366,7 +346,7 @@ extension MDData {
     }
     
     public var floatValue: Float? {
-        switch self.base {
+        switch self {
         case let .integer(value): return Float(exactly: value)
         case let .number(value): return Float(value)
         case let .decimal(value): return Double(exactly: value).flatMap { Float(exactly: $0) }
@@ -376,7 +356,7 @@ extension MDData {
     }
     
     public var doubleValue: Double? {
-        switch self.base {
+        switch self {
         case let .integer(value): return Double(exactly: value)
         case let .number(value): return value
         case let .decimal(value): return Double(exactly: value)
@@ -386,7 +366,7 @@ extension MDData {
     }
     
     public var decimalValue: Decimal? {
-        switch self.base {
+        switch self {
         case let .integer(value): return Decimal(exactly: value)
         case let .number(value): return Decimal(exactly: value)
         case let .decimal(value): return value
@@ -396,28 +376,28 @@ extension MDData {
     }
     
     public var string: String? {
-        switch self.base {
+        switch self {
         case let .string(value): return value
         default: return nil
         }
     }
     
     public var timestamp: Date? {
-        switch self.base {
+        switch self {
         case let .timestamp(value): return value
         default: return nil
         }
     }
     
     public var array: [MDData]? {
-        switch self.base {
+        switch self {
         case let .array(value): return value
         default: return nil
         }
     }
     
     public var dictionary: Dictionary<String, MDData>? {
-        switch self.base {
+        switch self {
         case let .dictionary(value): return value
         default: return nil
         }
@@ -427,7 +407,7 @@ extension MDData {
 extension MDData {
     
     public var count: Int {
-        switch self.base {
+        switch self {
         case let .array(value): return value.count
         case let .dictionary(value): return value.count
         default: fatalError("Not an array or object.")
@@ -437,20 +417,20 @@ extension MDData {
     public subscript(index: Int) -> MDData {
         get {
             guard 0..<count ~= index else { return nil }
-            switch self.base {
+            switch self {
             case let .array(value): return value[index]
             default: return nil
             }
         }
         set {
-            switch self.base {
+            switch self {
             case var .array(value):
                 
                 if index >= value.count {
                     value.append(contentsOf: repeatElement(nil, count: index - value.count + 1))
                 }
                 value[index] = newValue
-                self = MDData(value)
+                self = .array(value)
                 
             default: fatalError("Not an array.")
             }
@@ -458,7 +438,7 @@ extension MDData {
     }
     
     public var keys: Dictionary<String, MDData>.Keys {
-        switch self.base {
+        switch self {
         case let .dictionary(value): return value.keys
         default: return [:].keys
         }
@@ -466,17 +446,17 @@ extension MDData {
     
     public subscript(key: String) -> MDData {
         get {
-            switch self.base {
+            switch self {
             case let .dictionary(value): return value[key] ?? nil
             default: return nil
             }
         }
         set {
-            switch self.base {
+            switch self {
             case var .dictionary(value):
                 
                 value[key] = newValue.isNil ? nil : newValue
-                self = MDData(value)
+                self = .dictionary(value)
                 
             default: fatalError("Not an object.")
             }
