@@ -396,7 +396,7 @@ extension MDData {
         }
     }
     
-    public var dictionary: Dictionary<String, MDData>? {
+    public var dictionary: [String: MDData]? {
         switch self {
         case let .dictionary(value): return value
         default: return nil
