@@ -103,20 +103,20 @@ extension MDData: Decodable {
         if let double = try? container.decode(Double.self) {
             
             if let int64 = try? container.decode(Int64.self), Double(int64) == double {
-                return MDData(int64)
+                return .integer(int64)
             } else if let decimal = try? container.decode(Decimal.self), decimal.doubleValue == double {
-                return MDData(decimal)
+                return .decimal(decimal)
             } else {
-                return MDData(double)
+                return .number(double)
             }
         }
         
         if let int64 = try? container.decode(Int64.self) {
-            return MDData(int64)
+            return .integer(int64)
         }
         
         if let decimal = try? container.decode(Decimal.self) {
-            return MDData(decimal)
+            return .decimal(decimal)
         }
         
         return nil
@@ -127,12 +127,12 @@ extension MDData: Decodable {
         let container = try decoder.singleValueContainer()
         
         if container.decodeNil() {
-            self.init(nilLiteral: ())
+            self = .null
             return
         }
         
         if let bool = try? container.decode(Bool.self) {
-            self.init(bool)
+            self = .boolean(bool)
             return
         }
         
@@ -142,22 +142,22 @@ extension MDData: Decodable {
         }
         
         if let string = try? container.decode(String.self) {
-            self.init(string)
+            self = .string(string)
             return
         }
         
         if let timestamp = try? container.decode(Date.self) {
-            self.init(timestamp)
+            self = .timestamp(timestamp)
             return
         }
         
         if let array = try? container.decode([MDData].self) {
-            self.init(array)
+            self = .array(array)
             return
         }
         
         if let object = try? container.decode([String: MDData].self) {
-            self.init(object)
+            self = .dictionary(object)
             return
         }
         
