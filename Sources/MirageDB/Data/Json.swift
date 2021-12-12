@@ -28,14 +28,14 @@ extension MDData {
     public init(_ json: Json) {
         switch json {
         case .null: self = nil
-        case let .boolean(value): self = DBData(value)
-        case let .string(value): self = DBData(value)
-        case let .signed(value): self = DBData(value)
-        case let .unsigned(value): self = DBData(value)
-        case let .number(value): self = DBData(value)
-        case let .decimal(value): self = DBData(value)
-        case let .array(value): self = DBData(value.map { DBData($0) })
-        case let .dictionary(value): self = DBData(value.mapValues { DBData($0) })
+        case let .boolean(value): self = MDData(value)
+        case let .string(value): self = MDData(value)
+        case let .signed(value): self = MDData(value)
+        case let .unsigned(value): self = MDData(value)
+        case let .number(value): self = MDData(value)
+        case let .decimal(value): self = MDData(value)
+        case let .array(value): self = MDData(value.map { MDData($0) })
+        case let .dictionary(value): self = MDData(value.mapValues { MDData($0) })
         }
     }
 }
