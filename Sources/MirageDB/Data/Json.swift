@@ -26,13 +26,16 @@
 extension MDData {
     
     public init(_ json: Json) {
-        switch json.type {
+        switch json {
         case .null: self = nil
-        case .boolean: self = json.boolValue.map { MDData($0) } ?? nil
-        case .string: self = json.stringValue.map { MDData($0) } ?? nil
-        case .number: self = json.doubleValue.map { MDData($0) } ?? nil
-        case .array: self = json.array.map { MDData($0.map { MDData($0) }) } ?? nil
-        case .dictionary: self = json.dictionary.map { MDData($0.mapValues { MDData($0) }) } ?? nil
+        case let .boolean(value): self = DBData(value)
+        case let .string(value): self = DBData(value)
+        case let .signed(value): self = DBData(value)
+        case let .unsigned(value): self = DBData(value)
+        case let .number(value): self = DBData(value)
+        case let .decimal(value): self = DBData(value)
+        case let .array(value): self = DBData(value.map { DBData($0) })
+        case let .dictionary(value): self = DBData(value.mapValues { DBData($0) })
         }
     }
 }
