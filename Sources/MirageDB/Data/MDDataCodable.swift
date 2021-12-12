@@ -1,5 +1,5 @@
 //
-//  Encodable.swift
+//  MDDataCodable.swift
 //
 //  The MIT License
 //  Copyright (c) 2021 The Oddmen Technology Limited. All rights reserved.
@@ -93,5 +93,77 @@ extension MDData: Encodable {
                 try container.encode(value, forKey: CodingKey(stringValue: key))
             }
         }
+    }
+}
+
+extension MDData: Decodable {
+    
+    private static func _decode_number(_ container: SingleValueDecodingContainer) -> MDData? {
+        
+        if let double = try? container.decode(Double.self) {
+            
+            if let int64 = try? container.decode(Int64.self), Double(int64) == double {
+                return MDData(int64)
+            } else if let decimal = try? container.decode(Decimal.self), decimal.doubleValue == double {
+                return MDData(decimal)
+            } else {
+                return MDData(double)
+            }
+        }
+        
+        if let int64 = try? container.decode(Int64.self) {
+            return MDData(int64)
+        }
+        
+        if let decimal = try? container.decode(Decimal.self) {
+            return MDData(decimal)
+        }
+        
+        return nil
+    }
+    
+    public init(from decoder: Decoder) throws {
+        
+        let container = try decoder.singleValueContainer()
+        
+        if container.decodeNil() {
+            self.init(nilLiteral: ())
+            return
+        }
+        
+        if let bool = try? container.decode(Bool.self) {
+            self.init(bool)
+            return
+        }
+        
+        if let number = MDData._decode_number(container) {
+            self = number
+            return
+        }
+        
+        if let string = try? container.decode(String.self) {
+            self.init(string)
+            return
+        }
+        
+        if let timestamp = try? container.decode(Date.self) {
+            self.init(timestamp)
+            return
+        }
+        
+        if let array = try? container.decode([MDData].self) {
+            self.init(array)
+            return
+        }
+        
+        if let object = try? container.decode([String: MDData].self) {
+            self.init(object)
+            return
+        }
+        
+        throw DecodingError.dataCorrupted(DecodingError.Context(
+            codingPath: decoder.codingPath,
+            debugDescription: "Attempted to decode MDData from unknown structure.")
+        )
     }
 }

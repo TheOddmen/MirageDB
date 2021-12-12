@@ -1,5 +1,5 @@
 //
-//  Decodable.swift
+//  MDDataDecoder.swift
 //
 //  The MIT License
 //  Copyright (c) 2021 The Oddmen Technology Limited. All rights reserved.
