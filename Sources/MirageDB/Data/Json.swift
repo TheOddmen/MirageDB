@@ -30,7 +30,7 @@ extension MDData {
         case .null: self = nil
         case let .boolean(value): self = MDData(value)
         case let .string(value): self = MDData(value)
-        case let .number(value): self = DBData(value.doubleValue)
+        case let .number(value): self = MDData(value.doubleValue)
         case let .array(value): self = MDData(value.map { MDData($0) })
         case let .dictionary(value): self = MDData(value.mapValues { MDData($0) })
         }
