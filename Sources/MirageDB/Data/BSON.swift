@@ -66,6 +66,18 @@ extension MDData {
     }
 }
 
+extension MDData.Number: BSONConvertible {
+    
+    public func toBSON() -> BSON {
+        switch self {
+        case let .signed(value): return BSON(value)
+        case let .unsigned(value): return BSON(value)
+        case let .number(value): return BSON(value)
+        case let .decimal(value): return BSON(value)
+        }
+    }
+}
+
 extension MDData: BSONConvertible {
     
     public func toBSON() -> BSON {
@@ -73,9 +85,7 @@ extension MDData: BSONConvertible {
         case .null: return .undefined
         case let .boolean(value): return BSON(value)
         case let .string(value): return BSON(value)
-        case let .integer(value): return BSON(value)
         case let .number(value): return BSON(value)
-        case let .decimal(value): return BSON(value)
         case let .timestamp(value): return BSON(value)
         case let .array(value): return BSON(value.map { $0.toBSON() })
         case let .dictionary(value): return BSON(value.mapValues { $0.toBSON() })

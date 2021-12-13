@@ -66,6 +66,18 @@ private func decodeDate(_ obj: [String: DBData]) -> Date? {
     return Date(timeIntervalSince1970: Double(millis) / 1000)
 }
 
+extension MDData.Number {
+    
+    fileprivate init(_ value: DBData.Number) {
+        switch value {
+        case let .signed(value): self.init(value)
+        case let .unsigned(value): self.init(value)
+        case let .number(value): self.init(value)
+        case let .decimal(value): self.init(value)
+        }
+    }
+}
+
 extension MDData {
     
     private static let extendedJSONTypes = [
@@ -81,10 +93,7 @@ extension MDData {
         case .null: self = nil
         case let .boolean(value): self.init(value)
         case let .string(value): self.init(value)
-        case let .signed(value): self.init(value)
-        case let .unsigned(value): self.init(value)
-        case let .number(value): self.init(value)
-        case let .decimal(value): self.init(value)
+        case let .number(value): self = .number(Number(value))
         case let .timestamp(value): self.init(value)
         case let .array(value): try self.init(value.map(MDData.init(fromExtendedJSON:)))
         case let .dictionary(obj):
@@ -109,9 +118,13 @@ extension MDData {
         case .null: return nil
         case let .boolean(value): return DBData(value)
         case let .string(value): return DBData(value)
-        case let .integer(value): return ["$numberLong": "\(value)"]
-        case let .number(value): return DBData(value)
-        case let .decimal(value): return ["$numberDecimal": "\(value)"]
+        case let .number(value):
+            switch value {
+            case let .signed(value): return ["$numberLong": "\(value)"]
+            case let .unsigned(value): return ["$numberLong": "\(value)"]
+            case let .number(value): return DBData(value)
+            case let .decimal(value): return ["$numberDecimal": "\(value)"]
+            }
         case let .timestamp(value): return ["$date": ["$numberLong": "\(Int64(value.timeIntervalSince1970 * 1000))"]]
         case let .array(value): return DBData(value.map { $0.toExtendedJSON() })
         case let .dictionary(value): return DBData(value.mapValues { $0.toExtendedJSON() })
@@ -126,10 +139,7 @@ extension MDData {
         case .null: self = nil
         case let .boolean(value): self.init(value)
         case let .string(value): self.init(value)
-        case let .signed(value): self.init(value)
-        case let .unsigned(value): self.init(value)
-        case let .number(value): self.init(value)
-        case let .decimal(value): self.init(value)
+        case let .number(value): self = .number(Number(value))
         case let .timestamp(value): self.init(value)
         case let .array(value): try self.init(value.map(MDData.init(fromExtendedJSON:)))
         case let .dictionary(value): try self.init(value.mapValues(MDData.init(fromExtendedJSON:)))
@@ -142,9 +152,13 @@ extension MDData {
         case .null: return nil
         case let .boolean(value): return DBData(value)
         case let .string(value): return DBData(value)
-        case let .integer(value): return DBData(value)
-        case let .number(value): return DBData(value)
-        case let .decimal(value): return DBData(value)
+        case let .number(value):
+            switch value {
+            case let .signed(value): return DBData(value)
+            case let .unsigned(value): return DBData(value)
+            case let .number(value): return DBData(value)
+            case let .decimal(value): return DBData(value)
+            }
         case let .timestamp(value): return DBData(value)
         case let .array(value): return DBData(value.map { $0.toExtendedJSON() })
         case let .dictionary(value): return DBData(value.mapValues { $0.toExtendedJSON() })

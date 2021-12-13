@@ -37,6 +37,18 @@ extension MDData {
     }
 }
 
+extension Json.Number {
+    
+    public init(_ value: MDData.Number) {
+        switch value {
+        case let .signed(value): self.init(value)
+        case let .unsigned(value): self.init(value)
+        case let .number(value): self.init(value)
+        case let .decimal(value): self.init(value)
+        }
+    }
+}
+
 extension Json {
     
     public init?(_ value: MDData) {
@@ -44,9 +56,7 @@ extension Json {
         case .null: self = nil
         case let .boolean(value): self.init(value)
         case let .string(value): self.init(value)
-        case let .integer(value): self.init(value)
-        case let .number(value): self.init(value)
-        case let .decimal(value): self.init(value)
+        case let .number(value): self = .number(Number(value))
         case let .timestamp(value):
             
             let formatter = ISO8601DateFormatter()

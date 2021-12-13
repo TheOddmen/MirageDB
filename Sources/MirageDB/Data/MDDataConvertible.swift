@@ -49,7 +49,14 @@ extension Bool: MDDataConvertible {
     }
 }
 
-extension FixedWidthInteger {
+extension SignedInteger where Self: FixedWidthInteger {
+    
+    public func toMDData() -> MDData {
+        return MDData(self)
+    }
+}
+
+extension UnsignedInteger where Self: FixedWidthInteger {
     
     public func toMDData() -> MDData {
         return MDData(self)

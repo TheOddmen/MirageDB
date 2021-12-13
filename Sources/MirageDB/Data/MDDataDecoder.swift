@@ -59,11 +59,11 @@ extension MDData {
             calendar: Calendar = Calendar(identifier: .iso8601),
             timeZone: TimeZone = TimeZone(secondsFromGMT: 0)!,
             userInfo: [CodingUserInfoKey: Any] = [:]) {
-            self.dateDecodingStrategy = dateDecodingStrategy
-            self.calendar = calendar
-            self.timeZone = timeZone
-            self.userInfo = userInfo
-        }
+                self.dateDecodingStrategy = dateDecodingStrategy
+                self.calendar = calendar
+                self.timeZone = timeZone
+                self.userInfo = userInfo
+            }
     }
 }
 
@@ -174,21 +174,30 @@ extension MDData._Decoder: SingleValueDecodingContainer {
         switch value {
         case .null: throw Database.Error.valueNotFound
             
-        case let .integer(value):
-            
-            guard let value = T(exactly: value) else { throw Database.Error.unsupportedType }
-            return value
-            
         case let .number(value):
             
-            guard let value = T(exactly: value) else { throw Database.Error.unsupportedType }
-            return value
-            
-        case let .decimal(value):
-            
-            guard let double = Double(exactly: value) else { throw Database.Error.unsupportedType }
-            guard let value = T(exactly: double) else { throw Database.Error.unsupportedType }
-            return value
+            switch value {
+            case let .signed(value):
+                
+                guard let value = T(exactly: value) else { throw Database.Error.unsupportedType }
+                return value
+                
+            case let .unsigned(value):
+                
+                guard let value = T(exactly: value) else { throw Database.Error.unsupportedType }
+                return value
+                
+            case let .number(value):
+                
+                guard let value = T(exactly: value) else { throw Database.Error.unsupportedType }
+                return value
+                
+            case let .decimal(value):
+                
+                guard let double = Double(exactly: value) else { throw Database.Error.unsupportedType }
+                guard let value = T(exactly: double) else { throw Database.Error.unsupportedType }
+                return value
+            }
             
         case let .string(string):
             
@@ -204,21 +213,30 @@ extension MDData._Decoder: SingleValueDecodingContainer {
         switch value {
         case .null: throw Database.Error.valueNotFound
             
-        case let .integer(value):
-            
-            guard let value = T(exactly: value) else { throw Database.Error.unsupportedType }
-            return value
-            
         case let .number(value):
             
-            guard let value = T(exactly: value) else { throw Database.Error.unsupportedType }
-            return value
-            
-        case let .decimal(value):
-            
-            guard let int64 = Int64(exactly: value) else { throw Database.Error.unsupportedType }
-            guard let value = T(exactly: int64) else { throw Database.Error.unsupportedType }
-            return value
+            switch value {
+            case let .signed(value):
+                
+                guard let value = T(exactly: value) else { throw Database.Error.unsupportedType }
+                return value
+                
+            case let .unsigned(value):
+                
+                guard let value = T(exactly: value) else { throw Database.Error.unsupportedType }
+                return value
+                
+            case let .number(value):
+                
+                guard let value = T(exactly: value) else { throw Database.Error.unsupportedType }
+                return value
+                
+            case let .decimal(value):
+                
+                guard let int64 = Int64(exactly: value) else { throw Database.Error.unsupportedType }
+                guard let value = T(exactly: int64) else { throw Database.Error.unsupportedType }
+                return value
+            }
             
         case let .string(string):
             
@@ -233,9 +251,14 @@ extension MDData._Decoder: SingleValueDecodingContainer {
         switch value {
         case .null: throw Database.Error.valueNotFound
             
-        case let .integer(value): return Decimal(value)
-        case let .number(value): return Decimal(value)
-        case let .decimal(decimal): return decimal
+        case let .number(value):
+            
+            switch value {
+            case let .signed(value): return Decimal(value)
+            case let .unsigned(value): return Decimal(value)
+            case let .number(value): return Decimal(value)
+            case let .decimal(decimal): return decimal
+            }
             
         case let .string(string):
             
@@ -275,37 +298,50 @@ extension MDData._Decoder: SingleValueDecodingContainer {
             
             return date
             
-        case let .integer(value):
-            
-            switch options.dateDecodingStrategy {
-            case .secondsSince1970: return Date(timeIntervalSince1970: Double(value))
-            case .millisecondsSince1970: return Date(timeIntervalSince1970: Double(value) / 1000.0)
-            case let .custom(closure): return try closure(self)
-            default: throw Database.Error.unsupportedType
-            }
-            
         case let .number(value):
             
-            switch options.dateDecodingStrategy {
-            case .secondsSince1970: return Date(timeIntervalSince1970: value)
-            case .millisecondsSince1970: return Date(timeIntervalSince1970: value / 1000.0)
-            case let .custom(closure): return try closure(self)
-            default: throw Database.Error.unsupportedType
-            }
-            
-        case let .decimal(value):
-            
-            switch options.dateDecodingStrategy {
-            case .secondsSince1970: return Date(timeIntervalSince1970: value.doubleValue)
-            case .millisecondsSince1970: return Date(timeIntervalSince1970: value.doubleValue / 1000.0)
-            case let .custom(closure): return try closure(self)
-            default: throw Database.Error.unsupportedType
+            switch value {
+            case let .signed(value):
+                
+                switch options.dateDecodingStrategy {
+                case .secondsSince1970: return Date(timeIntervalSince1970: Double(value))
+                case .millisecondsSince1970: return Date(timeIntervalSince1970: Double(value) / 1000.0)
+                case let .custom(closure): return try closure(self)
+                default: throw Database.Error.unsupportedType
+                }
+                
+            case let .unsigned(value):
+                
+                switch options.dateDecodingStrategy {
+                case .secondsSince1970: return Date(timeIntervalSince1970: Double(value))
+                case .millisecondsSince1970: return Date(timeIntervalSince1970: Double(value) / 1000.0)
+                case let .custom(closure): return try closure(self)
+                default: throw Database.Error.unsupportedType
+                }
+                
+            case let .number(value):
+                
+                switch options.dateDecodingStrategy {
+                case .secondsSince1970: return Date(timeIntervalSince1970: value)
+                case .millisecondsSince1970: return Date(timeIntervalSince1970: value / 1000.0)
+                case let .custom(closure): return try closure(self)
+                default: throw Database.Error.unsupportedType
+                }
+                
+            case let .decimal(value):
+                
+                switch options.dateDecodingStrategy {
+                case .secondsSince1970: return Date(timeIntervalSince1970: value.doubleValue)
+                case .millisecondsSince1970: return Date(timeIntervalSince1970: value.doubleValue / 1000.0)
+                case let .custom(closure): return try closure(self)
+                default: throw Database.Error.unsupportedType
+                }
             }
             
         case let .string(string):
             
             switch options.dateDecodingStrategy {
-            
+                
             case .iso8601:
                 
                 guard let value = string.iso8601 else { throw Database.Error.invalidDateFormat }

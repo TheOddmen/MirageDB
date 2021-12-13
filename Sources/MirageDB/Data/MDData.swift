@@ -31,11 +31,7 @@ public enum MDData: Hashable {
     
     case string(String)
     
-    case integer(Int64)
-    
-    case number(Double)
-    
-    case decimal(Decimal)
+    case number(Number)
     
     case timestamp(Date)
     
@@ -58,16 +54,20 @@ extension MDData {
         self = .string(String(value))
     }
     
-    public init<T: FixedWidthInteger>(_ value: T) {
-        self = .integer(Int64(value))
+    public init<T: FixedWidthInteger & SignedInteger>(_ value: T) {
+        self = .number(Number(value))
+    }
+    
+    public init<T: FixedWidthInteger & UnsignedInteger>(_ value: T) {
+        self = .number(Number(value))
     }
     
     public init<T: BinaryFloatingPoint>(_ value: T) {
-        self = .number(Double(value))
+        self = .number(Number(value))
     }
     
     public init(_ value: Decimal) {
-        self = .decimal(value)
+        self = .number(Number(value))
     }
     
     public init(_ value: Date) {
@@ -151,9 +151,7 @@ extension MDData: CustomStringConvertible {
         case .null: return "nil"
         case let .boolean(value): return "\(value)"
         case let .string(value): return "\"\(value.escaped(asASCII: false))\""
-        case let .integer(value): return "\(value)"
         case let .number(value): return "\(value)"
-        case let .decimal(value): return "\(value)"
         case let .timestamp(value): return "\(value)"
         case let .array(value): return "\(value)"
         case let .dictionary(value): return "\(value)"
@@ -184,32 +182,9 @@ extension MDData {
         }
     }
     
-    public var isInteger: Bool {
-        switch self {
-        case .integer: return true
-        default: return false
-        }
-    }
-    
     public var isNumber: Bool {
         switch self {
         case .number: return true
-        default: return false
-        }
-    }
-    
-    public var isDecimal: Bool {
-        switch self {
-        case .decimal: return true
-        default: return false
-        }
-    }
-    
-    public var isNumeric: Bool {
-        switch self {
-        case .integer: return true
-        case .number: return true
-        case .decimal: return true
         default: return false
         }
     }
@@ -247,9 +222,7 @@ extension MDData {
     
     public var int8Value: Int8? {
         switch self {
-        case let .integer(value): return Int8(exactly: value)
-        case let .number(value): return Int8(exactly: value)
-        case let .decimal(value): return Int8(exactly: value)
+        case let .number(value): return value.int8Value
         case let .string(string): return Int8(string)
         default: return nil
         }
@@ -257,9 +230,7 @@ extension MDData {
     
     public var uint8Value: UInt8? {
         switch self {
-        case let .integer(value): return UInt8(exactly: value)
-        case let .number(value): return UInt8(exactly: value)
-        case let .decimal(value): return UInt8(exactly: value)
+        case let .number(value): return value.uint8Value
         case let .string(string): return UInt8(string)
         default: return nil
         }
@@ -267,9 +238,7 @@ extension MDData {
     
     public var int16Value: Int16? {
         switch self {
-        case let .integer(value): return Int16(exactly: value)
-        case let .number(value): return Int16(exactly: value)
-        case let .decimal(value): return Int16(exactly: value)
+        case let .number(value): return value.int16Value
         case let .string(string): return Int16(string)
         default: return nil
         }
@@ -277,9 +246,7 @@ extension MDData {
     
     public var uint16Value: UInt16? {
         switch self {
-        case let .integer(value): return UInt16(exactly: value)
-        case let .number(value): return UInt16(exactly: value)
-        case let .decimal(value): return UInt16(exactly: value)
+        case let .number(value): return value.uint16Value
         case let .string(string): return UInt16(string)
         default: return nil
         }
@@ -287,9 +254,7 @@ extension MDData {
     
     public var int32Value: Int32? {
         switch self {
-        case let .integer(value): return Int32(exactly: value)
-        case let .number(value): return Int32(exactly: value)
-        case let .decimal(value): return Int32(exactly: value)
+        case let .number(value): return value.int32Value
         case let .string(string): return Int32(string)
         default: return nil
         }
@@ -297,9 +262,7 @@ extension MDData {
     
     public var uint32Value: UInt32? {
         switch self {
-        case let .integer(value): return UInt32(exactly: value)
-        case let .number(value): return UInt32(exactly: value)
-        case let .decimal(value): return UInt32(exactly: value)
+        case let .number(value): return value.uint32Value
         case let .string(string): return UInt32(string)
         default: return nil
         }
@@ -307,9 +270,7 @@ extension MDData {
     
     public var int64Value: Int64? {
         switch self {
-        case let .integer(value): return value
-        case let .number(value): return Int64(exactly: value)
-        case let .decimal(value): return Int64(exactly: value)
+        case let .number(value): return value.int64Value
         case let .string(string): return Int64(string)
         default: return nil
         }
@@ -317,9 +278,7 @@ extension MDData {
     
     public var uint64Value: UInt64? {
         switch self {
-        case let .integer(value): return UInt64(exactly: value)
-        case let .number(value): return UInt64(exactly: value)
-        case let .decimal(value): return UInt64(exactly: value)
+        case let .number(value): return value.uint64Value
         case let .string(string): return UInt64(string)
         default: return nil
         }
@@ -327,9 +286,7 @@ extension MDData {
     
     public var intValue: Int? {
         switch self {
-        case let .integer(value): return Int(exactly: value)
-        case let .number(value): return Int(exactly: value)
-        case let .decimal(value): return Int(exactly: value)
+        case let .number(value): return value.intValue
         case let .string(string): return Int(string)
         default: return nil
         }
@@ -337,9 +294,7 @@ extension MDData {
     
     public var uintValue: UInt? {
         switch self {
-        case let .integer(value): return UInt(exactly: value)
-        case let .number(value): return UInt(exactly: value)
-        case let .decimal(value): return UInt(exactly: value)
+        case let .number(value): return value.uintValue
         case let .string(string): return UInt(string)
         default: return nil
         }
@@ -347,9 +302,7 @@ extension MDData {
     
     public var floatValue: Float? {
         switch self {
-        case let .integer(value): return Float(exactly: value)
-        case let .number(value): return Float(value)
-        case let .decimal(value): return Float(exactly: value)
+        case let .number(value): return value.floatValue
         case let .string(string): return Float(string)
         default: return nil
         }
@@ -357,9 +310,7 @@ extension MDData {
     
     public var doubleValue: Double? {
         switch self {
-        case let .integer(value): return Double(exactly: value)
-        case let .number(value): return value
-        case let .decimal(value): return Double(exactly: value)
+        case let .number(value): return value.doubleValue
         case let .string(string): return Double(string)
         default: return nil
         }
@@ -367,9 +318,7 @@ extension MDData {
     
     public var decimalValue: Decimal? {
         switch self {
-        case let .integer(value): return Decimal(exactly: value)
-        case let .number(value): return Decimal(exactly: value)
-        case let .decimal(value): return value
+        case let .number(value): return value.decimalValue
         case let .string(string): return Decimal(exactly: string)
         default: return nil
         }

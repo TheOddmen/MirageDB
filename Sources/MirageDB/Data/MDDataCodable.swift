@@ -60,20 +60,29 @@ extension MDData: Encodable {
             var container = encoder.singleValueContainer()
             try container.encode(value)
             
-        case let .integer(value):
+        case let .number(number):
             
-            var container = encoder.singleValueContainer()
-            try container.encode(value)
-            
-        case let .number(value):
-            
-            var container = encoder.singleValueContainer()
-            try container.encode(value)
-            
-        case let .decimal(value):
-            
-            var container = encoder.singleValueContainer()
-            try container.encode(value)
+            switch number {
+            case let .signed(number):
+                
+                var container = encoder.singleValueContainer()
+                try container.encode(number)
+                
+            case let .unsigned(number):
+                
+                var container = encoder.singleValueContainer()
+                try container.encode(number)
+                
+            case let .number(number):
+                
+                var container = encoder.singleValueContainer()
+                try container.encode(number)
+                
+            case let .decimal(number):
+                
+                var container = encoder.singleValueContainer()
+                try container.encode(number)
+            }
             
         case let .timestamp(value):
             
@@ -98,12 +107,14 @@ extension MDData: Encodable {
 
 extension MDData: Decodable {
     
-    private static func _decode_number(_ container: SingleValueDecodingContainer) -> MDData? {
+    private static func _decode_number(_ container: SingleValueDecodingContainer) -> Number? {
         
         if let double = try? container.decode(Double.self) {
             
-            if let int64 = try? container.decode(Int64.self), Double(int64) == double {
-                return .integer(int64)
+            if let uint64 = try? container.decode(UInt64.self), Double(uint64) == double {
+                return .unsigned(uint64)
+            } else if let int64 = try? container.decode(Int64.self), Double(int64) == double {
+                return .signed(int64)
             } else if let decimal = try? container.decode(Decimal.self), decimal.doubleValue == double {
                 return .decimal(decimal)
             } else {
@@ -111,8 +122,12 @@ extension MDData: Decodable {
             }
         }
         
+        if let uint64 = try? container.decode(UInt64.self) {
+            return .unsigned(uint64)
+        }
+        
         if let int64 = try? container.decode(Int64.self) {
-            return .integer(int64)
+            return .signed(int64)
         }
         
         if let decimal = try? container.decode(Decimal.self) {
@@ -137,7 +152,7 @@ extension MDData: Decodable {
         }
         
         if let number = MDData._decode_number(container) {
-            self = number
+            self = .number(number)
             return
         }
         

@@ -49,9 +49,12 @@ extension MDData {
         case .null: return nil
         case .boolean: return .boolean
         case .string: return .string
-        case .integer: return .integer
-        case .number: return .number
-        case .decimal: return .decimal
+        case let .number(value):
+            switch value {
+            case .signed, .unsigned: return .integer
+            case .number: return .number
+            case .decimal: return .decimal
+            }
         case .timestamp: return .timestamp
         case .array: return .json
         case .dictionary: return .json
