@@ -25,6 +25,7 @@
 
 extension MDData {
     
+    @inlinable
     public init(_ json: Json) {
         switch json {
         case .null: self = nil
@@ -39,6 +40,7 @@ extension MDData {
 
 extension Json.Number {
     
+    @inlinable
     public init(_ value: MDData.Number) {
         switch value {
         case let .signed(value): self.init(value)
@@ -51,6 +53,7 @@ extension Json.Number {
 
 extension Json {
     
+    @inlinable
     public init?(_ value: MDData) {
         switch value {
         case .null: self = nil

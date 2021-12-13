@@ -30,6 +30,7 @@ public protocol MDDataConvertible {
 
 extension MDData: MDDataConvertible {
     
+    @inlinable
     public func toMDData() -> MDData {
         return self
     }
@@ -37,6 +38,7 @@ extension MDData: MDDataConvertible {
 
 extension Optional: MDDataConvertible where Wrapped: MDDataConvertible {
     
+    @inlinable
     public func toMDData() -> MDData {
         return self?.toMDData() ?? nil
     }
@@ -44,6 +46,7 @@ extension Optional: MDDataConvertible where Wrapped: MDDataConvertible {
 
 extension Bool: MDDataConvertible {
     
+    @inlinable
     public func toMDData() -> MDData {
         return MDData(self)
     }
@@ -51,6 +54,7 @@ extension Bool: MDDataConvertible {
 
 extension SignedInteger where Self: FixedWidthInteger {
     
+    @inlinable
     public func toMDData() -> MDData {
         return MDData(self)
     }
@@ -58,6 +62,7 @@ extension SignedInteger where Self: FixedWidthInteger {
 
 extension UnsignedInteger where Self: FixedWidthInteger {
     
+    @inlinable
     public func toMDData() -> MDData {
         return MDData(self)
     }
@@ -76,6 +81,7 @@ extension Int64: MDDataConvertible { }
 
 extension BinaryFloatingPoint {
     
+    @inlinable
     public func toMDData() -> MDData {
         return MDData(self)
     }
@@ -94,6 +100,7 @@ extension Double: MDDataConvertible { }
 
 extension Decimal: MDDataConvertible {
     
+    @inlinable
     public func toMDData() -> MDData {
         return MDData(self)
     }
@@ -101,6 +108,7 @@ extension Decimal: MDDataConvertible {
 
 extension StringProtocol {
     
+    @inlinable
     public func toMDData() -> MDData {
         return MDData(String(self))
     }
@@ -108,6 +116,7 @@ extension StringProtocol {
 
 extension String: MDDataConvertible {
     
+    @inlinable
     public func toMDData() -> MDData {
         return MDData(self)
     }
@@ -117,6 +126,7 @@ extension Substring: MDDataConvertible { }
 
 extension Date: MDDataConvertible {
     
+    @inlinable
     public func toMDData() -> MDData {
         return MDData(self)
     }
@@ -124,6 +134,7 @@ extension Date: MDDataConvertible {
 
 extension Array: MDDataConvertible where Element: MDDataConvertible {
     
+    @inlinable
     public func toMDData() -> MDData {
         return MDData(self)
     }
@@ -131,6 +142,7 @@ extension Array: MDDataConvertible where Element: MDDataConvertible {
 
 extension Dictionary: MDDataConvertible where Key == String, Value: MDDataConvertible {
     
+    @inlinable
     public func toMDData() -> MDData {
         return MDData(self)
     }
@@ -138,6 +150,7 @@ extension Dictionary: MDDataConvertible where Key == String, Value: MDDataConver
 
 extension OrderedDictionary: MDDataConvertible where Key == String, Value: MDDataConvertible {
     
+    @inlinable
     public func toMDData() -> MDData {
         return MDData(self)
     }

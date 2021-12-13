@@ -68,6 +68,7 @@ extension MDData {
 
 extension MDData.Number: BSONConvertible {
     
+    @inlinable
     public func toBSON() -> BSON {
         switch self {
         case let .signed(value): return BSON(value)
@@ -80,6 +81,7 @@ extension MDData.Number: BSONConvertible {
 
 extension MDData: BSONConvertible {
     
+    @inlinable
     public func toBSON() -> BSON {
         switch self {
         case .null: return .undefined

@@ -42,50 +42,62 @@ public enum MDData: Hashable {
 
 extension MDData {
     
+    @inlinable
     public init(_ value: Bool) {
         self = .boolean(value)
     }
     
+    @inlinable
     public init(_ value: String) {
         self = .string(value)
     }
     
+    @inlinable
     public init<S: StringProtocol>(_ value: S) {
         self = .string(String(value))
     }
     
+    @inlinable
     public init<T: FixedWidthInteger & SignedInteger>(_ value: T) {
         self = .number(Number(value))
     }
     
+    @inlinable
     public init<T: FixedWidthInteger & UnsignedInteger>(_ value: T) {
         self = .number(Number(value))
     }
     
+    @inlinable
     public init<T: BinaryFloatingPoint>(_ value: T) {
         self = .number(Number(value))
     }
     
+    @inlinable
     public init(_ value: Decimal) {
         self = .number(Number(value))
     }
     
+    @inlinable
     public init(_ value: Date) {
         self = .timestamp(value)
     }
     
+    @inlinable
     public init<Wrapped: MDDataConvertible>(_ value: Wrapped?) {
         self = value.toMDData()
     }
     
+    @inlinable
     public init<S: Sequence>(_ elements: S) where S.Element: MDDataConvertible {
         self = .array(elements.map { $0.toMDData() })
     }
     
+    @inlinable
     public init<Value: MDDataConvertible>(_ elements: [String: Value]) {
         self = .dictionary(elements.mapValues { $0.toMDData() })
     }
     
+    @inlinable
     public init<Value: MDDataConvertible>(_ elements: OrderedDictionary<String, Value>) {
         self = .dictionary(Dictionary(elements.mapValues { $0.toMDData() }))
     }
@@ -93,6 +105,7 @@ extension MDData {
 
 extension MDData: ExpressibleByNilLiteral {
     
+    @inlinable
     public init(nilLiteral value: Void) {
         self = .null
     }
@@ -100,6 +113,7 @@ extension MDData: ExpressibleByNilLiteral {
 
 extension MDData: ExpressibleByBooleanLiteral {
     
+    @inlinable
     public init(booleanLiteral value: BooleanLiteralType) {
         self.init(value)
     }
@@ -107,6 +121,7 @@ extension MDData: ExpressibleByBooleanLiteral {
 
 extension MDData: ExpressibleByIntegerLiteral {
     
+    @inlinable
     public init(integerLiteral value: IntegerLiteralType) {
         self.init(value)
     }
@@ -114,6 +129,7 @@ extension MDData: ExpressibleByIntegerLiteral {
 
 extension MDData: ExpressibleByFloatLiteral {
     
+    @inlinable
     public init(floatLiteral value: FloatLiteralType) {
         self.init(value)
     }
@@ -121,10 +137,12 @@ extension MDData: ExpressibleByFloatLiteral {
 
 extension MDData: ExpressibleByStringInterpolation {
     
+    @inlinable
     public init(stringLiteral value: StringLiteralType) {
         self.init(value)
     }
     
+    @inlinable
     public init(stringInterpolation: String.StringInterpolation) {
         self.init(String(stringInterpolation: stringInterpolation))
     }
@@ -132,6 +150,7 @@ extension MDData: ExpressibleByStringInterpolation {
 
 extension MDData: ExpressibleByArrayLiteral {
     
+    @inlinable
     public init(arrayLiteral elements: MDData ...) {
         self.init(elements)
     }
@@ -139,6 +158,7 @@ extension MDData: ExpressibleByArrayLiteral {
 
 extension MDData: ExpressibleByDictionaryLiteral {
     
+    @inlinable
     public init(dictionaryLiteral elements: (String, MDData) ...) {
         self.init(Dictionary(uniqueKeysWithValues: elements))
     }
@@ -146,6 +166,7 @@ extension MDData: ExpressibleByDictionaryLiteral {
 
 extension MDData: CustomStringConvertible {
     
+    @inlinable
     public var description: String {
         switch self {
         case .null: return "nil"
@@ -161,6 +182,7 @@ extension MDData: CustomStringConvertible {
 
 extension MDData {
     
+    @inlinable
     public var isNil: Bool {
         switch self {
         case .null: return true
@@ -168,6 +190,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var isBool: Bool {
         switch self {
         case .boolean: return true
@@ -175,6 +198,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var isString: Bool {
         switch self {
         case .string: return true
@@ -182,6 +206,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var isNumber: Bool {
         switch self {
         case .number: return true
@@ -189,6 +214,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var isTimestamp: Bool {
         switch self {
         case .timestamp: return true
@@ -196,6 +222,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var isArray: Bool {
         switch self {
         case .array: return true
@@ -203,6 +230,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var isObject: Bool {
         switch self {
         case .dictionary: return true
@@ -213,6 +241,7 @@ extension MDData {
 
 extension MDData {
     
+    @inlinable
     public var boolValue: Bool? {
         switch self {
         case let .boolean(value): return value
@@ -220,6 +249,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var int8Value: Int8? {
         switch self {
         case let .number(value): return value.int8Value
@@ -228,6 +258,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var uint8Value: UInt8? {
         switch self {
         case let .number(value): return value.uint8Value
@@ -236,6 +267,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var int16Value: Int16? {
         switch self {
         case let .number(value): return value.int16Value
@@ -244,6 +276,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var uint16Value: UInt16? {
         switch self {
         case let .number(value): return value.uint16Value
@@ -252,6 +285,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var int32Value: Int32? {
         switch self {
         case let .number(value): return value.int32Value
@@ -260,6 +294,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var uint32Value: UInt32? {
         switch self {
         case let .number(value): return value.uint32Value
@@ -268,6 +303,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var int64Value: Int64? {
         switch self {
         case let .number(value): return value.int64Value
@@ -276,6 +312,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var uint64Value: UInt64? {
         switch self {
         case let .number(value): return value.uint64Value
@@ -284,6 +321,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var intValue: Int? {
         switch self {
         case let .number(value): return value.intValue
@@ -292,6 +330,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var uintValue: UInt? {
         switch self {
         case let .number(value): return value.uintValue
@@ -300,6 +339,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var floatValue: Float? {
         switch self {
         case let .number(value): return value.floatValue
@@ -308,6 +348,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var doubleValue: Double? {
         switch self {
         case let .number(value): return value.doubleValue
@@ -316,6 +357,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var decimalValue: Decimal? {
         switch self {
         case let .number(value): return value.decimalValue
@@ -324,6 +366,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var string: String? {
         switch self {
         case let .string(value): return value
@@ -331,6 +374,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var timestamp: Date? {
         switch self {
         case let .timestamp(value): return value
@@ -338,6 +382,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var array: [MDData]? {
         switch self {
         case let .array(value): return value
@@ -345,6 +390,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var dictionary: [String: MDData]? {
         switch self {
         case let .dictionary(value): return value
@@ -355,6 +401,7 @@ extension MDData {
 
 extension MDData {
     
+    @inlinable
     public var count: Int {
         switch self {
         case let .array(value): return value.count
@@ -363,6 +410,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public subscript(index: Int) -> MDData {
         get {
             guard 0..<count ~= index else { return nil }
@@ -386,6 +434,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public var keys: Dictionary<String, MDData>.Keys {
         switch self {
         case let .dictionary(value): return value.keys
@@ -393,6 +442,7 @@ extension MDData {
         }
     }
     
+    @inlinable
     public subscript(key: String) -> MDData {
         get {
             switch self {
