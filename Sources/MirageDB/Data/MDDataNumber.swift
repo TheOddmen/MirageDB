@@ -65,7 +65,13 @@ extension MDData.Number: Equatable {
     
     @inlinable
     public static func ==(lhs: MDData.Number, rhs: MDData.Number) -> Bool {
-        return lhs.doubleValue == rhs.doubleValue
+        switch (lhs.normalized, rhs.normalized) {
+        case let (.signed(lhs), .signed(rhs)): return lhs == rhs
+        case let (.unsigned(lhs), .unsigned(rhs)): return lhs == rhs
+        case let (.number(lhs), .number(rhs)): return lhs == rhs
+        case let (.decimal(lhs), .decimal(rhs)): return lhs == rhs
+        default: return false
+        }
     }
 }
 
@@ -73,7 +79,12 @@ extension MDData.Number: Hashable {
     
     @inlinable
     public func hash(into hasher: inout Hasher) {
-        hasher.combine(doubleValue)
+        switch normalized {
+        case let .signed(value): hasher.combine(value)
+        case let .unsigned(value): hasher.combine(value)
+        case let .number(value): hasher.combine(value)
+        case let .decimal(value): hasher.combine(value)
+        }
     }
 }
 
@@ -86,6 +97,50 @@ extension MDData.Number: CustomStringConvertible {
         case let .unsigned(value): return "\(value)"
         case let .number(value): return "\(value)"
         case let .decimal(value): return "\(value)"
+        }
+    }
+}
+
+extension MDData.Number {
+    
+    @inlinable
+    public var normalized: MDData.Number {
+        switch self {
+        case let .signed(value): return value < 0 ? .signed(value) : .unsigned(UInt64(value))
+        case let .unsigned(value): return .unsigned(value)
+        case let .number(value):
+            
+            if value.sign == .plus, let integer = UInt64(exactly: value) {
+                
+                return .unsigned(integer)
+                
+            } else if let integer = Int64(exactly: value) {
+                
+                return .signed(integer)
+                
+            } else if let decimal = Decimal(exactly: value) {
+                
+                return .decimal(decimal)
+                
+            } else {
+                
+                return .number(value)
+            }
+            
+        case let .decimal(value):
+            
+            if value.sign == .plus, let integer = UInt64(exactly: value) {
+                
+                return .unsigned(integer)
+                
+            } else if let integer = Int64(exactly: value) {
+                
+                return .signed(integer)
+                
+            } else {
+                
+                return .decimal(value)
+            }
         }
     }
 }
@@ -203,12 +258,12 @@ extension MDData.Number {
     }
     
     @inlinable
-    public var doubleValue: Double {
+    public var doubleValue: Double? {
         switch self {
-        case let .signed(value): return Double(value)
-        case let .unsigned(value): return Double(value)
+        case let .signed(value): return Double(exactly: value)
+        case let .unsigned(value): return Double(exactly: value)
         case let .number(value): return value
-        case let .decimal(value): return value.doubleValue
+        case let .decimal(value): return Double(exactly: value)
         }
     }
     

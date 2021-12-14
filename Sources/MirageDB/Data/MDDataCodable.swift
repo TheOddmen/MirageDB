@@ -25,23 +25,29 @@
 
 extension MDData: Encodable {
     
+    @usableFromInline
     struct CodingKey: Swift.CodingKey {
         
+        @usableFromInline
         var stringValue: String
         
+        @usableFromInline
         var intValue: Int?
         
+        @inlinable
         init(stringValue: String) {
             self.stringValue = stringValue
             self.intValue = nil
         }
         
+        @inlinable
         init(intValue: Int) {
             self.stringValue = "\(intValue)"
             self.intValue = intValue
         }
     }
     
+    @inlinable
     public func encode(to encoder: Encoder) throws {
         
         switch self {
@@ -62,27 +68,8 @@ extension MDData: Encodable {
             
         case let .number(number):
             
-            switch number {
-            case let .signed(number):
-                
-                var container = encoder.singleValueContainer()
-                try container.encode(number)
-                
-            case let .unsigned(number):
-                
-                var container = encoder.singleValueContainer()
-                try container.encode(number)
-                
-            case let .number(number):
-                
-                var container = encoder.singleValueContainer()
-                try container.encode(number)
-                
-            case let .decimal(number):
-                
-                var container = encoder.singleValueContainer()
-                try container.encode(number)
-            }
+            var container = encoder.singleValueContainer()
+            try container.encode(number)
             
         case let .timestamp(value):
             
@@ -107,36 +94,7 @@ extension MDData: Encodable {
 
 extension MDData: Decodable {
     
-    private static func _decode_number(_ container: SingleValueDecodingContainer) -> Number? {
-        
-        if let double = try? container.decode(Double.self) {
-            
-            if let uint64 = try? container.decode(UInt64.self), Double(uint64) == double {
-                return .unsigned(uint64)
-            } else if let int64 = try? container.decode(Int64.self), Double(int64) == double {
-                return .signed(int64)
-            } else if let decimal = try? container.decode(Decimal.self), decimal.doubleValue == double {
-                return .decimal(decimal)
-            } else {
-                return .number(double)
-            }
-        }
-        
-        if let uint64 = try? container.decode(UInt64.self) {
-            return .unsigned(uint64)
-        }
-        
-        if let int64 = try? container.decode(Int64.self) {
-            return .signed(int64)
-        }
-        
-        if let decimal = try? container.decode(Decimal.self) {
-            return .decimal(decimal)
-        }
-        
-        return nil
-    }
-    
+    @inlinable
     public init(from decoder: Decoder) throws {
         
         let container = try decoder.singleValueContainer()
@@ -151,7 +109,7 @@ extension MDData: Decodable {
             return
         }
         
-        if let number = MDData._decode_number(container) {
+        if let number = try? container.decode(Number.self) {
             self = .number(number)
             return
         }
