@@ -23,9 +23,9 @@
 //  THE SOFTWARE.
 //
 
-#if compiler(>=5.5) && canImport(_Concurrency)
+#if compiler(>=5.5.2) && canImport(_Concurrency)
 
-@available(macOS 12, iOS 15, watchOS 8, tvOS 15, *)
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension MDFindExpression {
     
     public func count() async throws -> Int {
@@ -33,7 +33,7 @@ extension MDFindExpression {
     }
 }
 
-@available(macOS 12, iOS 15, watchOS 8, tvOS 15, *)
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension MDFindExpression {
     
     public func toArray() async throws -> [MDObject] {
@@ -62,7 +62,7 @@ extension MDFindExpression {
     }
 }
 
-@available(macOS 12, iOS 15, watchOS 8, tvOS 15, *)
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension MDQuery {
     
     @discardableResult
@@ -71,7 +71,7 @@ extension MDQuery {
     }
 }
 
-@available(macOS 12, iOS 15, watchOS 8, tvOS 15, *)
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension MDFindExpression {
     
     @discardableResult
@@ -80,7 +80,7 @@ extension MDFindExpression {
     }
 }
 
-@available(macOS 12, iOS 15, watchOS 8, tvOS 15, *)
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension MDFindOneExpression {
     
     @discardableResult
@@ -94,7 +94,7 @@ extension MDFindOneExpression {
     }
 }
 
-@available(macOS 12, iOS 15, watchOS 8, tvOS 15, *)
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension MDFindOneExpression {
     
     @discardableResult
@@ -108,7 +108,7 @@ extension MDFindOneExpression {
     }
 }
 
-@available(macOS 12, iOS 15, watchOS 8, tvOS 15, *)
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension MDFindOneExpression {
     
     @discardableResult
