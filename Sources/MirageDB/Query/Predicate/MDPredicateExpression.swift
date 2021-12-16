@@ -23,6 +23,7 @@
 //  THE SOFTWARE.
 //
 
+@frozen
 public indirect enum MDPredicateExpression {
     
     case not(MDPredicateExpression)
@@ -58,6 +59,7 @@ public indirect enum MDPredicateExpression {
     case or([MDPredicateExpression])
 }
 
+@frozen
 public enum MDPredicateValue {
     
     case id
@@ -73,6 +75,7 @@ public enum MDPredicateValue {
 
 extension MDPredicateValue {
     
+    @inlinable
     static func key(_ key: MDPredicateKey) -> MDPredicateValue {
         switch key {
         case .id: return .id
@@ -83,166 +86,207 @@ extension MDPredicateValue {
     }
 }
 
+@inlinable
 public func == (lhs: MDPredicateKey, rhs: MDPredicateKey) -> MDPredicateExpression {
     return .equal(.key(lhs), .key(rhs))
 }
 
+@inlinable
 public func != (lhs: MDPredicateKey, rhs: MDPredicateKey) -> MDPredicateExpression {
     return .notEqual(.key(lhs), .key(rhs))
 }
 
+@inlinable
 public func < (lhs: MDPredicateKey, rhs: MDPredicateKey) -> MDPredicateExpression {
     return .lessThan(.key(lhs), .key(rhs))
 }
 
+@inlinable
 public func > (lhs: MDPredicateKey, rhs: MDPredicateKey) -> MDPredicateExpression {
     return .greaterThan(.key(lhs), .key(rhs))
 }
 
+@inlinable
 public func <= (lhs: MDPredicateKey, rhs: MDPredicateKey) -> MDPredicateExpression {
     return .lessThanOrEqualTo(.key(lhs), .key(rhs))
 }
 
+@inlinable
 public func >= (lhs: MDPredicateKey, rhs: MDPredicateKey) -> MDPredicateExpression {
     return .greaterThanOrEqualTo(.key(lhs), .key(rhs))
 }
 
+@inlinable
 public func == (lhs: MDPredicateKey, rhs: _OptionalNilComparisonType) -> MDPredicateExpression {
     return .equal(.key(lhs), .value(nil as MDData))
 }
 
+@inlinable
 public func != (lhs: MDPredicateKey, rhs: _OptionalNilComparisonType) -> MDPredicateExpression {
     return .notEqual(.key(lhs), .value(nil as MDData))
 }
 
+@inlinable
 public func == <T: MDDataConvertible>(lhs: MDPredicateKey, rhs: T) -> MDPredicateExpression {
     return .equal(.key(lhs), .value(rhs))
 }
 
+@inlinable
 public func != <T: MDDataConvertible>(lhs: MDPredicateKey, rhs: T) -> MDPredicateExpression {
     return .notEqual(.key(lhs), .value(rhs))
 }
 
+@inlinable
 public func < <T: MDDataConvertible>(lhs: MDPredicateKey, rhs: T) -> MDPredicateExpression {
     return .lessThan(.key(lhs), .value(rhs))
 }
 
+@inlinable
 public func > <T: MDDataConvertible>(lhs: MDPredicateKey, rhs: T) -> MDPredicateExpression {
     return .greaterThan(.key(lhs), .value(rhs))
 }
 
+@inlinable
 public func <= <T: MDDataConvertible>(lhs: MDPredicateKey, rhs: T) -> MDPredicateExpression {
     return .lessThanOrEqualTo(.key(lhs), .value(rhs))
 }
 
+@inlinable
 public func >= <T: MDDataConvertible>(lhs: MDPredicateKey, rhs: T) -> MDPredicateExpression {
     return .greaterThanOrEqualTo(.key(lhs), .value(rhs))
 }
 
+@inlinable
 public func == (lhs: _OptionalNilComparisonType, rhs: MDPredicateKey) -> MDPredicateExpression {
     return .equal(.value(nil as MDData), .key(rhs))
 }
 
+@inlinable
 public func != (lhs: _OptionalNilComparisonType, rhs: MDPredicateKey) -> MDPredicateExpression {
     return .notEqual(.value(nil as MDData), .key(rhs))
 }
 
+@inlinable
 public func == <T: MDDataConvertible>(lhs: T, rhs: MDPredicateKey) -> MDPredicateExpression {
     return .equal(.value(lhs), .key(rhs))
 }
 
+@inlinable
 public func != <T: MDDataConvertible>(lhs: T, rhs: MDPredicateKey) -> MDPredicateExpression {
     return .notEqual(.value(lhs), .key(rhs))
 }
 
+@inlinable
 public func < <T: MDDataConvertible>(lhs: T, rhs: MDPredicateKey) -> MDPredicateExpression {
     return .lessThan(.value(lhs), .key(rhs))
 }
 
+@inlinable
 public func > <T: MDDataConvertible>(lhs: T, rhs: MDPredicateKey) -> MDPredicateExpression {
     return .greaterThan(.value(lhs), .key(rhs))
 }
 
+@inlinable
 public func <= <T: MDDataConvertible>(lhs: T, rhs: MDPredicateKey) -> MDPredicateExpression {
     return .lessThanOrEqualTo(.value(lhs), .key(rhs))
 }
 
+@inlinable
 public func >= <T: MDDataConvertible>(lhs: T, rhs: MDPredicateKey) -> MDPredicateExpression {
     return .greaterThanOrEqualTo(.value(lhs), .key(rhs))
 }
 
+@inlinable
 public func ~= (lhs: MDPredicateKey, rhs: MDPredicateKey) -> MDPredicateExpression {
     return .containsIn(.key(rhs), .key(lhs))
 }
 
+@inlinable
 public func ~= <T: MDDataConvertible>(lhs: MDPredicateKey, rhs: T) -> MDPredicateExpression {
     return .containsIn(.value(rhs), .key(lhs))
 }
 
+@inlinable
 public func ~= <C: Collection>(lhs: C, rhs: MDPredicateKey) -> MDPredicateExpression where C.Element: MDDataConvertible {
     return .containsIn(.key(rhs), .value(MDData(lhs.map { $0.toMDData() })))
 }
 
+@inlinable
 public func ~= <T: MDDataConvertible>(lhs: Range<T>, rhs: MDPredicateKey) -> MDPredicateExpression {
     return .between(.key(rhs), .value(lhs.lowerBound), .value(lhs.upperBound))
 }
 
+@inlinable
 public func ~= <T: MDDataConvertible>(lhs: ClosedRange<T>, rhs: MDPredicateKey) -> MDPredicateExpression {
     return lhs.lowerBound <= rhs && rhs <= lhs.upperBound
 }
 
+@inlinable
 public func ~= <T: MDDataConvertible>(lhs: PartialRangeFrom<T>, rhs: MDPredicateKey) -> MDPredicateExpression {
     return lhs.lowerBound <= rhs
 }
 
+@inlinable
 public func ~= <T: MDDataConvertible>(lhs: PartialRangeUpTo<T>, rhs: MDPredicateKey) -> MDPredicateExpression {
     return rhs < lhs.upperBound
 }
 
+@inlinable
 public func ~= <T: MDDataConvertible>(lhs: PartialRangeThrough<T>, rhs: MDPredicateKey) -> MDPredicateExpression {
     return rhs <= lhs.upperBound
 }
 
+@inlinable
 public func =~ (lhs: MDPredicateKey, rhs: MDPredicateKey) -> MDPredicateExpression {
     return .containsIn(.key(lhs), .key(rhs))
 }
 
+@inlinable
 public func =~ <T: MDDataConvertible>(lhs: T, rhs: MDPredicateKey) -> MDPredicateExpression {
     return .containsIn(.value(lhs), .key(rhs))
 }
 
+@inlinable
 public func =~ <C: Collection>(lhs: MDPredicateKey, rhs: C) -> MDPredicateExpression where C.Element: MDDataConvertible {
     return .containsIn(.key(lhs), .value(MDData(rhs.map { $0.toMDData() })))
 }
 
+@inlinable
 public func =~ <T: MDDataConvertible>(lhs: MDPredicateKey, rhs: Range<T>) -> MDPredicateExpression {
     return .between(.key(lhs), .value(rhs.lowerBound), .value(rhs.upperBound))
 }
 
+@inlinable
 public func =~ <T: MDDataConvertible>(lhs: MDPredicateKey, rhs: ClosedRange<T>) -> MDPredicateExpression {
     return rhs.lowerBound <= lhs && lhs <= rhs.upperBound
 }
 
+@inlinable
 public func =~ <T: MDDataConvertible>(lhs: MDPredicateKey, rhs: PartialRangeFrom<T>) -> MDPredicateExpression {
     return rhs.lowerBound <= lhs
 }
 
+@inlinable
 public func =~ <T: MDDataConvertible>(lhs: MDPredicateKey, rhs: PartialRangeUpTo<T>) -> MDPredicateExpression {
     return lhs < rhs.upperBound
 }
 
+@inlinable
 public func =~ <T: MDDataConvertible>(lhs: MDPredicateKey, rhs: PartialRangeThrough<T>) -> MDPredicateExpression {
     return lhs <= rhs.upperBound
 }
 
+@inlinable
 public prefix func !(x: MDPredicateExpression) -> MDPredicateExpression {
     return .not(x)
 }
 
+@inlinable
 public func && (lhs: MDPredicateExpression, rhs: MDPredicateExpression) -> MDPredicateExpression {
     return .and([lhs, rhs])
 }
 
+@inlinable
 public func || (lhs: MDPredicateExpression, rhs: MDPredicateExpression) -> MDPredicateExpression {
     return .or([lhs, rhs])
 }

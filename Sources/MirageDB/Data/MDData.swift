@@ -23,6 +23,7 @@
 //  THE SOFTWARE.
 //
 
+@frozen
 public enum MDData: Hashable {
     
     case null

@@ -23,13 +23,16 @@
 //  THE SOFTWARE.
 //
 
+@frozen
 public struct MDPredicateBuilder {
     
+    @inlinable
     public init() {
         
     }
 }
 
+@frozen
 public enum MDPredicateKey {
     
     case id
@@ -43,10 +46,12 @@ public enum MDPredicateKey {
 
 extension MDPredicateBuilder {
     
+    @inlinable
     public var id: MDPredicateKey {
         return .id
     }
     
+    @inlinable
     public subscript(_ key: String) -> MDPredicateKey {
         return .key(key)
     }
