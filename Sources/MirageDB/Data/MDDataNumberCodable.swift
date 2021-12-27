@@ -34,7 +34,12 @@ extension MDData.Number: Encodable {
         case let .signed(number): try container.encode(number)
         case let .unsigned(number): try container.encode(number)
         case let .number(number): try container.encode(number)
-        case let .decimal(number): try container.encode(number)
+        case let .decimal(number):
+            if "\(type(of: encoder))" == "_BSONEncoder" {
+                try container.encode(BSON(number))
+            } else {
+                try container.encode(number)
+            }
         }
     }
 }
