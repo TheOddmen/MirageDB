@@ -47,6 +47,30 @@ extension MDData.Number: Encodable {
 extension MDData.Number: Decodable {
     
     @inlinable
+    static func _decode_number(_ value: BSON) -> MDData.Number? {
+        
+        switch value {
+        case let .int32(value): return .signed(Int64(value))
+        case let .int64(value): return .signed(value)
+        case let .double(value): return .number(value)
+        case let .decimal128(value):
+            
+            let str = value.description
+            
+            switch str {
+            case "Infinity": return .number(.infinity)
+            case "-Infinity": return .number(-.infinity)
+            case "NaN": return .number(.nan)
+            default:
+                guard let decimal = Decimal(string: str) else { return nil }
+                return .decimal(decimal)
+            }
+            
+        default: return nil
+        }
+    }
+    
+    @inlinable
     static func _decode_number(_ container: SingleValueDecodingContainer) -> MDData.Number? {
         
         if let double = try? container.decode(Double.self) {
@@ -81,6 +105,14 @@ extension MDData.Number: Decodable {
     public init(from decoder: Decoder) throws {
         
         let container = try decoder.singleValueContainer()
+        
+        if "\(type(of: decoder))" == "_BSONDecoder",
+            let value = try? container.decode(BSON.self),
+            let number = MDData.Number._decode_number(value) {
+            
+            self = number
+            return
+        }
         
         guard let number = MDData.Number._decode_number(container) else {
             
