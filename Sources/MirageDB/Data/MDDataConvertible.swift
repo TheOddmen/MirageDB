@@ -40,7 +40,7 @@ extension Optional: MDDataConvertible where Wrapped: MDDataConvertible {
     
     @inlinable
     public func toMDData() -> MDData {
-        return self?.toMDData() ?? nil
+        return self?.toMDData() ?? .null
     }
 }
 
