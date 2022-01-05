@@ -25,6 +25,6 @@
 
 let OBJECT_ID_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
 
-func objectIDGenerator() -> String {
+func generalObjectIDGenerator() -> String {
     return (0..<10).reduce(into: "") { str, _ in str.append(OBJECT_ID_CHARS.randomElement()!) }
 }

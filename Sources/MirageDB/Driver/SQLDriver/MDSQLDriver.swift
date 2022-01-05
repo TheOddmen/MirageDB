@@ -373,7 +373,7 @@ extension MDSQLDriver {
             let columns = upsert.compactMapValues { $0.sql_type }
             
             var _upsert = upsert
-            _upsert["id"] = .setOnInsert(objectIDGenerator())
+            _upsert["id"] = .setOnInsert(query.objectIDGenerator?() ?? generalObjectIDGenerator())
             _upsert["created_at"] = .setOnInsert(now)
             _upsert["updated_at"] = .set(now)
             
@@ -438,7 +438,7 @@ extension MDSQLDriver {
         let columns = data.compactMapValues { $0.sql_type }
         
         var _data = data.compactMapValues { $0.isNil ? nil : $0.toSQLData() }
-        _data["id"] = DBData(objectIDGenerator())
+        _data["id"] = DBData(generalObjectIDGenerator())
         _data["created_at"] = DBData(now)
         _data["updated_at"] = DBData(now)
         

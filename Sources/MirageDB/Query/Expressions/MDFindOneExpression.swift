@@ -36,6 +36,8 @@ public struct MDFindOneExpression: MDExpressionProtocol {
     var includes: Set<String> = []
     
     var returning: MDReturningOption = .after
+    
+    var objectIDGenerator: (() -> String)?
 }
 
 extension MDQuery {
@@ -71,6 +73,15 @@ extension MDFindOneExpression {
     
     public func delete() -> EventLoopFuture<MDObject?> {
         return self.connection.driver.findOneAndDelete(self)
+    }
+}
+
+extension MDFindOneExpression {
+    
+    public func objectID(with generator: @escaping () -> String) -> Self {
+        var result = self
+        result.objectIDGenerator = generator
+        return result
     }
 }
 

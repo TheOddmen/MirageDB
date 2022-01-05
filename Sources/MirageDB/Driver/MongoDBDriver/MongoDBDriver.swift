@@ -287,7 +287,7 @@ struct MongoDBDriver: MDDriver {
             let now = Date()
             
             var upsert = upsert
-            upsert["_id"] = .setOnInsert(objectIDGenerator())
+            upsert["_id"] = .setOnInsert(query.objectIDGenerator?() ?? generalObjectIDGenerator())
             upsert["created_at"] = .setOnInsert(now)
             upsert["updated_at"] = .set(now)
             
@@ -364,7 +364,7 @@ struct MongoDBDriver: MDDriver {
         let now = Date()
         
         var data = values
-        data["_id"] = MDData(objectIDGenerator())
+        data["_id"] = MDData(generalObjectIDGenerator())
         data["created_at"] = MDData(now)
         data["updated_at"] = MDData(now)
         
