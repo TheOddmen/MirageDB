@@ -60,10 +60,6 @@ extension MDFindExpression {
         return self.connection.driver.toArray(self)
     }
     
-    public func forEach(_ body: @escaping (MDObject) -> Void) -> EventLoopFuture<Void> {
-        return self.connection.driver.forEach(self, body)
-    }
-    
     public func forEach(_ body: @escaping (MDObject) throws -> Void) -> EventLoopFuture<Void> {
         return self.connection.driver.forEach(self, body)
     }
