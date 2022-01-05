@@ -106,6 +106,35 @@ class MongoDBTest: XCTestCase {
         }
     }
     
+    func testCustomObjectIDGenerator() throws {
+        
+        let OBJECT_ID_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789"
+        
+        func objectIDGenerator() -> String {
+            return (0..<10).reduce(into: "") { str, _ in str.append(OBJECT_ID_CHARS.randomElement()!) }
+        }
+        
+        do {
+            
+            let obj = try connection.query()
+                .findOne("testUpsertQuery")
+                .filter { $0["col"] == "text_1" }
+                .objectID(with: objectIDGenerator)
+                .upsert([
+                    "col": .set("text_1")
+                ]).wait()
+            
+            XCTAssertEqual(obj?.id?.count, 10)
+            XCTAssertEqual(obj?.id, obj?.id?.lowercased())
+            XCTAssertEqual(obj?["col"].string, "text_1")
+            
+        } catch {
+            
+            print(error)
+            throw error
+        }
+    }
+    
     func testSetNil() throws {
         
         do {
