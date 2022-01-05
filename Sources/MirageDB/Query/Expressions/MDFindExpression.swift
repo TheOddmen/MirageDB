@@ -37,7 +37,7 @@ public struct MDFindExpression: MDExpressionProtocol {
     
     var limit: Int = .max
     
-    var includes: Set<String> = []
+    var includes: Set<String>?
 }
 
 extension MDQuery {
@@ -116,13 +116,13 @@ extension MDFindExpression {
     
     public func includes(_ keys: String ...) -> Self {
         var result = self
-        result.includes = includes.union(keys)
+        result.includes = includes?.union(keys) ?? Set(keys)
         return result
     }
     
     public func includes<S: Sequence>(_ keys: S) -> Self where S.Element == String {
         var result = self
-        result.includes = includes.union(keys)
+        result.includes = includes?.union(keys) ?? Set(keys)
         return result
     }
 }

@@ -243,8 +243,8 @@ extension MDSQLDriver {
         if query.limit != .max {
             _query = _query.limit(query.limit)
         }
-        if !query.includes.isEmpty {
-            _query = _query.includes(query.includes.union(MDObject._default_fields))
+        if let includes = query.includes {
+            _query = _query.includes(includes.union(MDObject._default_fields))
         }
         
         return _query
@@ -324,8 +324,8 @@ extension MDSQLDriver {
             if !query.sort.isEmpty {
                 _query = _query.sort(query.sort.mapValues(DBSortOrderOption.init))
             }
-            if !query.includes.isEmpty {
-                _query = _query.includes(query.includes.union(MDObject._default_fields))
+            if let includes = query.includes {
+                _query = _query.includes(includes.union(MDObject._default_fields))
             }
             
             let now = Date()
@@ -333,6 +333,8 @@ extension MDSQLDriver {
             let columns = update.compactMapValues { $0.sql_type }
             
             var _update = update
+            _update["id"] = nil
+            _update["created_at"] = nil
             _update["updated_at"] = .set(now)
             
             return self.enforceFieldExists(query.connection, `class`, columns).flatMap {
@@ -364,8 +366,8 @@ extension MDSQLDriver {
             if !query.sort.isEmpty {
                 _query = _query.sort(query.sort.mapValues(DBSortOrderOption.init))
             }
-            if !query.includes.isEmpty {
-                _query = _query.includes(query.includes.union(MDObject._default_fields))
+            if let includes = query.includes {
+                _query = _query.includes(includes.union(MDObject._default_fields))
             }
             
             let now = Date()
@@ -401,8 +403,8 @@ extension MDSQLDriver {
             if !query.sort.isEmpty {
                 _query = _query.sort(query.sort.mapValues(DBSortOrderOption.init))
             }
-            if !query.includes.isEmpty {
-                _query = _query.includes(query.includes.union(MDObject._default_fields))
+            if let includes = query.includes {
+                _query = _query.includes(includes.union(MDObject._default_fields))
             }
             
             return _query.delete().flatMapThrowing { try $0.map(MDObject.init) }

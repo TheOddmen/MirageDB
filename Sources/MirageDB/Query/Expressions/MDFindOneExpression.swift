@@ -33,7 +33,7 @@ public struct MDFindOneExpression: MDExpressionProtocol {
     
     var sort: OrderedDictionary<String, MDSortOrderOption> = [:]
     
-    var includes: Set<String> = []
+    var includes: Set<String>?
     
     var returning: MDReturningOption = .after
     
@@ -113,13 +113,13 @@ extension MDFindOneExpression {
     
     public func includes(_ keys: String ...) -> Self {
         var result = self
-        result.includes = includes.union(keys)
+        result.includes = includes?.union(keys) ?? Set(keys)
         return result
     }
     
     public func includes<S: Sequence>(_ keys: S) -> Self where S.Element == String {
         var result = self
-        result.includes = includes.union(keys)
+        result.includes = includes?.union(keys) ?? Set(keys)
         return result
     }
     

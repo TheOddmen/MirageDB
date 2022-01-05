@@ -170,8 +170,8 @@ struct MongoDBDriver: MDDriver {
         if query.limit != .max {
             _query = _query.limit(query.limit)
         }
-        if !query.includes.isEmpty {
-            let projection = Dictionary(uniqueKeysWithValues: query.includes.union(MDObject._default_fields).map { ($0, 1) })
+        if let includes = query.includes {
+            let projection = Dictionary(uniqueKeysWithValues: includes.union(MDObject._default_fields).map { ($0, 1) })
             _query = _query.projection(BSONDocument(projection))
         }
         
@@ -223,8 +223,8 @@ struct MongoDBDriver: MDDriver {
             if !query.sort.isEmpty {
                 _query = _query.sort(query.sort.mapValues(DBMongoSortOrder.init))
             }
-            if !query.includes.isEmpty {
-                let projection = Dictionary(uniqueKeysWithValues: query.includes.union(MDObject._default_fields).map { ($0, 1) })
+            if let includes = query.includes {
+                let projection = Dictionary(uniqueKeysWithValues: includes.union(MDObject._default_fields).map { ($0, 1) })
                 _query = _query.projection(BSONDocument(projection))
             }
             
@@ -249,6 +249,8 @@ struct MongoDBDriver: MDDriver {
             let now = Date()
             
             var update = update
+            update["_id"] = nil
+            update["created_at"] = nil
             update["updated_at"] = .set(now)
             
             _query = try _query.update(update.toBSONDocument())
@@ -261,8 +263,8 @@ struct MongoDBDriver: MDDriver {
             if !query.sort.isEmpty {
                 _query = _query.sort(query.sort.mapValues(DBMongoSortOrder.init))
             }
-            if !query.includes.isEmpty {
-                let projection = Dictionary(uniqueKeysWithValues: query.includes.union(MDObject._default_fields).map { ($0, 1) })
+            if let includes = query.includes {
+                let projection = Dictionary(uniqueKeysWithValues: includes.union(MDObject._default_fields).map { ($0, 1) })
                 _query = _query.projection(BSONDocument(projection))
             }
             
@@ -302,8 +304,8 @@ struct MongoDBDriver: MDDriver {
             if !query.sort.isEmpty {
                 _query = _query.sort(query.sort.mapValues(DBMongoSortOrder.init))
             }
-            if !query.includes.isEmpty {
-                let projection = Dictionary(uniqueKeysWithValues: query.includes.union(MDObject._default_fields).map { ($0, 1) })
+            if let includes = query.includes {
+                let projection = Dictionary(uniqueKeysWithValues: includes.union(MDObject._default_fields).map { ($0, 1) })
                 _query = _query.projection(BSONDocument(projection))
             }
             
@@ -328,8 +330,8 @@ struct MongoDBDriver: MDDriver {
             if !query.sort.isEmpty {
                 _query = _query.sort(query.sort.mapValues(DBMongoSortOrder.init))
             }
-            if !query.includes.isEmpty {
-                let projection = Dictionary(uniqueKeysWithValues: query.includes.union(MDObject._default_fields).map { ($0, 1) })
+            if let includes = query.includes {
+                let projection = Dictionary(uniqueKeysWithValues: includes.union(MDObject._default_fields).map { ($0, 1) })
                 _query = _query.projection(BSONDocument(projection))
             }
             
