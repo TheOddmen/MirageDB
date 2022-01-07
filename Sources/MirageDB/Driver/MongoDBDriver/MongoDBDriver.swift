@@ -23,6 +23,8 @@
 //  THE SOFTWARE.
 //
 
+import MongoSwift
+
 extension MDObject {
     
     fileprivate static let _default_fields = ["_id", "created_at", "updated_at"]
@@ -380,7 +382,14 @@ extension MongoDBDriver {
     
     func createTable(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
         
-        return connection.connection.mongoQuery().createCollection(table).execute().map { _ in }
+        return connection.connection.mongoQuery().createCollection(table).execute().map { _ in }.flatMapErrorThrowing { error in
+            
+            if let error = error as? MongoError.CommandError, error.code == 48 { // Collection already exists
+                return
+            }
+            
+            throw error
+        }
     }
     
     func addColumns(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
