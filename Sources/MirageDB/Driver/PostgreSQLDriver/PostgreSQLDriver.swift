@@ -34,7 +34,6 @@ extension MDSQLDataType {
         case "CHARACTER VARYING(10)": self = .id
         case "BOOLEAN": self = .boolean
         case "TEXT": self = .string
-        case "INTEGER": self = .integer
         case "DOUBLE PRECISION": self = .number
         case "NUMERIC": self = .decimal
         case "TIMESTAMP WITHOUT TIME ZONE": self = .timestamp
@@ -48,7 +47,6 @@ extension MDSQLDataType {
         case .id: return "VARCHAR(10)"
         case .boolean: return "BOOLEAN"
         case .string: return "TEXT"
-        case .integer: return "INTEGER"
         case .number: return "DOUBLE PRECISION"
         case .decimal: return "NUMERIC"
         case .timestamp: return "TIMESTAMP"

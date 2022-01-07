@@ -31,8 +31,6 @@ public enum MDSQLDataType {
     
     case string
     
-    case integer
-    
     case number
     
     case decimal
