@@ -33,6 +33,4 @@ public enum MDError: Error {
     
     case invalidObjectId
     
-    case classNotSet
-    
 }

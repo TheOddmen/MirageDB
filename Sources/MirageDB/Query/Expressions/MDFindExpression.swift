@@ -27,7 +27,7 @@ public struct MDFindExpression: MDExpressionProtocol {
     
     public let connection: MDConnection
     
-    var `class`: String?
+    public let `class`: String
     
     var filters: [MDPredicateExpression] = []
     

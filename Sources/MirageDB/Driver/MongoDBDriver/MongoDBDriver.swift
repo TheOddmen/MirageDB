@@ -23,8 +23,6 @@
 //  THE SOFTWARE.
 //
 
-import SwiftBSON
-
 extension MDObject {
     
     fileprivate static let _default_fields = ["_id", "created_at", "updated_at"]
@@ -139,11 +137,9 @@ struct MongoDBDriver: MDDriver {
         
         do {
             
-            guard let `class` = query.class else { throw MDError.classNotSet }
-            
             let filter = try query.filterBSONDocument()
             
-            let _query = query.connection.connection.mongoQuery().collection(`class`)
+            let _query = query.connection.connection.mongoQuery().collection(query.class)
             
             return _query.count().filter(filter).execute()
             
@@ -155,11 +151,9 @@ struct MongoDBDriver: MDDriver {
     
     func _find(_ query: MDFindExpression) throws -> DBMongoFindExpression<BSONDocument> {
         
-        guard let `class` = query.class else { throw MDError.classNotSet }
-        
         let filter = try query.filterBSONDocument()
         
-        var _query = query.connection.connection.mongoQuery().collection(`class`).find().filter(filter)
+        var _query = query.connection.connection.mongoQuery().collection(query.class).find().filter(filter)
         
         if !query.sort.isEmpty {
             _query = _query.sort(query.sort.mapValues(DBMongoSortOrder.init))
@@ -182,11 +176,9 @@ struct MongoDBDriver: MDDriver {
         
         do {
             
-            guard let `class` = query.class else { throw MDError.classNotSet }
-            
             let _query = try self._find(query)
             
-            return _query.execute().toArray().flatMapThrowing { try $0.map { try MDObject(class: `class`, data: $0) } }
+            return _query.execute().toArray().flatMapThrowing { try $0.map { try MDObject(class: query.class, data: $0) } }
             
         } catch {
             
@@ -198,11 +190,9 @@ struct MongoDBDriver: MDDriver {
         
         do {
             
-            guard let `class` = query.class else { throw MDError.classNotSet }
-            
             let _query = try self._find(query)
             
-            return _query.execute().forEach { try body(MDObject(class: `class`, data: $0)) }
+            return _query.execute().forEach { try body(MDObject(class: query.class, data: $0)) }
             
         } catch {
             
@@ -214,11 +204,9 @@ struct MongoDBDriver: MDDriver {
         
         do {
             
-            guard let `class` = query.class else { throw MDError.classNotSet }
-            
             let filter = try query.filterBSONDocument()
             
-            var _query = query.connection.connection.mongoQuery().collection(`class`).findOne().filter(filter)
+            var _query = query.connection.connection.mongoQuery().collection(query.class).findOne().filter(filter)
             
             if !query.sort.isEmpty {
                 _query = _query.sort(query.sort.mapValues(DBMongoSortOrder.init))
@@ -228,7 +216,7 @@ struct MongoDBDriver: MDDriver {
                 _query = _query.projection(BSONDocument(projection))
             }
             
-            return _query.execute().flatMapThrowing { try $0.map { try MDObject(class: `class`, data: $0) } }
+            return _query.execute().flatMapThrowing { try $0.map { try MDObject(class: query.class, data: $0) } }
             
         } catch {
             
@@ -240,11 +228,9 @@ struct MongoDBDriver: MDDriver {
         
         do {
             
-            guard let `class` = query.class else { throw MDError.classNotSet }
-            
             let filter = try query.filterBSONDocument()
             
-            var _query = query.connection.connection.mongoQuery().collection(`class`).findOneAndUpdate().filter(filter)
+            var _query = query.connection.connection.mongoQuery().collection(query.class).findOneAndUpdate().filter(filter)
             
             let now = Date()
             
@@ -268,7 +254,7 @@ struct MongoDBDriver: MDDriver {
                 _query = _query.projection(BSONDocument(projection))
             }
             
-            return _query.execute().flatMapThrowing { try $0.map { try MDObject(class: `class`, data: $0) } }
+            return _query.execute().flatMapThrowing { try $0.map { try MDObject(class: query.class, data: $0) } }
             
         } catch {
             
@@ -280,11 +266,9 @@ struct MongoDBDriver: MDDriver {
         
         do {
             
-            guard let `class` = query.class else { throw MDError.classNotSet }
-            
             let filter = try query.filterBSONDocument()
             
-            var _query = query.connection.connection.mongoQuery().collection(`class`).findOneAndUpdate().filter(filter)
+            var _query = query.connection.connection.mongoQuery().collection(query.class).findOneAndUpdate().filter(filter)
             
             let now = Date()
             
@@ -309,7 +293,7 @@ struct MongoDBDriver: MDDriver {
                 _query = _query.projection(BSONDocument(projection))
             }
             
-            return _query.execute().flatMapThrowing { try $0.map { try MDObject(class: `class`, data: $0) } }
+            return _query.execute().flatMapThrowing { try $0.map { try MDObject(class: query.class, data: $0) } }
             
         } catch {
             
@@ -321,11 +305,9 @@ struct MongoDBDriver: MDDriver {
         
         do {
             
-            guard let `class` = query.class else { throw MDError.classNotSet }
-            
             let filter = try query.filterBSONDocument()
             
-            var _query = query.connection.connection.mongoQuery().collection(`class`).findOneAndDelete().filter(filter)
+            var _query = query.connection.connection.mongoQuery().collection(query.class).findOneAndDelete().filter(filter)
             
             if !query.sort.isEmpty {
                 _query = _query.sort(query.sort.mapValues(DBMongoSortOrder.init))
@@ -335,7 +317,7 @@ struct MongoDBDriver: MDDriver {
                 _query = _query.projection(BSONDocument(projection))
             }
             
-            return _query.execute().flatMapThrowing { try $0.map { try MDObject(class: `class`, data: $0) } }
+            return _query.execute().flatMapThrowing { try $0.map { try MDObject(class: query.class, data: $0) } }
             
         } catch {
             
@@ -347,11 +329,9 @@ struct MongoDBDriver: MDDriver {
         
         do {
             
-            guard let `class` = query.class else { throw MDError.classNotSet }
-            
             let filter = try query.filterBSONDocument()
             
-            let _query = query.connection.connection.mongoQuery().collection(`class`)
+            let _query = query.connection.connection.mongoQuery().collection(query.class)
             
             return _query.deleteMany().filter(filter).execute().map { $0?.deletedCount }
             

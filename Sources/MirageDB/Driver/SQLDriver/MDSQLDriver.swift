@@ -200,37 +200,26 @@ extension MDSQLDriver {
     
     func count(_ query: MDFindExpression) -> EventLoopFuture<Int> {
         
-        do {
+        var _query = query.connection.connection.query().find(query.class)
+        
+        _query = _query.filter(query.filters.map(DBPredicateExpression.init))
+        
+        return self.checkTableExists(query.connection, query.class).flatMap { tableExists in
             
-            guard let `class` = query.class else { throw MDError.classNotSet }
-            
-            var _query = query.connection.connection.query().find(`class`)
-            
-            _query = _query.filter(query.filters.map(DBPredicateExpression.init))
-            
-            return self.checkTableExists(query.connection, `class`).flatMap { tableExists in
+            if tableExists {
                 
-                if tableExists {
-                    
-                    return _query.count()
-                    
-                } else {
-                    
-                    return query.connection.eventLoopGroup.next().makeSucceededFuture(0)
-                }
+                return _query.count()
+                
+            } else {
+                
+                return query.connection.eventLoopGroup.next().makeSucceededFuture(0)
             }
-            
-        } catch {
-            
-            return query.connection.eventLoopGroup.next().makeFailedFuture(error)
         }
     }
     
     func _find(_ query: MDFindExpression) throws -> DBFindExpression {
         
-        guard let `class` = query.class else { throw MDError.classNotSet }
-        
-        var _query = query.connection.connection.query().find(`class`)
+        var _query = query.connection.connection.query().find(query.class)
         
         _query = _query.filter(query.filters.map(DBPredicateExpression.init))
         
@@ -254,11 +243,9 @@ extension MDSQLDriver {
         
         do {
             
-            guard let `class` = query.class else { throw MDError.classNotSet }
-            
             let _query = try self._find(query)
             
-            return self.checkTableExists(query.connection, `class`).flatMap { tableExists in
+            return self.checkTableExists(query.connection, query.class).flatMap { tableExists in
                 
                 if tableExists {
                     
@@ -280,11 +267,9 @@ extension MDSQLDriver {
         
         do {
             
-            guard let `class` = query.class else { throw MDError.classNotSet }
-            
             let _query = try self._find(query)
             
-            return self.checkTableExists(query.connection, `class`).flatMap { tableExists in
+            return self.checkTableExists(query.connection, query.class).flatMap { tableExists in
                 
                 if tableExists {
                     
@@ -308,129 +293,93 @@ extension MDSQLDriver {
     
     func findOneAndUpdate(_ query: MDFindOneExpression, _ update: [String : MDUpdateOption]) -> EventLoopFuture<MDObject?> {
         
-        do {
+        var _query = query.connection.connection.query().findOne(query.class)
+        
+        _query = _query.filter(query.filters.map(DBPredicateExpression.init))
+        
+        switch query.returning {
+        case .before: _query = _query.returning(.before)
+        case .after: _query = _query.returning(.after)
+        }
+        
+        if !query.sort.isEmpty {
+            _query = _query.sort(query.sort.mapValues(DBSortOrderOption.init))
+        }
+        if let includes = query.includes {
+            _query = _query.includes(includes.union(MDObject._default_fields))
+        }
+        
+        let now = Date()
+        
+        let columns = update.compactMapValues { $0.sql_type }
+        
+        var _update = update
+        _update["id"] = nil
+        _update["created_at"] = nil
+        _update["updated_at"] = .set(now)
+        
+        return self.enforceFieldExists(query.connection, query.class, columns).flatMap {
             
-            guard let `class` = query.class else { throw MDError.classNotSet }
-            
-            var _query = query.connection.connection.query().findOne(`class`)
-            
-            _query = _query.filter(query.filters.map(DBPredicateExpression.init))
-            
-            switch query.returning {
-            case .before: _query = _query.returning(.before)
-            case .after: _query = _query.returning(.after)
-            }
-            
-            if !query.sort.isEmpty {
-                _query = _query.sort(query.sort.mapValues(DBSortOrderOption.init))
-            }
-            if let includes = query.includes {
-                _query = _query.includes(includes.union(MDObject._default_fields))
-            }
-            
-            let now = Date()
-            
-            let columns = update.compactMapValues { $0.sql_type }
-            
-            var _update = update
-            _update["id"] = nil
-            _update["created_at"] = nil
-            _update["updated_at"] = .set(now)
-            
-            return self.enforceFieldExists(query.connection, `class`, columns).flatMap {
-                
-                _query.update(_update.mapValues(DBUpdateOption.init)).flatMapThrowing { try $0.map(MDObject.init) }
-            }
-            
-        } catch {
-            
-            return query.connection.eventLoopGroup.next().makeFailedFuture(error)
+            _query.update(_update.mapValues(DBUpdateOption.init)).flatMapThrowing { try $0.map(MDObject.init) }
         }
     }
     
     func findOneAndUpsert(_ query: MDFindOneExpression, _ upsert: [String : MDUpsertOption]) -> EventLoopFuture<MDObject?> {
         
-        do {
+        var _query = query.connection.connection.query().findOne(query.class)
+        
+        _query = _query.filter(query.filters.map(DBPredicateExpression.init))
+        
+        switch query.returning {
+        case .before: _query = _query.returning(.before)
+        case .after: _query = _query.returning(.after)
+        }
+        
+        if !query.sort.isEmpty {
+            _query = _query.sort(query.sort.mapValues(DBSortOrderOption.init))
+        }
+        if let includes = query.includes {
+            _query = _query.includes(includes.union(MDObject._default_fields))
+        }
+        
+        let now = Date()
+        
+        let columns = upsert.compactMapValues { $0.sql_type }
+        
+        var _upsert = upsert
+        _upsert["id"] = .setOnInsert(query.objectIDGenerator?() ?? generalObjectIDGenerator())
+        _upsert["created_at"] = .setOnInsert(now)
+        _upsert["updated_at"] = .set(now)
+        
+        return self.enforceFieldExists(query.connection, query.class, columns).flatMap {
             
-            guard let `class` = query.class else { throw MDError.classNotSet }
-            
-            var _query = query.connection.connection.query().findOne(`class`)
-            
-            _query = _query.filter(query.filters.map(DBPredicateExpression.init))
-            
-            switch query.returning {
-            case .before: _query = _query.returning(.before)
-            case .after: _query = _query.returning(.after)
-            }
-            
-            if !query.sort.isEmpty {
-                _query = _query.sort(query.sort.mapValues(DBSortOrderOption.init))
-            }
-            if let includes = query.includes {
-                _query = _query.includes(includes.union(MDObject._default_fields))
-            }
-            
-            let now = Date()
-            
-            let columns = upsert.compactMapValues { $0.sql_type }
-            
-            var _upsert = upsert
-            _upsert["id"] = .setOnInsert(query.objectIDGenerator?() ?? generalObjectIDGenerator())
-            _upsert["created_at"] = .setOnInsert(now)
-            _upsert["updated_at"] = .set(now)
-            
-            return self.enforceFieldExists(query.connection, `class`, columns).flatMap {
-                
-                _query.upsert(_upsert.mapValues(DBUpsertOption.init)).flatMapThrowing { try $0.map(MDObject.init) }
-            }
-            
-        } catch {
-            
-            return query.connection.eventLoopGroup.next().makeFailedFuture(error)
+            _query.upsert(_upsert.mapValues(DBUpsertOption.init)).flatMapThrowing { try $0.map(MDObject.init) }
         }
     }
     
     func findOneAndDelete(_ query: MDFindOneExpression) -> EventLoopFuture<MDObject?> {
         
-        do {
-            
-            guard let `class` = query.class else { throw MDError.classNotSet }
-            
-            var _query = query.connection.connection.query().findOne(`class`)
-            
-            _query = _query.filter(query.filters.map(DBPredicateExpression.init))
-            
-            if !query.sort.isEmpty {
-                _query = _query.sort(query.sort.mapValues(DBSortOrderOption.init))
-            }
-            if let includes = query.includes {
-                _query = _query.includes(includes.union(MDObject._default_fields))
-            }
-            
-            return _query.delete().flatMapThrowing { try $0.map(MDObject.init) }
-            
-        } catch {
-            
-            return query.connection.eventLoopGroup.next().makeFailedFuture(error)
+        var _query = query.connection.connection.query().findOne(query.class)
+        
+        _query = _query.filter(query.filters.map(DBPredicateExpression.init))
+        
+        if !query.sort.isEmpty {
+            _query = _query.sort(query.sort.mapValues(DBSortOrderOption.init))
         }
+        if let includes = query.includes {
+            _query = _query.includes(includes.union(MDObject._default_fields))
+        }
+        
+        return _query.delete().flatMapThrowing { try $0.map(MDObject.init) }
     }
     
     func deleteAll(_ query: MDFindExpression) -> EventLoopFuture<Int?> {
         
-        do {
-            
-            guard let `class` = query.class else { throw MDError.classNotSet }
-            
-            var _query = query.connection.connection.query().find(`class`)
-            
-            _query = _query.filter(query.filters.map(DBPredicateExpression.init))
-            
-            return _query.delete()
-            
-        } catch {
-            
-            return query.connection.eventLoopGroup.next().makeFailedFuture(error)
-        }
+        var _query = query.connection.connection.query().find(query.class)
+        
+        _query = _query.filter(query.filters.map(DBPredicateExpression.init))
+        
+        return _query.delete()
     }
     
     func insert(_ connection: MDConnection, _ class: String, _ data: [String: MDData]) -> EventLoopFuture<MDObject> {
