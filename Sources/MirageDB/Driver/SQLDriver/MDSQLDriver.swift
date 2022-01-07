@@ -51,7 +51,9 @@ extension MDData {
         case .string: return .string
         case let .number(value):
             switch value {
-            case .signed, .unsigned, .number: return .number
+            case .signed: return .number
+            case .unsigned: return .number
+            case .number: return .number
             case .decimal: return .decimal
             }
         case .timestamp: return .timestamp
