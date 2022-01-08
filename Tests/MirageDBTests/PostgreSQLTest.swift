@@ -111,7 +111,7 @@ class PostgreSQLTest: XCTestCase {
         do {
             
             let obj = try connection.query()
-                .findOne("testUpsertQuery")
+                .findOne("testCustomObjectIDGenerator")
                 .filter { $0["col"] == "text_1" }
                 .objectID(with: objectIDGenerator)
                 .upsert([
