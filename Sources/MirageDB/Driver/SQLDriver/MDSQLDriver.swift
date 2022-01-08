@@ -396,7 +396,7 @@ extension MDSQLDriver {
         return _query.delete()
     }
     
-    func insert(_ connection: MDConnection, _ class: String, _ data: [String: MDData]) -> EventLoopFuture<MDObject> {
+    func _insert(_ connection: MDConnection, _ class: String, _ data: [String: MDData]) -> EventLoopFuture<MDObject> {
         
         let now = Date()
         
@@ -410,6 +410,19 @@ extension MDSQLDriver {
         return self.enforceFieldExists(connection, `class`, columns).flatMap {
             
             connection.connection.query().insert(`class`, _data).flatMapThrowing { try MDObject($0) }
+        }
+    }
+    
+    func insert(_ connection: MDConnection, _ class: String, _ values: [String: MDData]) -> EventLoopFuture<MDObject> {
+        
+        self._insert(connection, `class`, values).flatMapError { error in
+            
+            if let error = error as? Database.Error, error == .duplicatedPrimaryKey {
+                
+                return self.insert(connection, `class`, values)
+            }
+            
+            return connection.eventLoopGroup.next().makeFailedFuture(error)
         }
     }
     
