@@ -23,7 +23,7 @@
 //  THE SOFTWARE.
 //
 
-public enum MDError: Error {
+public enum MDError: Error, Hashable {
     
     case unknown
     

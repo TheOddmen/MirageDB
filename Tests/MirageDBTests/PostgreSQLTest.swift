@@ -129,6 +129,39 @@ class PostgreSQLTest: XCTestCase {
         }
     }
     
+    func testDuplicatedObjectID() throws {
+        
+        var counter = 0
+        
+        func objectIDGenerator() -> String {
+            counter += 1
+            return "\(counter / 2)"
+        }
+        
+        do {
+            
+            for _ in 0..<7 {
+                
+                _ = try connection.query()
+                    .findOne("testDuplicatedObjectID")
+                    .filter { $0["col"] != "text_1" }
+                    .objectID(with: objectIDGenerator)
+                    .upsert([
+                        "col": .set("text_1")
+                    ]).wait()
+            }
+            
+            let list = try connection.query().find("testDuplicatedObjectID").toArray().wait()
+            
+            XCTAssertEqual(Set(list.compactMap { $0.id }), ["0", "1", "2", "3", "4", "5", "6"])
+            
+        } catch {
+            
+            print(error)
+            throw error
+        }
+    }
+    
     func testSetNil() throws {
         
         do {

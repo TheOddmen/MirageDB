@@ -325,7 +325,7 @@ extension MDSQLDriver {
         }
     }
     
-    func findOneAndUpsert(_ query: MDFindOneExpression, _ upsert: [String : MDUpsertOption]) -> EventLoopFuture<MDObject?> {
+    func _findOneAndUpsert(_ query: MDFindOneExpression, _ upsert: [String : MDUpsertOption]) -> EventLoopFuture<MDObject?> {
         
         var _query = query.connection.connection.query().findOne(query.class)
         
@@ -355,6 +355,19 @@ extension MDSQLDriver {
         return self.enforceFieldExists(query.connection, query.class, columns).flatMap {
             
             _query.upsert(_upsert.mapValues(DBUpsertOption.init)).flatMapThrowing { try $0.map(MDObject.init) }
+        }
+    }
+    
+    func findOneAndUpsert(_ query: MDFindOneExpression, _ upsert: [String : MDUpsertOption]) -> EventLoopFuture<MDObject?> {
+        
+        self._findOneAndUpsert(query, upsert).flatMapError { error in
+            
+            if let error = error as? Database.Error, error == .duplicatedPrimaryKey {
+                
+                return self.findOneAndUpsert(query, upsert)
+            }
+            
+            return query.connection.eventLoopGroup.next().makeFailedFuture(error)
         }
     }
     

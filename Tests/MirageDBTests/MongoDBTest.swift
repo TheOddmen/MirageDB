@@ -141,7 +141,7 @@ class MongoDBTest: XCTestCase {
         
         func objectIDGenerator() -> String {
             counter += 1
-            return "\((counter * 3) % 7)"
+            return "\(counter / 2)"
         }
         
         do {
