@@ -264,7 +264,7 @@ struct MongoDBDriver: MDDriver {
         }
     }
     
-    func findOneAndUpsert(_ query: MDFindOneExpression, _ upsert: [String : MDUpsertOption]) -> EventLoopFuture<MDObject?> {
+    func _findOneAndUpsert(_ query: MDFindOneExpression, _ upsert: [String : MDUpsertOption]) -> EventLoopFuture<MDObject?> {
         
         do {
             
@@ -298,6 +298,20 @@ struct MongoDBDriver: MDDriver {
             return _query.execute().flatMapThrowing { try $0.map { try MDObject(class: query.class, data: $0) } }
             
         } catch {
+            
+            return query.connection.eventLoopGroup.next().makeFailedFuture(error)
+        }
+    }
+    
+    func findOneAndUpsert(_ query: MDFindOneExpression, _ upsert: [String : MDUpsertOption]) -> EventLoopFuture<MDObject?> {
+        
+        self._findOneAndUpsert(query, upsert).flatMapError { error in
+            
+            if let error = error as? MongoError.CommandError,
+               error.code == 11000 && error.message.contains(" index: _id_ ") {
+                
+                return self.findOneAndUpsert(query, upsert)
+            }
             
             return query.connection.eventLoopGroup.next().makeFailedFuture(error)
         }
@@ -343,7 +357,7 @@ struct MongoDBDriver: MDDriver {
         }
     }
     
-    func insert(_ connection: MDConnection, _ class: String, _ values: [String: MDData]) -> EventLoopFuture<MDObject> {
+    func _insert(_ connection: MDConnection, _ class: String, _ values: [String: MDData]) -> EventLoopFuture<MDObject> {
         
         let now = Date()
         
@@ -370,6 +384,21 @@ struct MongoDBDriver: MDDriver {
                     data: values
                 )
             }
+    }
+    
+    func insert(_ connection: MDConnection, _ class: String, _ values: [String: MDData]) -> EventLoopFuture<MDObject> {
+        
+        self._insert(connection, `class`, values).flatMapError { error in
+            
+            if let error = error as? MongoError.WriteError,
+               let writeFailure = error.writeFailure,
+               writeFailure.code == 11000 && writeFailure.message.contains(" index: _id_ ") {
+                
+                return self.insert(connection, `class`, values)
+            }
+            
+            return connection.eventLoopGroup.next().makeFailedFuture(error)
+        }
     }
     
     func withTransaction<T>(_ connection: MDConnection, _ transactionBody: @escaping () throws -> EventLoopFuture<T>) -> EventLoopFuture<T> {
