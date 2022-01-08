@@ -381,9 +381,6 @@ extension MDData._Decoder: SingleValueDecodingContainer {
         case is String.Type: return try self._decode(String.self) as! T
         case is UUID.Type: return try self._decode(UUID.self) as! T
         case is Date.Type: return try self._decode(Date.self) as! T
-        case is Json.Type:
-            guard let json = Json(value) else { throw MDError.unsupportedType }
-            return json as! T
         default: throw Database.Error.unsupportedType
         }
     }

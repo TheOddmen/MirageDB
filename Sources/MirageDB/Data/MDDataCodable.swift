@@ -76,6 +76,11 @@ extension MDData: Encodable {
             var container = encoder.singleValueContainer()
             try container.encode(value)
             
+        case let .binary(value):
+            
+            var container = encoder.singleValueContainer()
+            try container.encode(value)
+            
         case let .array(value):
             
             var container = encoder.unkeyedContainer()
@@ -121,6 +126,11 @@ extension MDData: Decodable {
         
         if let timestamp = try? container.decode(Date.self) {
             self = .timestamp(timestamp)
+            return
+        }
+        
+        if let data = try? container.decode(Data.self) {
+            self = .binary(data)
             return
         }
         

@@ -37,6 +37,7 @@ extension MDSQLDataType {
         case "DOUBLE PRECISION": self = .number
         case "NUMERIC": self = .decimal
         case "TIMESTAMP WITHOUT TIME ZONE": self = .timestamp
+        case "BYTEA": self = .binary
         case "JSONB": self = .json
         default: return nil
         }
@@ -50,6 +51,7 @@ extension MDSQLDataType {
         case .number: return "DOUBLE PRECISION"
         case .decimal: return "NUMERIC"
         case .timestamp: return "TIMESTAMP"
+        case .binary: return "BYTEA"
         case .json: return "JSONB"
         }
     }

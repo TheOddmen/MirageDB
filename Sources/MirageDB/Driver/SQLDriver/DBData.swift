@@ -66,6 +66,13 @@ private func decodeDate(_ obj: [String: DBData]) -> Date? {
     return Date(timeIntervalSince1970: Double(millis) / 1000)
 }
 
+private func decodeBinary(_ obj: [String: DBData]) -> Data? {
+    guard obj.count == 1 else { return nil }
+    guard obj.keys.first == "$binary" else { return nil }
+    guard let value = obj["base64"]?.string else { return nil }
+    return Data(base64Encoded: value)
+}
+
 extension MDData.Number {
     
     fileprivate init(_ value: DBData.Number) {
@@ -85,6 +92,7 @@ extension MDData {
         "$numberLong": { decodeInt64($0).map(MDData.init) },
         "$numberDouble": { decodeDouble($0).map(MDData.init) },
         "$numberDecimal": { decodeDecimal($0).map(MDData.init) },
+        "$binary": { decodeBinary($0).map(MDData.init) },
         "$date": { decodeDate($0).map(MDData.init) },
     ]
     
@@ -126,6 +134,7 @@ extension MDData {
             case let .decimal(value): return ["$numberDecimal": "\(value)"]
             }
         case let .timestamp(value): return ["$date": ["$numberLong": "\(Int64(value.timeIntervalSince1970 * 1000))"]]
+        case let .binary(value): return ["$binary": ["base64": DBData(value.base64EncodedString()), "subType": "00"]]
         case let .array(value): return DBData(value.map { $0.toExtendedJSON() })
         case let .dictionary(value): return DBData(value.mapValues { $0.toExtendedJSON() })
         }
@@ -141,6 +150,7 @@ extension MDData {
         case let .string(value): self.init(value)
         case let .number(value): self = .number(Number(value))
         case let .timestamp(value): self.init(value)
+        case let .binary(value): self.init(value)
         case let .array(value): try self.init(value.map(MDData.init(fromExtendedJSON:)))
         case let .dictionary(value): try self.init(value.mapValues(MDData.init(fromExtendedJSON:)))
         default: throw MDError.unsupportedType
@@ -160,6 +170,7 @@ extension MDData {
             case let .decimal(value): return DBData(value)
             }
         case let .timestamp(value): return DBData(value)
+        case let .binary(value): return DBData(value)
         case let .array(value): return DBData(value.map { $0.toExtendedJSON() })
         case let .dictionary(value): return DBData(value.mapValues { $0.toExtendedJSON() })
         }

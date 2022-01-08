@@ -23,26 +23,11 @@
 //  THE SOFTWARE.
 //
 
-extension MDData {
+extension MDData.Number {
     
     @inlinable
-    public init(_ json: Json) {
+    public init(_ json: Json.Number) {
         switch json {
-        case .null: self = nil
-        case let .boolean(value): self = MDData(value)
-        case let .string(value): self = MDData(value)
-        case let .number(value): self = MDData(value.doubleValue)
-        case let .array(value): self = MDData(value.map { MDData($0) })
-        case let .dictionary(value): self = MDData(value.mapValues { MDData($0) })
-        }
-    }
-}
-
-extension Json.Number {
-    
-    @inlinable
-    public init(_ value: MDData.Number) {
-        switch value {
         case let .signed(value): self.init(value)
         case let .unsigned(value): self.init(value)
         case let .number(value): self.init(value)
@@ -51,33 +36,17 @@ extension Json.Number {
     }
 }
 
-extension Json {
+extension MDData {
     
     @inlinable
-    public init?(_ value: MDData) {
-        switch value {
+    public init(_ json: Json) {
+        switch json {
         case .null: self = nil
-        case let .boolean(value): self.init(value)
-        case let .string(value): self.init(value)
+        case let .boolean(value): self = MDData(value)
+        case let .string(value): self = MDData(value)
         case let .number(value): self = .number(Number(value))
-        case let .timestamp(value):
-            
-            let formatter = ISO8601DateFormatter()
-            formatter.formatOptions = .withInternetDateTime
-            
-            self.init(formatter.string(from: value))
-            
-        case let .array(value):
-            
-            let array = value.compactMap(Json.init)
-            guard array.count == value.count else { return nil }
-            self.init(array)
-            
-        case let .dictionary(value):
-            
-            let dictionary = value.compactMapValues(Json.init)
-            guard dictionary.count == value.count else { return nil }
-            self.init(dictionary)
+        case let .array(value): self = MDData(value.map { MDData($0) })
+        case let .dictionary(value): self = MDData(value.mapValues { MDData($0) })
         }
     }
 }

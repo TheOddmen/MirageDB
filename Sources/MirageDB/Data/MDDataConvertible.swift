@@ -132,6 +132,30 @@ extension Date: MDDataConvertible {
     }
 }
 
+extension Data: MDDataConvertible {
+    
+    @inlinable
+    public func toMDData() -> MDData {
+        return .binary(self)
+    }
+}
+
+extension ByteBuffer: MDDataConvertible {
+    
+    @inlinable
+    public func toMDData() -> MDData {
+        return .binary(self.data)
+    }
+}
+
+extension ByteBufferView: MDDataConvertible {
+    
+    @inlinable
+    public func toMDData() -> MDData {
+        return .binary(Data(self))
+    }
+}
+
 extension Array: MDDataConvertible where Element: MDDataConvertible {
     
     @inlinable

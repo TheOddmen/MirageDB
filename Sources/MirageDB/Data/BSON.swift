@@ -59,6 +59,7 @@ extension MDData {
         case let .double(value): self.init(value)
         case let .string(value): self.init(value)
         case let .objectID(value): self.init(value.hex)
+        case let .binary(value): self.init(value.data)
         case let .array(value): try self.init(value.map(MDData.init))
         case let .document(value): try self.init(Dictionary(value))
         default: throw MDError.unsupportedType
@@ -89,6 +90,7 @@ extension MDData: BSONConvertible {
         case let .string(value): return BSON(value)
         case let .number(value): return BSON(value)
         case let .timestamp(value): return BSON(value)
+        case let .binary(value): return BSON(value)
         case let .array(value): return BSON(value.map { $0.toBSON() })
         case let .dictionary(value): return BSON(value.mapValues { $0.toBSON() })
         }

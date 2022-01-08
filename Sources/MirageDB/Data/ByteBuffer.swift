@@ -1,5 +1,5 @@
 //
-//  MDSQLDataType.swift
+//  ByteBuffer.swift
 //
 //  The MIT License
 //  Copyright (c) 2021 - 2022 The Oddmen Technology Limited. All rights reserved.
@@ -23,21 +23,10 @@
 //  THE SOFTWARE.
 //
 
-public enum MDSQLDataType {
+extension ByteBuffer {
     
-    case id
-    
-    case boolean
-    
-    case string
-    
-    case number
-    
-    case decimal
-    
-    case timestamp
-    
-    case binary
-    
-    case json
+    @inlinable
+    var data: Data {
+        return self.getData(at: self.readerIndex, length: self.readableBytes) ?? Data()
+    }
 }

@@ -36,6 +36,8 @@ public enum MDData: Hashable {
     
     case timestamp(Date)
     
+    case binary(Data)
+    
     case array([MDData])
     
     case dictionary([String: MDData])
@@ -81,6 +83,21 @@ extension MDData {
     @inlinable
     public init(_ value: Date) {
         self = .timestamp(value)
+    }
+    
+    @inlinable
+    public init(_ binary: Data) {
+        self = .binary(binary)
+    }
+    
+    @inlinable
+    public init(_ binary: ByteBuffer) {
+        self = .binary(binary.data)
+    }
+    
+    @inlinable
+    public init(_ binary: ByteBufferView) {
+        self = .binary(Data(binary))
     }
     
     @inlinable
@@ -175,6 +192,7 @@ extension MDData: CustomStringConvertible {
         case let .string(value): return "\"\(value.escaped(asASCII: false))\""
         case let .number(value): return "\(value)"
         case let .timestamp(value): return "\(value)"
+        case let .binary(value): return "\(value)"
         case let .array(value): return "\(value)"
         case let .dictionary(value): return "\(value)"
         }

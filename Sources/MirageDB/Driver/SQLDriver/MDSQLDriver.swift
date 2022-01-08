@@ -57,6 +57,7 @@ extension MDData {
             case .decimal: return .decimal
             }
         case .timestamp: return .timestamp
+        case .binary: return .binary
         case .array: return .json
         case .dictionary: return .json
         }
