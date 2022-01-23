@@ -141,7 +141,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        swift_version: [main]
+        swift_version: [5.6, main]
         distro: [bionic, focal]
     steps:
     - uses: actions/checkout@v1
