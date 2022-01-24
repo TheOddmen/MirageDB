@@ -188,11 +188,33 @@ extension MDSQLDriver {
                     return connection.eventLoopGroup.next().makeSucceededVoidFuture()
                 }
                 
-                return self.addColumns(connection, table, columns)
+                connection.logger.debug("Generating columns for \(table)")
+                
+                let result = self.addColumns(connection, table, columns)
+                
+                result.whenComplete { result in
+                    switch result {
+                    case .success: connection.logger.debug("Generate columns for \(table) completed.")
+                    case .failure: connection.logger.debug("Generate columns for \(table) failed.")
+                    }
+                }
+                
+                return result
                 
             } else {
                 
-                return self.createTable(connection, table, columns)
+                connection.logger.debug("Generating table \(table)")
+                
+                let result = self.createTable(connection, table, columns)
+                
+                result.whenComplete { result in
+                    switch result {
+                    case .success: connection.logger.debug("Generate table \(table) completed.")
+                    case .failure: connection.logger.debug("Generate table \(table) failed.")
+                    }
+                }
+                
+                return result
             }
         }
     }
