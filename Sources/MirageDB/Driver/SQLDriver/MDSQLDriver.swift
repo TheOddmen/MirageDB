@@ -35,10 +35,23 @@ protocol MDSQLDriver: MDDriver {
 extension MDSQLDriver {
     
     func createTable(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
+        
         var columns = columns
         columns["created_at"] = .timestamp
         columns["updated_at"] = .timestamp
-        return self._createTable(connection, table, columns)
+        
+        connection.logger.debug("Generating table \(table) if necessary.")
+        
+        let result = self._createTable(connection, table, columns)
+        
+        result.whenComplete { result in
+            switch result {
+            case .success: connection.logger.debug("Generate table \(table) completed.")
+            case let .failure(error): connection.logger.debug("Generate table \(table) failed. Error: \(error)")
+            }
+        }
+        
+        return result
     }
 }
 
@@ -188,7 +201,18 @@ extension MDSQLDriver {
                     return connection.eventLoopGroup.next().makeSucceededVoidFuture()
                 }
                 
-                return self.addColumns(connection, table, columns)
+                connection.logger.debug("Generating columns for table \(table) if necessary.")
+                
+                let result = self.addColumns(connection, table, columns)
+                
+                result.whenComplete { result in
+                    switch result {
+                    case .success: connection.logger.debug("Generate columns for table \(table) completed.")
+                    case let .failure(error): connection.logger.debug("Generate columns for table \(table) failed. Error: \(error)")
+                    }
+                }
+                
+                return result
                 
             } else {
                 
@@ -199,7 +223,7 @@ extension MDSQLDriver {
                 result.whenComplete { result in
                     switch result {
                     case .success: connection.logger.debug("Generate table \(table) completed.")
-                    case .failure: connection.logger.debug("Generate table \(table) failed.")
+                    case let .failure(error): connection.logger.debug("Generate table \(table) failed. Error: \(error)")
                     }
                 }
                 
