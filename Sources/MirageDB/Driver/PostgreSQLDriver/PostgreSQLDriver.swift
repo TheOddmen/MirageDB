@@ -63,13 +63,22 @@ extension PostgreSQLDriver {
         
         do {
             
-            guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
+            guard let _connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
             
             let list: [SQLRaw] = ["id VARCHAR(10) NOT NULL PRIMARY KEY"] + columns.map { "\(identifier: $0.key) \($0.value.postgresType)" }
             
             let sql: SQLRaw = "CREATE TABLE IF NOT EXISTS \(identifier: table) (\(list.joined(separator: ",")))"
             
-            return connection.execute(sql).map { _ in }
+            return _connection.execute(sql)
+                .map { _ in }
+                .flatMapError { error in
+                    
+                    if "\(error)".starts(with: "server: duplicate key value violates unique constraint \"pg_type_typname_nsp_index\" (_bt_check_unique)") {
+                        return self._createTable(connection, table, columns)
+                    }
+                    
+                    return _connection.eventLoopGroup.next().makeFailedFuture(error)
+                }
             
         } catch {
             
