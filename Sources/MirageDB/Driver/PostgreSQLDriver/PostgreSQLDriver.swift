@@ -23,6 +23,8 @@
 //  THE SOFTWARE.
 //
 
+import PostgresNIO
+
 struct PostgreSQLDriver: MDSQLDriver {
     
 }
@@ -73,7 +75,13 @@ extension PostgreSQLDriver {
                 .map { _ in }
                 .flatMapError { error in
                     
-                    if "\(error)".starts(with: "server: duplicate key value violates unique constraint \"pg_type_typname_nsp_index\" (_bt_check_unique)") {
+                    if case let .server(error) = error as? PostgresError,
+                       error.fields[.sqlState] == "23505" &&
+                        error.fields[.schemaName] == "pg_catalog" &&
+                        error.fields[.tableName] == "pg_type" &&
+                        error.fields[.constraintName] == "pg_type_typname_nsp_index" &&
+                        error.fields[.routine] == "_bt_check_unique" {
+                        
                         return self._createTable(connection, table, columns)
                     }
                     
