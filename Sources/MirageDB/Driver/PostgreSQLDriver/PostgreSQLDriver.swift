@@ -75,14 +75,22 @@ extension PostgreSQLDriver {
                 .map { _ in }
                 .flatMapError { error in
                     
-                    if case let .server(error) = error as? PostgresError,
-                       error.fields[.sqlState] == "23505" &&
-                        error.fields[.schemaName] == "pg_catalog" &&
-                        error.fields[.tableName] == "pg_type" &&
-                        error.fields[.constraintName] == "pg_type_typname_nsp_index" &&
-                        error.fields[.routine] == "_bt_check_unique" {
+                    if case let .server(error) = error as? PostgresError {
                         
-                        return self._createTable(connection, table, columns)
+                        let sqlState = error.fields[.sqlState]
+                        let schemaName = error.fields[.schemaName]
+                        let tableName = error.fields[.tableName]
+                        let constraintName = error.fields[.constraintName]
+                        let routine = error.fields[.routine]
+                        
+                        if sqlState == "23505" &&
+                            schemaName == "pg_catalog" &&
+                            tableName == "pg_type" &&
+                            constraintName == "pg_type_typname_nsp_index" &&
+                            routine == "_bt_check_unique" {
+                            
+                            return self._createTable(connection, table, columns)
+                        }
                     }
                     
                     return _connection.eventLoopGroup.next().makeFailedFuture(error)
