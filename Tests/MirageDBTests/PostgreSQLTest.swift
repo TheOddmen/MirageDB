@@ -2,7 +2,7 @@
 //  PostgreSQLTest.swift
 //
 //  The MIT License
-//  Copyright (c) 2021 - 2022 The Oddmen Technology Limited. All rights reserved.
+//  Copyright (c) 2021 - 2022 O2ter Limited. All rights reserved.
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -51,7 +51,7 @@ class PostgreSQLTest: XCTestCase {
                 ]
             }
             
-            var logger = Logger(label: "com.TheOddmen.MirageDB")
+            var logger = Logger(label: "com.o2ter.MirageDB")
             logger.logLevel = .debug
             
             self.connection = try MDConnection.connect(url: url, logger: logger, on: eventLoopGroup).wait()

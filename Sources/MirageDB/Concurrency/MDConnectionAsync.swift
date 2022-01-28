@@ -2,7 +2,7 @@
 //  MDConnectionAsync.swift
 //
 //  The MIT License
-//  Copyright (c) 2021 - 2022 The Oddmen Technology Limited. All rights reserved.
+//  Copyright (c) 2021 - 2022 O2ter Limited. All rights reserved.
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -30,7 +30,7 @@ extension MDConnection {
     
     public static func connect(
         config: Database.Configuration,
-        logger: Logger = .init(label: "com.TheOddmen.MirageDB"),
+        logger: Logger = .init(label: "com.o2ter.MirageDB"),
         driver: DBDriver,
         on eventLoopGroup: EventLoopGroup
     ) async throws -> MDConnection {
@@ -40,7 +40,7 @@ extension MDConnection {
     
     public static func connect(
         url: URL,
-        logger: Logger = .init(label: "com.TheOddmen.MirageDB"),
+        logger: Logger = .init(label: "com.o2ter.MirageDB"),
         on eventLoopGroup: EventLoopGroup
     ) async throws -> MDConnection {
         
@@ -49,7 +49,7 @@ extension MDConnection {
     
     public static func connect(
         url: URLComponents,
-        logger: Logger = .init(label: "com.TheOddmen.MirageDB"),
+        logger: Logger = .init(label: "com.o2ter.MirageDB"),
         on eventLoopGroup: EventLoopGroup
     ) async throws -> MDConnection {
         
