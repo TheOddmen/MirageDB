@@ -77,18 +77,13 @@ extension PostgreSQLDriver {
                     
                     if case let .server(error) = error as? PostgresError {
                         
-                        let sqlState = error.fields[.sqlState]
-                        let schemaName = error.fields[.schemaName]
-                        let tableName = error.fields[.tableName]
-                        let constraintName = error.fields[.constraintName]
-                        let routine = error.fields[.routine]
+                        let sqlState = error.fields[.sqlState] == "23505"
+                        let schemaName = error.fields[.schemaName] == "pg_catalog"
+                        let tableName = error.fields[.tableName] == "pg_type"
+                        let constraintName = error.fields[.constraintName] == "pg_type_typname_nsp_index"
+                        let routine = error.fields[.routine] == "_bt_check_unique"
                         
-                        if sqlState == "23505" &&
-                            schemaName == "pg_catalog" &&
-                            tableName == "pg_type" &&
-                            constraintName == "pg_type_typname_nsp_index" &&
-                            routine == "_bt_check_unique" {
-                            
+                        if sqlState && schemaName && tableName && constraintName && routine {
                             return self._createTable(connection, table, columns)
                         }
                     }
