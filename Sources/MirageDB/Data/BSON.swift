@@ -25,7 +25,8 @@
 
 extension Dictionary where Key == String, Value == MDData {
     
-    fileprivate init(_ document: BSONDocument) throws {
+    @inlinable
+    init(_ document: BSONDocument) throws {
         self.init()
         for (key, value) in document {
             self[key] = try MDData(value)
@@ -35,8 +36,14 @@ extension Dictionary where Key == String, Value == MDData {
 
 extension MDData {
     
-    init(_ data: BSON) throws {
-        switch data {
+    @inlinable
+    public init(_ value: BSONDocument) throws {
+        try self.init(.document(value))
+    }
+    
+    @inlinable
+    public init(_ value: BSON) throws {
+        switch value {
         case .null: self = nil
         case .undefined: self = nil
         case let .int32(value): self.init(value)
