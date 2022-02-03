@@ -40,14 +40,14 @@ extension MDSQLDriver {
         columns["created_at"] = .timestamp
         columns["updated_at"] = .timestamp
         
-        connection.logger.debug("Generating table \(table) if necessary.")
+        connection.logger.trace("Generating table \(table) if necessary.")
         
         let result = self._createTable(connection, table, columns)
         
         result.whenComplete { result in
             switch result {
-            case .success: connection.logger.debug("Generate table \(table) completed.")
-            case let .failure(error): connection.logger.debug("Generate table \(table) failed. Error: \(error)")
+            case .success: connection.logger.trace("Generate table \(table) completed.")
+            case let .failure(error): connection.logger.trace("Generate table \(table) failed. Error: \(error)")
             }
         }
         
@@ -201,14 +201,14 @@ extension MDSQLDriver {
                     return connection.eventLoopGroup.next().makeSucceededVoidFuture()
                 }
                 
-                connection.logger.debug("Generating columns for table \(table) if necessary.")
+                connection.logger.trace("Generating columns for table \(table) if necessary.")
                 
                 let result = self.addColumns(connection, table, columns)
                 
                 result.whenComplete { result in
                     switch result {
-                    case .success: connection.logger.debug("Generate columns for table \(table) completed.")
-                    case let .failure(error): connection.logger.debug("Generate columns for table \(table) failed. Error: \(error)")
+                    case .success: connection.logger.trace("Generate columns for table \(table) completed.")
+                    case let .failure(error): connection.logger.trace("Generate columns for table \(table) failed. Error: \(error)")
                     }
                 }
                 
@@ -216,14 +216,14 @@ extension MDSQLDriver {
                 
             } else {
                 
-                connection.logger.debug("Generating table \(table)")
+                connection.logger.trace("Generating table \(table)")
                 
                 let result = self.createTable(connection, table, columns)
                 
                 result.whenComplete { result in
                     switch result {
-                    case .success: connection.logger.debug("Generate table \(table) completed.")
-                    case let .failure(error): connection.logger.debug("Generate table \(table) failed. Error: \(error)")
+                    case .success: connection.logger.trace("Generate table \(table) completed.")
+                    case let .failure(error): connection.logger.trace("Generate table \(table) failed. Error: \(error)")
                     }
                 }
                 
