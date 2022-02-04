@@ -142,10 +142,7 @@ extension MDObject {
                 .filter { $0.id == id }
                 .includes(keys)
                 .first()
-                .flatMapThrowing { object in
-                    guard let object = object else { throw MDError.objectNotFound }
-                    return object
-                }
+                .unwrap(orError: MDError.objectNotFound)
             
         } else {
             return connection.eventLoopGroup.next().makeFailedFuture(MDError.invalidObjectId)
@@ -160,10 +157,7 @@ extension MDObject {
                 .find(self.class)
                 .filter { $0.id == id }
                 .first()
-                .flatMapThrowing { object in
-                    guard let object = object else { throw MDError.objectNotFound }
-                    return object
-                }
+                .unwrap(orError: MDError.objectNotFound)
             
         } else {
             return connection.eventLoopGroup.next().makeFailedFuture(MDError.invalidObjectId)
@@ -179,10 +173,7 @@ extension MDObject {
                 .filter { $0.id == id }
                 .includes(self.keys)
                 .update(mutated)
-                .flatMapThrowing { object in
-                    guard let object = object else { throw MDError.objectNotFound }
-                    return object
-                }
+                .unwrap(orError: MDError.objectNotFound)
             
         } else {
             
@@ -199,10 +190,7 @@ extension MDObject {
                 .filter { $0.id == id }
                 .includes(self.keys)
                 .delete()
-                .flatMapThrowing { object in
-                    guard let object = object else { throw MDError.objectNotFound }
-                    return object
-                }
+                .unwrap(orError: MDError.objectNotFound)
             
         } else {
             return connection.eventLoopGroup.next().makeFailedFuture(MDError.invalidObjectId)
