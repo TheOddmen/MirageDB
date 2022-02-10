@@ -120,7 +120,7 @@ extension MDData: Decodable {
         }
         
         if let number = try? container.decode(Json.Number.self) {
-            self = .number(MDData.Number(number))
+            self = .number(Number(number))
             return
         }
         

@@ -361,6 +361,26 @@ extension MDData._Decoder: SingleValueDecodingContainer {
         }
     }
     
+    func _decode(_ type: Json.Number.Type) throws -> Json.Number {
+        switch value {
+        case .null: throw Database.Error.valueNotFound
+            
+        case let .number(value): return Json.Number(value)
+            
+        default: throw Database.Error.unsupportedType
+        }
+    }
+    
+    func _decode(_ type: MDData.Number.Type) throws -> MDData.Number {
+        switch value {
+        case .null: throw Database.Error.valueNotFound
+            
+        case let .number(value): return value
+            
+        default: throw Database.Error.unsupportedType
+        }
+    }
+    
     func decode<T: Decodable>(_ type: T.Type) throws -> T {
         switch type {
         case is MDData.Type: return self as! T
@@ -381,6 +401,8 @@ extension MDData._Decoder: SingleValueDecodingContainer {
         case is String.Type: return try self._decode(String.self) as! T
         case is UUID.Type: return try self._decode(UUID.self) as! T
         case is Date.Type: return try self._decode(Date.self) as! T
+        case is Json.Number.Type: return try self._decode(Json.Number.self) as! T
+        case is MDData.Number.Type: return try self._decode(MDData.Number.self) as! T
         default: throw Database.Error.unsupportedType
         }
     }
