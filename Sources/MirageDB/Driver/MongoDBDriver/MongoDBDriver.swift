@@ -406,9 +406,7 @@ struct MongoDBDriver: MDDriver {
         _ transactionBody: @escaping (MDConnection) throws -> EventLoopFuture<T>
     ) -> EventLoopFuture<T> {
         
-        return connection.connection.withMongoSession(options: nil) { connection in
-            connection.mongoQuery().withTransaction { _ in try transactionBody(MDConnection(connection: connection)) }
-        }
+        return connection.connection.withTransaction { try transactionBody(MDConnection(connection: $0)) }
     }
     
     #if compiler(>=5.5.2) && canImport(_Concurrency)
@@ -419,9 +417,7 @@ struct MongoDBDriver: MDDriver {
         _ transactionBody: (MDConnection) async throws -> T
     ) async throws -> T {
         
-        return try await connection.connection.withMongoSession(options: nil) { connection in
-            try await connection.mongoQuery().withTransaction { _ in try await transactionBody(MDConnection(connection: connection)) }
-        }
+        return try await connection.connection.withTransaction { try await transactionBody(MDConnection(connection: $0)) }
     }
     
     #endif
