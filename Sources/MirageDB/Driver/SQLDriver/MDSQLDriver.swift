@@ -462,17 +462,37 @@ extension MDSQLDriver {
         }
     }
     
-    func withTransaction<T>(_ connection: MDConnection, _ transactionBody: @escaping () throws -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+    func withTransaction<T>(
+        _ connection: MDConnection,
+        _ transactionBody: @escaping (MDConnection) throws -> EventLoopFuture<T>
+    ) -> EventLoopFuture<T> {
         
         do {
             
             guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
             
-            return connection.withTransaction { _ in try transactionBody() }
+            return connection.withTransaction { try transactionBody(MDConnection(connection: $0)) }
             
         } catch {
             
             return connection.eventLoopGroup.next().makeFailedFuture(error)
         }
     }
+    
+    #if compiler(>=5.5.2) && canImport(_Concurrency)
+    
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    func withTransaction<T>(
+        _ connection: MDConnection,
+        _ transactionBody: (MDConnection) async throws -> T
+    ) async throws -> T {
+        
+        guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
+        
+        return try await connection.withTransaction { try await transactionBody(MDConnection(connection: $0)) }
+        
+    }
+    
+    #endif
+
 }

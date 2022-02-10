@@ -83,12 +83,7 @@ extension MDConnection {
     public func withTransaction<T>(
         _ transactionBody: (MDConnection) async throws -> T
     ) async throws -> T {
-        
-        guard let driver = self.driver as? MDDriverAsync else {
-            throw MDError.unknown
-        }
-        
-        return try await driver.withTransaction(self) { try await transactionBody(self) }
+        return try await driver.withTransaction(self) { try await transactionBody($0) }
     }
 }
 

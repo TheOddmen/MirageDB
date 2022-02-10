@@ -122,8 +122,10 @@ extension MDConnection {
 
 extension MDConnection {
     
-    public func withTransaction<T>(_ transactionBody: @escaping (MDConnection) throws -> EventLoopFuture<T>) -> EventLoopFuture<T> {
-        return self.driver.withTransaction(self) { try transactionBody(self) }
+    public func withTransaction<T>(
+        _ transactionBody: @escaping (MDConnection) throws -> EventLoopFuture<T>
+    ) -> EventLoopFuture<T> {
+        return self.driver.withTransaction(self) { try transactionBody($0) }
     }
 }
 

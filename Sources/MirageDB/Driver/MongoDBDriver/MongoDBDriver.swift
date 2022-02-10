@@ -401,10 +401,31 @@ struct MongoDBDriver: MDDriver {
         }
     }
     
-    func withTransaction<T>(_ connection: MDConnection, _ transactionBody: @escaping () throws -> EventLoopFuture<T>) -> EventLoopFuture<T> {
+    func withTransaction<T>(
+        _ connection: MDConnection,
+        _ transactionBody: @escaping (MDConnection) throws -> EventLoopFuture<T>
+    ) -> EventLoopFuture<T> {
         
-        return connection.connection.mongoQuery().withTransaction { _ in try transactionBody() }
+        return connection.connection.withMongoSession(options: nil) { connection in
+            connection.mongoQuery().withTransaction { _ in try transactionBody(MDConnection(connection: connection)) }
+        }
     }
+    
+    #if compiler(>=5.5.2) && canImport(_Concurrency)
+    
+    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+    func withTransaction<T>(
+        _ connection: MDConnection,
+        _ transactionBody: (MDConnection) async throws -> T
+    ) async throws -> T {
+        
+        return try await connection.connection.withMongoSession(options: nil) { connection in
+            try await connection.mongoQuery().withTransaction { _ in try await transactionBody(MDConnection(connection: connection)) }
+        }
+    }
+    
+    #endif
+
 }
 
 extension MongoDBDriver {
