@@ -1,6 +1,5 @@
-// swift-tools-version:5.3
 //
-//  Package.swift
+//  MDDriverAsync.swift
 //
 //  The MIT License
 //  Copyright (c) 2021 - 2022 O2ter Limited. All rights reserved.
@@ -24,40 +23,39 @@
 //  THE SOFTWARE.
 //
 
-import PackageDescription
+#if compiler(>=5.5.2) && canImport(_Concurrency)
 
-let package = Package(
-    name: "MirageDB",
-    platforms: [
-        .macOS(.v10_15),
-    ],
-    products: [
-        .library(name: "MirageDB", targets: ["MirageDB"]),
-        .library(name: "MirageDBVapor", targets: ["MirageDBVapor"]),
-    ],
-    dependencies: [
-        .package(url: "https://github.com/vapor/vapor.git", from: "4.50.0"),
-        .package(url: "https://github.com/SusanDoggie/DoggieDB.git", from: "0.0.65"),
-    ],
-    targets: [
-        .target(
-            name: "MirageDB",
-            dependencies: [
-                .product(name: "DoggieDB", package: "DoggieDB"),
-            ]
-        ),
-        .target(
-            name: "MirageDBVapor",
-            dependencies: [
-                .target(name: "MirageDB"),
-                .product(name: "Vapor", package: "vapor"),
-            ]
-        ),
-        .testTarget(
-            name: "MirageDBTests",
-            dependencies: [
-                .target(name: "MirageDB"),
-            ]
-        ),
-    ]
-)
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+protocol MDDriverAsync {
+    
+    func withTransaction<T>(
+        _ connection: MDConnection,
+        _ transactionBody: () async throws -> T
+    ) async throws -> T
+}
+
+extension PostgreSQLDriver: MDDriverAsync {
+    
+    func withTransaction<T>(
+        _ connection: MDConnection,
+        _ transactionBody: () async throws -> T
+    ) async throws -> T {
+        
+        guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
+        
+        return try await connection.withTransaction { _ in try await transactionBody() }
+    }
+}
+
+extension MongoDBDriver: MDDriverAsync {
+    
+    func withTransaction<T>(
+        _ connection: MDConnection,
+        _ transactionBody: () async throws -> T
+    ) async throws -> T {
+        
+        return try await connection.connection.mongoQuery().withTransaction { _ in try await transactionBody() }
+    }
+}
+
+#endif

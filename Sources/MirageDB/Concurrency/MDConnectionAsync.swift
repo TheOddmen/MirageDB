@@ -81,18 +81,14 @@ extension MDConnection {
 extension MDConnection {
     
     public func withTransaction<T>(
-        _ transactionBody: @escaping @Sendable (MDConnection) async throws -> T
+        _ transactionBody: (MDConnection) async throws -> T
     ) async throws -> T {
         
-        let promise = self.eventLoopGroup.next().makePromise(of: T.self)
+        guard let driver = self.driver as? MDDriverAsync else {
+            throw MDError.unknown
+        }
         
-        return try await self.withTransaction { connection in
-            
-            promise.completeWithTask { try await transactionBody(connection) }
-            
-            return promise.futureResult
-            
-        }.get()
+        return try await driver.withTransaction(self) { try await transactionBody(self) }
     }
 }
 
