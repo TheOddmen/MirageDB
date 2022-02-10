@@ -81,7 +81,7 @@ extension MDConnection {
 extension MDConnection {
     
     public func withTransaction<T>(
-        _ transactionBody: @escaping (MDConnection) async throws -> T
+        _ transactionBody: @escaping @Sendable (MDConnection) async throws -> T
     ) async throws -> T {
         
         let promise = self.eventLoopGroup.next().makePromise(of: T.self)
