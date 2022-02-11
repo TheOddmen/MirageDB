@@ -111,23 +111,6 @@ extension Dictionary where Key == String, Value == MDUpdateOption {
     }
 }
 
-extension Dictionary where Key == String, Value == MDUpsertOption {
-    
-    fileprivate func toBSONDocument() throws -> BSONDocument {
-        
-        var update = try self.compactMapValues { $0.update }.toBSONDocument()
-        var setOnInsert: BSONDocument = [:]
-        
-        for case let (key, .setOnInsert(value)) in self where value.toMDData() != nil {
-            
-            setOnInsert[key] = value.toMDData().toBSON()
-        }
-        
-        if !setOnInsert.isEmpty { update["$setOnInsert"] = BSON(setOnInsert) }
-        return update
-    }
-}
-
 struct MongoDBDriver: MDDriver {
     
     func tables(_ connection: MDConnection) -> EventLoopFuture<[String]> {
@@ -264,7 +247,7 @@ struct MongoDBDriver: MDDriver {
         }
     }
     
-    func _findOneAndUpsert(_ query: MDFindOneExpression, _ upsert: [String : MDUpsertOption]) -> EventLoopFuture<MDObject?> {
+    func _findOneAndUpsert(_ query: MDFindOneExpression, _ update: [String : MDUpdateOption], _ setOnInsert: [String : MDDataConvertible]) -> EventLoopFuture<MDObject?> {
         
         do {
             
@@ -274,12 +257,24 @@ struct MongoDBDriver: MDDriver {
             
             let now = Date()
             
-            var upsert = upsert
-            upsert["_id"] = .setOnInsert(query.objectIDGenerator?() ?? generalObjectIDGenerator())
-            upsert["created_at"] = .setOnInsert(now)
-            upsert["updated_at"] = .set(now)
+            var update = update
+            update["_id"] = nil
+            update["created_at"] = nil
+            update["updated_at"] = .set(now)
             
-            _query = try _query.update(upsert.toBSONDocument())
+            var setOnInsert = setOnInsert
+            setOnInsert["_id"] = query.objectIDGenerator?() ?? generalObjectIDGenerator()
+            setOnInsert["created_at"] = now
+            setOnInsert["updated_at"] = nil
+            
+            var _update = try update.toBSONDocument()
+            var _setOnInsert: BSONDocument = [:]
+            for case let (key, value) in setOnInsert where value.toMDData() != nil {
+                _setOnInsert[key] = value.toMDData().toBSON()
+            }
+            if !_setOnInsert.isEmpty { _update["$setOnInsert"] = BSON(_setOnInsert) }
+            
+            _query = _query.update(_update)
             _query = _query.upsert(true)
             
             switch query.returning {
@@ -303,14 +298,14 @@ struct MongoDBDriver: MDDriver {
         }
     }
     
-    func findOneAndUpsert(_ query: MDFindOneExpression, _ upsert: [String : MDUpsertOption]) -> EventLoopFuture<MDObject?> {
+    func findOneAndUpsert(_ query: MDFindOneExpression, _ update: [String : MDUpdateOption], _ setOnInsert: [String : MDDataConvertible]) -> EventLoopFuture<MDObject?> {
         
-        self._findOneAndUpsert(query, upsert).flatMapError { error in
+        self._findOneAndUpsert(query, update, setOnInsert).flatMapError { error in
             
             if let error = error as? MongoError.CommandError,
                error.code == 11000 && error.message.contains(" index: _id_ ") {
                 
-                return self.findOneAndUpsert(query, upsert)
+                return self.findOneAndUpsert(query, update, setOnInsert)
             }
             
             return query.connection.eventLoopGroup.next().makeFailedFuture(error)

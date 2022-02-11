@@ -361,7 +361,7 @@ extension MDSQLDriver {
         }
     }
     
-    func _findOneAndUpsert(_ query: MDFindOneExpression, _ upsert: [String : MDUpsertOption]) -> EventLoopFuture<MDObject?> {
+    func _findOneAndUpsert(_ query: MDFindOneExpression, _ update: [String : MDUpdateOption], _ setOnInsert: [String : MDDataConvertible]) -> EventLoopFuture<MDObject?> {
         
         var _query = query.connection.connection.query().findOne(query.class)
         
@@ -381,26 +381,32 @@ extension MDSQLDriver {
         
         let now = Date()
         
-        let columns = upsert.compactMapValues { $0.sql_type }
+        let columns = update.compactMapValues { $0.sql_type }
+            .merging(setOnInsert.compactMapValues { $0.toMDData().sql_type }) { _, rhs in rhs }
         
-        var _upsert = upsert
-        _upsert["id"] = .setOnInsert(query.objectIDGenerator?() ?? generalObjectIDGenerator())
-        _upsert["created_at"] = .setOnInsert(now)
-        _upsert["updated_at"] = .set(now)
+        var _update = update.mapValues(DBUpdateOption.init)
+        _update["_id"] = nil
+        _update["created_at"] = nil
+        _update["updated_at"] = .set(now)
+        
+        var _setOnInsert = setOnInsert.mapValues { $0.toMDData().toSQLData() }
+        _setOnInsert["id"] = DBData(query.objectIDGenerator?() ?? generalObjectIDGenerator())
+        _setOnInsert["created_at"] = DBData(now)
+        _setOnInsert["updated_at"] = nil
         
         return self.enforceFieldExists(query.connection, query.class, columns).flatMap {
             
-            _query.upsert(_upsert.mapValues(DBUpsertOption.init)).flatMapThrowing { try $0.map(MDObject.init) }
+            _query.upsert(_update, setOnInsert: _setOnInsert).flatMapThrowing { try $0.map(MDObject.init) }
         }
     }
     
-    func findOneAndUpsert(_ query: MDFindOneExpression, _ upsert: [String : MDUpsertOption]) -> EventLoopFuture<MDObject?> {
+    func findOneAndUpsert(_ query: MDFindOneExpression, _ update: [String : MDUpdateOption], _ setOnInsert: [String : MDDataConvertible]) -> EventLoopFuture<MDObject?> {
         
-        self._findOneAndUpsert(query, upsert).flatMapError { error in
+        self._findOneAndUpsert(query, update, setOnInsert).flatMapError { error in
             
             if let error = error as? Database.Error, error == .duplicatedPrimaryKey {
                 
-                return self.findOneAndUpsert(query, upsert)
+                return self.findOneAndUpsert(query, update, setOnInsert)
             }
             
             return query.connection.eventLoopGroup.next().makeFailedFuture(error)

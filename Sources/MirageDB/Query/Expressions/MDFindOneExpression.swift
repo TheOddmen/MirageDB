@@ -65,7 +65,15 @@ extension MDFindOneExpression {
     }
     
     public func upsert(_ upsert: [String: MDUpsertOption]) -> EventLoopFuture<MDObject?> {
-        return self.connection.driver.findOneAndUpsert(self, upsert)
+        return self.upsert(upsert.compactMapValues { $0.update }, setOnInsert: upsert.compactMapValues { $0.setOnInsert })
+    }
+    
+    public func upsert(_ update: [String: MDDataConvertible], setOnInsert: [String : MDDataConvertible]) -> EventLoopFuture<MDObject?> {
+        return self.upsert(update.mapValues { .set($0) }, setOnInsert: setOnInsert)
+    }
+    
+    public func upsert(_ update: [String : MDUpdateOption], setOnInsert: [String : MDDataConvertible]) -> EventLoopFuture<MDObject?> {
+        return self.connection.driver.findOneAndUpsert(self, update, setOnInsert)
     }
 }
 
