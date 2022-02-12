@@ -38,10 +38,10 @@ until echo | docker exec --tty mongo_test_db_${RAND} mongo --eval 'quit(0)'; do 
 
 docker exec --tty mongo_test_db_${RAND} mongo --eval "
   rs.initiate({
-    '_id': 'rs0',
-    'members': [{
-       '_id': 0,
-      'host': 'localhost'
+    _id: 'rs0',
+    members: [{
+       _id: 0,
+      host: 'localhost'
     }]
   })
 "
