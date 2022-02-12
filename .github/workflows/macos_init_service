@@ -1,0 +1,32 @@
+#!/bin/bash
+set -e
+
+echo ::group::Starting PostgreSQL service
+
+export PATH="/usr/local/opt/postgresql/bin:$PATH" PGDATA=/tmp/postgres-test
+
+brew install postgresql
+
+initdb --locale=C -U $POSTGRES_USERNAME --pwfile=<(echo $POSTGRES_PASSWORD)
+pg_ctl start --wait
+
+echo ::endgroup::
+
+echo ::group::Starting MongoDB service
+
+brew services start mongodb-community
+
+until echo | mongo 'admin' --eval 'quit(0)'; do sleep 1; done
+
+mongo admin --eval "
+  db.createUser({
+    user: '$MONGO_USERNAME',
+    pwd: '$MONGO_PASSWORD',
+    roles: [{
+      role: 'root',
+      db: '$MONGO_AUTHSOURCE'
+    }]
+  })
+"
+
+echo ::endgroup::
