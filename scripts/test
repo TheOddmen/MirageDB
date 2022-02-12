@@ -25,10 +25,7 @@ docker run -d --rm --name postgres_test_db_${RAND} \
 
 docker run -d --rm --name mongo_test_db_${RAND} \
   -p 27017:27017 \
-  -e "MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}" \
-  -e "MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}" \
-  -e "MONGO_INITDB_DATABASE=${MONGO_DATABASE}" \
-  mongo
+  mongo --replSet rs0
 
 function cleanup {
   docker stop postgres_test_db_${RAND}
@@ -36,5 +33,28 @@ function cleanup {
 }
 
 trap cleanup EXIT
+
+until echo | docker exec --tty mongo_test_db_${RAND} mongo --eval 'quit(0)'; do sleep 1; done
+
+docker exec --tty mongo_test_db_${RAND} mongo --eval "
+  rs.initiate({
+    '_id': 'rs0',
+    'members': [{
+       '_id': 0,
+      'host': 'localhost'
+    }]
+  })
+"
+
+docker exec --tty mongo_test_db_${RAND} mongo admin --eval "
+  db.createUser({
+    user: '${MONGO_USERNAME}',
+    pwd: '${MONGO_PASSWORD}',
+    roles:[{
+      role: 'root',
+      db: 'admin'
+    }]
+  })
+"
 
 swift test
