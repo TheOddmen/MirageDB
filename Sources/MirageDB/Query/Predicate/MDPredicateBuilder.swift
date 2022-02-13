@@ -52,6 +52,16 @@ extension MDPredicateBuilder {
     }
     
     @inlinable
+    public var createdAt: MDPredicateKey {
+        return .createdAt
+    }
+    
+    @inlinable
+    public var updatedAt: MDPredicateKey {
+        return .updatedAt
+    }
+    
+    @inlinable
     public subscript(_ key: String) -> MDPredicateKey {
         return .key(key)
     }
