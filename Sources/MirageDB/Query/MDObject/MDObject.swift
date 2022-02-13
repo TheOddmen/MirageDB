@@ -25,6 +25,8 @@
 
 public struct MDObject: Hashable, Equatable, Identifiable {
     
+    static let _default_fields = ["_id", "created_at", "updated_at"]
+    
     public let `class`: String
     
     public let id: String?

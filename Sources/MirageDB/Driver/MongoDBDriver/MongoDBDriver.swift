@@ -27,8 +27,6 @@ import MongoSwift
 
 extension MDObject {
     
-    fileprivate static let _default_fields = ["_id", "created_at", "updated_at"]
-    
     fileprivate init(class: String, data object: BSONDocument) throws {
         var data: [String: MDData] = [:]
         for (key, value) in object where !MDObject._default_fields.contains(key) {

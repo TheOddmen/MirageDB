@@ -32,7 +32,7 @@ public class MDConnection {
         self.connection = connection
         
         if let connection = connection as? DBSQLConnection {
-            connection.primaryKeyHook = { connection, _ in connection.eventLoopGroup.next().makeSucceededFuture(["id"]) }
+            connection.primaryKeyHook = { connection, _ in connection.eventLoopGroup.next().makeSucceededFuture(["_id"]) }
         }
     }
 }

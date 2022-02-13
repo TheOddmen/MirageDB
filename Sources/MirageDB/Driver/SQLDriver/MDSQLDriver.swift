@@ -102,8 +102,6 @@ extension MDUpsertOption {
 
 extension MDObject {
     
-    fileprivate static let _default_fields = ["id", "created_at", "updated_at"]
-    
     fileprivate init(_ object: DBObject) throws {
         var data: [String: MDData] = [:]
         for key in object.keys where !MDObject._default_fields.contains(key) {
@@ -111,7 +109,7 @@ extension MDObject {
         }
         self.init(
             class: object.class,
-            id: object["id"].string,
+            id: object["_id"].string,
             createdAt: object["created_at"].date,
             updatedAt: object["updated_at"].date,
             data: data
@@ -351,7 +349,7 @@ extension MDSQLDriver {
         let columns = update.compactMapValues { $0.sql_type }
         
         var _update = update
-        _update["id"] = nil
+        _update["_id"] = nil
         _update["created_at"] = nil
         _update["updated_at"] = .set(now)
         
@@ -390,7 +388,7 @@ extension MDSQLDriver {
         _update["updated_at"] = .set(now)
         
         var _setOnInsert = setOnInsert.mapValues { $0.toMDData().toSQLData() }
-        _setOnInsert["id"] = DBData(query.objectIDGenerator?() ?? generalObjectIDGenerator())
+        _setOnInsert["_id"] = DBData(query.objectIDGenerator?() ?? generalObjectIDGenerator())
         _setOnInsert["created_at"] = DBData(now)
         _setOnInsert["updated_at"] = nil
         
@@ -445,7 +443,7 @@ extension MDSQLDriver {
         let columns = data.compactMapValues { $0.sql_type }
         
         var _data = data.compactMapValues { $0.isNil ? nil : $0.toSQLData() }
-        _data["id"] = DBData(generalObjectIDGenerator())
+        _data["_id"] = DBData(generalObjectIDGenerator())
         _data["created_at"] = DBData(now)
         _data["updated_at"] = DBData(now)
         

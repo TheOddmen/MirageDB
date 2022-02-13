@@ -67,7 +67,7 @@ extension PostgreSQLDriver {
             
             guard let _connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
             
-            let list: [SQLRaw] = ["id VARCHAR(10) NOT NULL PRIMARY KEY"] + columns.map { "\(identifier: $0.key) \($0.value.postgresType)" }
+            let list: [SQLRaw] = ["_id VARCHAR(10) NOT NULL PRIMARY KEY"] + columns.map { "\(identifier: $0.key) \($0.value.postgresType)" }
             
             let sql: SQLRaw = "CREATE TABLE IF NOT EXISTS \(identifier: table) (\(list.joined(separator: ",")))"
             
