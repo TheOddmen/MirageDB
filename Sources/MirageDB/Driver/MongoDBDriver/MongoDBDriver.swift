@@ -35,8 +35,8 @@ extension MDObject {
         self.init(
             class: `class`,
             id: object["_id"]?.stringValue,
-            createdAt: object["created_at"]?.dateValue,
-            updatedAt: object["updated_at"]?.dateValue,
+            createdAt: object["_created_at"]?.dateValue,
+            updatedAt: object["_updated_at"]?.dateValue,
             data: data
         )
     }
@@ -219,8 +219,8 @@ struct MongoDBDriver: MDDriver {
             
             var update = update
             update["_id"] = nil
-            update["created_at"] = nil
-            update["updated_at"] = .set(now)
+            update["_created_at"] = nil
+            update["_updated_at"] = .set(now)
             
             _query = try _query.update(update.toBSONDocument())
             
@@ -257,13 +257,13 @@ struct MongoDBDriver: MDDriver {
             
             var update = update
             update["_id"] = nil
-            update["created_at"] = nil
-            update["updated_at"] = .set(now)
+            update["_created_at"] = nil
+            update["_updated_at"] = .set(now)
             
             var setOnInsert = setOnInsert
             setOnInsert["_id"] = query.objectIDGenerator?() ?? generalObjectIDGenerator()
-            setOnInsert["created_at"] = now
-            setOnInsert["updated_at"] = nil
+            setOnInsert["_created_at"] = now
+            setOnInsert["_updated_at"] = nil
             
             var _update = try update.toBSONDocument()
             var _setOnInsert: BSONDocument = [:]
@@ -356,8 +356,8 @@ struct MongoDBDriver: MDDriver {
         
         var data = values
         data["_id"] = MDData(generalObjectIDGenerator())
-        data["created_at"] = MDData(now)
-        data["updated_at"] = MDData(now)
+        data["_created_at"] = MDData(now)
+        data["_updated_at"] = MDData(now)
         
         let _values = BSONDocument(data.mapValues { $0.toBSON() })
         

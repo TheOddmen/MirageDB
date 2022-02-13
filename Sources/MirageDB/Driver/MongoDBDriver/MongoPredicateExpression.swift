@@ -65,8 +65,8 @@ extension MongoPredicateValue {
     fileprivate init(_ value: MDPredicateValue) throws {
         switch value {
         case .id: self = .key("_id")
-        case .createdAt: self = .key("created_at")
-        case .updatedAt: self = .key("updated_at")
+        case .createdAt: self = .key("_created_at")
+        case .updatedAt: self = .key("_updated_at")
         case let .key(key): self = .key(key)
         case let .value(value): self = .value(BSON(value.toMDData()))
         }
@@ -78,8 +78,8 @@ extension MongoPredicateKey {
     fileprivate init(_ value: MDPredicateKey) {
         switch value {
         case .id: self.init(key: "_id")
-        case .createdAt: self.init(key: "created_at")
-        case .updatedAt: self.init(key: "updated_at")
+        case .createdAt: self.init(key: "_created_at")
+        case .updatedAt: self.init(key: "_updated_at")
         case let .key(key): self.init(key: key)
         }
     }

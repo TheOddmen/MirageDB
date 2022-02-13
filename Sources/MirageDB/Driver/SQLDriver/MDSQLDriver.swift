@@ -37,8 +37,8 @@ extension MDSQLDriver {
     func createTable(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
         
         var columns = columns
-        columns["created_at"] = .timestamp
-        columns["updated_at"] = .timestamp
+        columns["_created_at"] = .timestamp
+        columns["_updated_at"] = .timestamp
         
         connection.logger.trace("Generating table \(table) if necessary.")
         
@@ -110,8 +110,8 @@ extension MDObject {
         self.init(
             class: object.class,
             id: object["_id"].string,
-            createdAt: object["created_at"].date,
-            updatedAt: object["updated_at"].date,
+            createdAt: object["_created_at"].date,
+            updatedAt: object["_updated_at"].date,
             data: data
         )
     }
@@ -350,8 +350,8 @@ extension MDSQLDriver {
         
         var _update = update
         _update["_id"] = nil
-        _update["created_at"] = nil
-        _update["updated_at"] = .set(now)
+        _update["_created_at"] = nil
+        _update["_updated_at"] = .set(now)
         
         return self.enforceFieldExists(query.connection, query.class, columns).flatMap {
             
@@ -384,13 +384,13 @@ extension MDSQLDriver {
         
         var _update = update.mapValues(DBUpdateOption.init)
         _update["_id"] = nil
-        _update["created_at"] = nil
-        _update["updated_at"] = .set(now)
+        _update["_created_at"] = nil
+        _update["_updated_at"] = .set(now)
         
         var _setOnInsert = setOnInsert.mapValues { $0.toMDData().toSQLData() }
         _setOnInsert["_id"] = DBData(query.objectIDGenerator?() ?? generalObjectIDGenerator())
-        _setOnInsert["created_at"] = DBData(now)
-        _setOnInsert["updated_at"] = nil
+        _setOnInsert["_created_at"] = DBData(now)
+        _setOnInsert["_updated_at"] = nil
         
         return self.enforceFieldExists(query.connection, query.class, columns).flatMap {
             
@@ -444,8 +444,8 @@ extension MDSQLDriver {
         
         var _data = data.compactMapValues { $0.isNil ? nil : $0.toSQLData() }
         _data["_id"] = DBData(generalObjectIDGenerator())
-        _data["created_at"] = DBData(now)
-        _data["updated_at"] = DBData(now)
+        _data["_created_at"] = DBData(now)
+        _data["_updated_at"] = DBData(now)
         
         return self.enforceFieldExists(connection, `class`, columns).flatMap {
             
