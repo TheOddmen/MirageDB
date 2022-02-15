@@ -106,6 +106,14 @@ extension Decimal: MDDataConvertible {
     }
 }
 
+extension MDData.Number: MDDataConvertible {
+    
+    @inlinable
+    public func toMDData() -> MDData {
+        return .number(self)
+    }
+}
+
 extension StringProtocol {
     
     @inlinable

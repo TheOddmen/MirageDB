@@ -81,6 +81,11 @@ extension MDData {
     }
     
     @inlinable
+    public init(_ value: Number) {
+        self = .number(value)
+    }
+    
+    @inlinable
     public init(_ value: Date) {
         self = .timestamp(value)
     }
@@ -381,6 +386,14 @@ extension MDData {
         switch self {
         case let .number(value): return value.decimalValue
         case let .string(string): return Decimal(exactly: string)
+        default: return nil
+        }
+    }
+    
+    @inlinable
+    public var numberValue: Number? {
+        switch self {
+        case let .number(value): return value
         default: return nil
         }
     }
