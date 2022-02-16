@@ -35,7 +35,7 @@ public struct MDObject: Hashable, Equatable, Identifiable {
     
     public let updatedAt: Date?
     
-    var data: [String: MDData]
+    let data: [String: MDData]
     
     var mutated: [String: MDUpdateOption] = [:]
     
