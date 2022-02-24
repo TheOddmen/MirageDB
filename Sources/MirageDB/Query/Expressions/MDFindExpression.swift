@@ -126,3 +126,18 @@ extension MDFindExpression {
         return result
     }
 }
+
+extension MDFindExpression {
+    
+    public func sort(_ sort: OrderedDictionary<String, MDSortOrderOption>) -> Self {
+        return self.sort(OrderedDictionary(sort.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs })
+    }
+    
+    public func includes(_ keys: String ...) -> Self {
+        return self.includes(keys.map { MDQueryKey(key: $0) })
+    }
+    
+    public func includes<S: Sequence>(_ keys: S) -> Self where S.Element == String {
+        return self.includes(keys.map { MDQueryKey(key: $0) })
+    }
+}
