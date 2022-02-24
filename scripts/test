@@ -37,6 +37,8 @@ trap cleanup EXIT
 docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" postgres_test_db_${RAND}
 docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" mongo_test_db_${RAND}
 
+until docker exec --tty mongo_test_db_${RAND} mongo 'admin' --eval 'quit(0)'; do sleep 1; done
+
 docker exec --tty mongo_test_db_${RAND} mongo --eval "
   rs.initiate({
     _id: 'rs0',
