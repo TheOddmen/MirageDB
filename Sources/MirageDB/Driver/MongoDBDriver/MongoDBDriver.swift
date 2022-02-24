@@ -350,11 +350,11 @@ struct MongoDBDriver: MDDriver {
         }
     }
     
-    private func _insert(_ connection: MDConnection, _ class: String, _ values: [String: MDData]) -> EventLoopFuture<MDObject> {
+    private func _insert(_ connection: MDConnection, _ class: String, _ values: [MDQueryKey: MDData]) -> EventLoopFuture<MDObject> {
         
         let now = Date()
         
-        var data = values
+        var data = values.stringKeys
         data["_id"] = MDData(generalObjectIDGenerator())
         data["_created_at"] = MDData(now)
         data["_updated_at"] = MDData(now)
@@ -374,12 +374,12 @@ struct MongoDBDriver: MDDriver {
                     id: id,
                     createdAt: now,
                     updatedAt: now,
-                    data: values
+                    data: data
                 )
             }
     }
     
-    func insert(_ connection: MDConnection, _ class: String, _ values: [String: MDData]) -> EventLoopFuture<MDObject> {
+    func insert(_ connection: MDConnection, _ class: String, _ values: [MDQueryKey: MDData]) -> EventLoopFuture<MDObject> {
         
         self._insert(connection, `class`, values).flatMapError { error in
             

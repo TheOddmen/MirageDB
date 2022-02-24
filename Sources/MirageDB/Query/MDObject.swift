@@ -50,7 +50,7 @@ public struct MDObject: Hashable, Equatable, Identifiable {
         self.id = id
         self.createdAt = createdAt
         self.updatedAt = updatedAt
-        self.data = data
+        self.data = data.filter { !MDObject._default_fields.contains($0.key) }
     }
     
     public init(class: String, id: String? = nil) {
@@ -167,6 +167,8 @@ extension MDObject {
     }
     
     public func save(on connection: MDConnection) -> EventLoopFuture<MDObject> {
+        
+        let mutated = Dictionary(self.mutated.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs }
         
         if let id = self.id {
             

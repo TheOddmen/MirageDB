@@ -440,10 +440,11 @@ extension MDSQLDriver {
         return _query.delete()
     }
     
-    private func _insert(_ connection: MDConnection, _ class: String, _ data: [String: MDData]) -> EventLoopFuture<MDObject> {
+    private func _insert(_ connection: MDConnection, _ class: String, _ data: [MDQueryKey: MDData]) -> EventLoopFuture<MDObject> {
         
         let now = Date()
         
+        let data = data.stringKeys
         let columns = data.compactMapValues { $0.sql_type }
         
         var _data = data.compactMapValues { $0.isNil ? nil : $0.toSQLData() }
@@ -457,7 +458,7 @@ extension MDSQLDriver {
         }
     }
     
-    func insert(_ connection: MDConnection, _ class: String, _ values: [String: MDData]) -> EventLoopFuture<MDObject> {
+    func insert(_ connection: MDConnection, _ class: String, _ values: [MDQueryKey: MDData]) -> EventLoopFuture<MDObject> {
         
         self._insert(connection, `class`, values).flatMapError { error in
             

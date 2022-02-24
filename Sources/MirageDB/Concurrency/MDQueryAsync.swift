@@ -72,6 +72,15 @@ extension MDQuery {
 }
 
 @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+extension MDQuery {
+    
+    @discardableResult
+    public func insert(_ class: String, _ data: [MDQueryKey: MDData]) async throws -> MDObject {
+        return try await self.insert(`class`, data).get()
+    }
+}
+
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension MDFindExpression {
     
     @discardableResult

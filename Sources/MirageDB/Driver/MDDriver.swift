@@ -91,7 +91,7 @@ protocol MDDriver {
     func insert(
         _ connection: MDConnection,
         _ class: String,
-        _ data: [String: MDData]
+        _ data: [MDQueryKey: MDData]
     ) -> EventLoopFuture<MDObject>
     
     func withTransaction<T>(
