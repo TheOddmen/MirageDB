@@ -51,9 +51,6 @@ extension DBPredicateValue {
     
     fileprivate init(_ value: MDPredicateValue) {
         switch value {
-        case .id: self = .objectId
-        case .createdAt: self = .key("_created_at")
-        case .updatedAt: self = .key("_updated_at")
         case let .key(key): self = .key(key)
         case let .value(value): self = .value(value.toMDData().toSQLData())
         }
@@ -62,12 +59,7 @@ extension DBPredicateValue {
 
 extension DBPredicateKey {
     
-    fileprivate init(_ value: MDPredicateKey) {
-        switch value {
-        case .id: self = .objectId
-        case .createdAt: self = .key("_created_at")
-        case .updatedAt: self = .key("_updated_at")
-        case let .key(key): self = .key(key)
-        }
+    fileprivate init(_ value: MDQueryKey) {
+        self = .key(value.key)
     }
 }

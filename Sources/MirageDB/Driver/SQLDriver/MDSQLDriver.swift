@@ -252,14 +252,14 @@ extension MDSQLDriver {
         }
     }
     
-    func _find(_ query: MDFindExpression) throws -> DBFindExpression {
+    private func _find(_ query: MDFindExpression) throws -> DBFindExpression {
         
         var _query = query.connection.connection.query().find(query.class)
         
         _query = _query.filter(query.filters.map(DBPredicateExpression.init))
         
         if !query.sort.isEmpty {
-            _query = _query.sort(query.sort.mapValues(DBSortOrderOption.init))
+            _query = _query.sort(query.sort.stringKeys.mapValues(DBSortOrderOption.init))
         }
         if query.skip > 0 {
             _query = _query.skip(query.skip)
@@ -268,7 +268,7 @@ extension MDSQLDriver {
             _query = _query.limit(query.limit)
         }
         if let includes = query.includes {
-            _query = _query.includes(includes.union(MDObject._default_fields))
+            _query = _query.includes(includes.stringKeys.union(MDObject._default_fields))
         }
         
         return _query
@@ -326,7 +326,7 @@ extension MDSQLDriver {
         return self.toArray(query.limit(1)).map { $0.first }
     }
     
-    func findOneAndUpdate(_ query: MDFindOneExpression, _ update: [String : MDUpdateOption]) -> EventLoopFuture<MDObject?> {
+    func findOneAndUpdate(_ query: MDFindOneExpression, _ update: [MDQueryKey: MDUpdateOption]) -> EventLoopFuture<MDObject?> {
         
         var _query = query.connection.connection.query().findOne(query.class)
         
@@ -338,14 +338,15 @@ extension MDSQLDriver {
         }
         
         if !query.sort.isEmpty {
-            _query = _query.sort(query.sort.mapValues(DBSortOrderOption.init))
+            _query = _query.sort(query.sort.stringKeys.mapValues(DBSortOrderOption.init))
         }
         if let includes = query.includes {
-            _query = _query.includes(includes.union(MDObject._default_fields))
+            _query = _query.includes(includes.stringKeys.union(MDObject._default_fields))
         }
         
         let now = Date()
         
+        let update = update.stringKeys
         let columns = update.compactMapValues { $0.sql_type }
         
         var _update = update
@@ -359,7 +360,7 @@ extension MDSQLDriver {
         }
     }
     
-    func _findOneAndUpsert(_ query: MDFindOneExpression, _ update: [String : MDUpdateOption], _ setOnInsert: [String : MDDataConvertible]) -> EventLoopFuture<MDObject?> {
+    private func _findOneAndUpsert(_ query: MDFindOneExpression, _ update: [MDQueryKey: MDUpdateOption], _ setOnInsert: [MDQueryKey: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
         
         var _query = query.connection.connection.query().findOne(query.class)
         
@@ -371,13 +372,16 @@ extension MDSQLDriver {
         }
         
         if !query.sort.isEmpty {
-            _query = _query.sort(query.sort.mapValues(DBSortOrderOption.init))
+            _query = _query.sort(query.sort.stringKeys.mapValues(DBSortOrderOption.init))
         }
         if let includes = query.includes {
-            _query = _query.includes(includes.union(MDObject._default_fields))
+            _query = _query.includes(includes.stringKeys.union(MDObject._default_fields))
         }
         
         let now = Date()
+        
+        let update = update.stringKeys
+        let setOnInsert = setOnInsert.stringKeys
         
         let columns = update.compactMapValues { $0.sql_type }
             .merging(setOnInsert.compactMapValues { $0.toMDData().sql_type }) { _, rhs in rhs }
@@ -398,7 +402,7 @@ extension MDSQLDriver {
         }
     }
     
-    func findOneAndUpsert(_ query: MDFindOneExpression, _ update: [String : MDUpdateOption], _ setOnInsert: [String : MDDataConvertible]) -> EventLoopFuture<MDObject?> {
+    func findOneAndUpsert(_ query: MDFindOneExpression, _ update: [MDQueryKey: MDUpdateOption], _ setOnInsert: [MDQueryKey: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
         
         self._findOneAndUpsert(query, update, setOnInsert).flatMapError { error in
             
@@ -418,10 +422,10 @@ extension MDSQLDriver {
         _query = _query.filter(query.filters.map(DBPredicateExpression.init))
         
         if !query.sort.isEmpty {
-            _query = _query.sort(query.sort.mapValues(DBSortOrderOption.init))
+            _query = _query.sort(query.sort.stringKeys.mapValues(DBSortOrderOption.init))
         }
         if let includes = query.includes {
-            _query = _query.includes(includes.union(MDObject._default_fields))
+            _query = _query.includes(includes.stringKeys.union(MDObject._default_fields))
         }
         
         return _query.delete().flatMapThrowing { try $0.map(MDObject.init) }
@@ -436,7 +440,7 @@ extension MDSQLDriver {
         return _query.delete()
     }
     
-    func _insert(_ connection: MDConnection, _ class: String, _ data: [String: MDData]) -> EventLoopFuture<MDObject> {
+    private func _insert(_ connection: MDConnection, _ class: String, _ data: [String: MDData]) -> EventLoopFuture<MDObject> {
         
         let now = Date()
         

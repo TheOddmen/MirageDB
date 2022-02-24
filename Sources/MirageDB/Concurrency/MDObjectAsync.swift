@@ -32,6 +32,10 @@ extension MDObject {
         self = try await self.fetch(keys, on: connection).get()
     }
     
+    public mutating func fetch<S: Sequence>(_ keys: S, on connection: MDConnection) async throws where S.Element == MDQueryKey {
+        self = try await self.fetch(keys, on: connection).get()
+    }
+    
     public mutating func fetch(on connection: MDConnection) async throws {
         self = try await self.fetch(on: connection).get()
     }

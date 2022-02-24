@@ -135,7 +135,7 @@ extension MDObject {
 
 extension MDObject {
     
-    public func fetch<S: Sequence>(_ keys: S, on connection: MDConnection) -> EventLoopFuture<MDObject> where S.Element == String {
+    public func fetch<S: Sequence>(_ keys: S, on connection: MDConnection) -> EventLoopFuture<MDObject> where S.Element == MDQueryKey {
         
         if let id = self.id {
             
@@ -173,7 +173,7 @@ extension MDObject {
             return connection.query()
                 .findOne(self.class)
                 .filter { $0.id == id }
-                .includes(self.keys)
+                .includes(self.keys.map { MDQueryKey(key: $0) })
                 .update(mutated)
                 .unwrap(orError: MDError.objectNotFound)
             
@@ -190,12 +190,19 @@ extension MDObject {
             return connection.query()
                 .findOne(self.class)
                 .filter { $0.id == id }
-                .includes(self.keys)
+                .includes(self.keys.map { MDQueryKey(key: $0) })
                 .delete()
                 .unwrap(orError: MDError.objectNotFound)
             
         } else {
             return connection.eventLoopGroup.next().makeFailedFuture(MDError.invalidObjectId)
         }
+    }
+}
+
+extension MDObject {
+    
+    public func fetch<S: Sequence>(_ keys: S, on connection: MDConnection) -> EventLoopFuture<MDObject> where S.Element == String {
+        return self.fetch(keys.map { MDQueryKey(key: $0) }, on: connection)
     }
 }

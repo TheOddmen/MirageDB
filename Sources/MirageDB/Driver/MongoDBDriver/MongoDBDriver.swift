@@ -132,14 +132,14 @@ struct MongoDBDriver: MDDriver {
         }
     }
     
-    func _find(_ query: MDFindExpression) throws -> DBMongoFindExpression<BSONDocument> {
+    private func _find(_ query: MDFindExpression) throws -> DBMongoFindExpression<BSONDocument> {
         
         let filter = try query.filterBSONDocument()
         
         var _query = query.connection.connection.mongoQuery().collection(query.class).find().filter(filter)
         
         if !query.sort.isEmpty {
-            _query = _query.sort(query.sort.mapValues(DBMongoSortOrder.init))
+            _query = _query.sort(query.sort.stringKeys.mapValues(DBMongoSortOrder.init))
         }
         if query.skip > 0 {
             _query = _query.skip(query.skip)
@@ -148,7 +148,7 @@ struct MongoDBDriver: MDDriver {
             _query = _query.limit(query.limit)
         }
         if let includes = query.includes {
-            let projection = Dictionary(uniqueKeysWithValues: includes.union(MDObject._default_fields).map { ($0, 1) })
+            let projection = Dictionary(uniqueKeysWithValues: includes.stringKeys.union(MDObject._default_fields).map { ($0, 1) })
             _query = _query.projection(BSONDocument(projection))
         }
         
@@ -192,10 +192,10 @@ struct MongoDBDriver: MDDriver {
             var _query = query.connection.connection.mongoQuery().collection(query.class).findOne().filter(filter)
             
             if !query.sort.isEmpty {
-                _query = _query.sort(query.sort.mapValues(DBMongoSortOrder.init))
+                _query = _query.sort(query.sort.stringKeys.mapValues(DBMongoSortOrder.init))
             }
             if let includes = query.includes {
-                let projection = Dictionary(uniqueKeysWithValues: includes.union(MDObject._default_fields).map { ($0, 1) })
+                let projection = Dictionary(uniqueKeysWithValues: includes.stringKeys.union(MDObject._default_fields).map { ($0, 1) })
                 _query = _query.projection(BSONDocument(projection))
             }
             
@@ -207,7 +207,7 @@ struct MongoDBDriver: MDDriver {
         }
     }
     
-    func findOneAndUpdate(_ query: MDFindOneExpression, _ update: [String : MDUpdateOption]) -> EventLoopFuture<MDObject?> {
+    func findOneAndUpdate(_ query: MDFindOneExpression, _ update: [MDQueryKey: MDUpdateOption]) -> EventLoopFuture<MDObject?> {
         
         do {
             
@@ -217,7 +217,7 @@ struct MongoDBDriver: MDDriver {
             
             let now = Date()
             
-            var update = update
+            var update = update.stringKeys
             update["_id"] = nil
             update["_created_at"] = nil
             update["_updated_at"] = .set(now)
@@ -230,10 +230,10 @@ struct MongoDBDriver: MDDriver {
             }
             
             if !query.sort.isEmpty {
-                _query = _query.sort(query.sort.mapValues(DBMongoSortOrder.init))
+                _query = _query.sort(query.sort.stringKeys.mapValues(DBMongoSortOrder.init))
             }
             if let includes = query.includes {
-                let projection = Dictionary(uniqueKeysWithValues: includes.union(MDObject._default_fields).map { ($0, 1) })
+                let projection = Dictionary(uniqueKeysWithValues: includes.stringKeys.union(MDObject._default_fields).map { ($0, 1) })
                 _query = _query.projection(BSONDocument(projection))
             }
             
@@ -245,7 +245,7 @@ struct MongoDBDriver: MDDriver {
         }
     }
     
-    func _findOneAndUpsert(_ query: MDFindOneExpression, _ update: [String : MDUpdateOption], _ setOnInsert: [String : MDDataConvertible]) -> EventLoopFuture<MDObject?> {
+    private func _findOneAndUpsert(_ query: MDFindOneExpression, _ update: [MDQueryKey: MDUpdateOption], _ setOnInsert: [MDQueryKey: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
         
         do {
             
@@ -255,12 +255,12 @@ struct MongoDBDriver: MDDriver {
             
             let now = Date()
             
-            var update = update
+            var update = update.stringKeys
             update["_id"] = nil
             update["_created_at"] = nil
             update["_updated_at"] = .set(now)
             
-            var setOnInsert = setOnInsert
+            var setOnInsert = setOnInsert.stringKeys
             setOnInsert["_id"] = query.objectIDGenerator?() ?? generalObjectIDGenerator()
             setOnInsert["_created_at"] = now
             setOnInsert["_updated_at"] = nil
@@ -281,10 +281,10 @@ struct MongoDBDriver: MDDriver {
             }
             
             if !query.sort.isEmpty {
-                _query = _query.sort(query.sort.mapValues(DBMongoSortOrder.init))
+                _query = _query.sort(query.sort.stringKeys.mapValues(DBMongoSortOrder.init))
             }
             if let includes = query.includes {
-                let projection = Dictionary(uniqueKeysWithValues: includes.union(MDObject._default_fields).map { ($0, 1) })
+                let projection = Dictionary(uniqueKeysWithValues: includes.stringKeys.union(MDObject._default_fields).map { ($0, 1) })
                 _query = _query.projection(BSONDocument(projection))
             }
             
@@ -296,7 +296,7 @@ struct MongoDBDriver: MDDriver {
         }
     }
     
-    func findOneAndUpsert(_ query: MDFindOneExpression, _ update: [String : MDUpdateOption], _ setOnInsert: [String : MDDataConvertible]) -> EventLoopFuture<MDObject?> {
+    func findOneAndUpsert(_ query: MDFindOneExpression, _ update: [MDQueryKey: MDUpdateOption], _ setOnInsert: [MDQueryKey: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
         
         self._findOneAndUpsert(query, update, setOnInsert).flatMapError { error in
             
@@ -319,10 +319,10 @@ struct MongoDBDriver: MDDriver {
             var _query = query.connection.connection.mongoQuery().collection(query.class).findOneAndDelete().filter(filter)
             
             if !query.sort.isEmpty {
-                _query = _query.sort(query.sort.mapValues(DBMongoSortOrder.init))
+                _query = _query.sort(query.sort.stringKeys.mapValues(DBMongoSortOrder.init))
             }
             if let includes = query.includes {
-                let projection = Dictionary(uniqueKeysWithValues: includes.union(MDObject._default_fields).map { ($0, 1) })
+                let projection = Dictionary(uniqueKeysWithValues: includes.stringKeys.union(MDObject._default_fields).map { ($0, 1) })
                 _query = _query.projection(BSONDocument(projection))
             }
             
@@ -350,7 +350,7 @@ struct MongoDBDriver: MDDriver {
         }
     }
     
-    func _insert(_ connection: MDConnection, _ class: String, _ values: [String: MDData]) -> EventLoopFuture<MDObject> {
+    private func _insert(_ connection: MDConnection, _ class: String, _ values: [String: MDData]) -> EventLoopFuture<MDObject> {
         
         let now = Date()
         

@@ -1,5 +1,5 @@
 //
-//  MDPredicateBuilder.swift
+//  MDQueryKey.swift
 //
 //  The MIT License
 //  Copyright (c) 2021 - 2022 O2ter Limited. All rights reserved.
@@ -24,25 +24,53 @@
 //
 
 @frozen
-public struct MDPredicateBuilder {
+public struct MDQueryKey: Hashable {
+    
+    public var key: String
     
     @inlinable
-    public init() {
-        
+    public init(key: String) {
+        switch key {
+        case "id": self.key = "_id"
+        case "createdAt": self.key = "_created_at"
+        case "updatedAt": self.key = "_updated_at"
+        default: self.key = key
+        }
     }
 }
 
-extension MDPredicateBuilder {
+extension MDQueryKey {
     
     @inlinable
-    public var id: MDQueryKey { .id }
+    public static var id: MDQueryKey { MDQueryKey(key: "id") }
     
     @inlinable
-    public var createdAt: MDQueryKey { .createdAt }
+    public static var createdAt: MDQueryKey { MDQueryKey(key: "createdAt") }
     
     @inlinable
-    public var updatedAt: MDQueryKey { .updatedAt }
+    public static var updatedAt: MDQueryKey { MDQueryKey(key: "updatedAt") }
     
     @inlinable
-    public subscript(_ key: String) -> MDQueryKey { .key(key) }
+    public static func key(_ key: String) -> MDQueryKey { MDQueryKey(key: key) }
+}
+
+extension Set where Element == MDQueryKey {
+    
+    var stringKeys: Set<String> {
+        return Set<String>(self.map { $0.key })
+    }
+}
+
+extension Dictionary where Key == MDQueryKey {
+    
+    var stringKeys: Dictionary<String, Value> {
+        return Dictionary<String, Value>(self.map { ($0.key, $1) }) { _, rhs in rhs }
+    }
+}
+
+extension OrderedDictionary where Key == MDQueryKey {
+    
+    var stringKeys: OrderedDictionary<String, Value> {
+        return OrderedDictionary<String, Value>(self.map { ($0.key, $1) }) { _, rhs in rhs }
+    }
 }

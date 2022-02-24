@@ -31,9 +31,9 @@ public struct MDFindOneExpression: MDExpressionProtocol {
     
     var filters: [MDPredicateExpression] = []
     
-    var sort: OrderedDictionary<String, MDSortOrderOption> = [:]
+    var sort: OrderedDictionary<MDQueryKey, MDSortOrderOption> = [:]
     
-    var includes: Set<String>?
+    var includes: Set<MDQueryKey>?
     
     var returning: MDReturningOption = .after
     
@@ -49,30 +49,30 @@ extension MDQuery {
 
 extension MDFindOneExpression {
     
-    public func update(_ update: [String: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
+    public func update(_ update: [MDQueryKey: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
         return self.update(update.mapValues { .set($0.toMDData()) })
     }
     
-    public func update(_ update: [String: MDUpdateOption]) -> EventLoopFuture<MDObject?> {
+    public func update(_ update: [MDQueryKey: MDUpdateOption]) -> EventLoopFuture<MDObject?> {
         return self.connection.driver.findOneAndUpdate(self, update)
     }
 }
 
 extension MDFindOneExpression {
     
-    public func upsert(_ upsert: [String: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
+    public func upsert(_ upsert: [MDQueryKey: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
         return self.upsert(upsert.mapValues { .set($0.toMDData()) })
     }
     
-    public func upsert(_ upsert: [String: MDUpsertOption]) -> EventLoopFuture<MDObject?> {
+    public func upsert(_ upsert: [MDQueryKey: MDUpsertOption]) -> EventLoopFuture<MDObject?> {
         return self.upsert(upsert.compactMapValues { $0.update }, setOnInsert: upsert.compactMapValues { $0.setOnInsert })
     }
     
-    public func upsert(_ update: [String: MDDataConvertible], setOnInsert: [String : MDDataConvertible]) -> EventLoopFuture<MDObject?> {
+    public func upsert(_ update: [MDQueryKey: MDDataConvertible], setOnInsert: [MDQueryKey: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
         return self.upsert(update.mapValues { .set($0) }, setOnInsert: setOnInsert)
     }
     
-    public func upsert(_ update: [String : MDUpdateOption], setOnInsert: [String : MDDataConvertible]) -> EventLoopFuture<MDObject?> {
+    public func upsert(_ update: [MDQueryKey: MDUpdateOption], setOnInsert: [MDQueryKey: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
         return self.connection.driver.findOneAndUpsert(self, update, setOnInsert)
     }
 }
@@ -113,19 +113,19 @@ extension MDFindOneExpression {
         return result
     }
     
-    public func sort(_ sort: OrderedDictionary<String, MDSortOrderOption>) -> Self {
+    public func sort(_ sort: OrderedDictionary<MDQueryKey, MDSortOrderOption>) -> Self {
         var result = self
         result.sort = sort
         return result
     }
     
-    public func includes(_ keys: String ...) -> Self {
+    public func includes(_ keys: MDQueryKey ...) -> Self {
         var result = self
         result.includes = includes?.union(keys) ?? Set(keys)
         return result
     }
     
-    public func includes<S: Sequence>(_ keys: S) -> Self where S.Element == String {
+    public func includes<S: Sequence>(_ keys: S) -> Self where S.Element == MDQueryKey {
         var result = self
         result.includes = includes?.union(keys) ?? Set(keys)
         return result
@@ -135,5 +135,56 @@ extension MDFindOneExpression {
         var result = self
         result.returning = returning
         return result
+    }
+}
+
+extension MDFindOneExpression {
+    
+    public func update(_ update: [String: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
+        return self.update(Dictionary(update.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs })
+    }
+    
+    public func update(_ update: [String: MDUpdateOption]) -> EventLoopFuture<MDObject?> {
+        return self.update(Dictionary(update.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs })
+    }
+}
+
+extension MDFindOneExpression {
+    
+    public func upsert(_ upsert: [String: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
+        return self.upsert(Dictionary(upsert.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs })
+    }
+    
+    public func upsert(_ upsert: [String: MDUpsertOption]) -> EventLoopFuture<MDObject?> {
+        return self.upsert(Dictionary(upsert.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs })
+    }
+    
+    public func upsert(_ update: [String: MDDataConvertible], setOnInsert: [String: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
+        return self.upsert(
+            Dictionary(update.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs },
+            setOnInsert: Dictionary(setOnInsert.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs }
+        )
+    }
+    
+    public func upsert(_ update: [String: MDUpdateOption], setOnInsert: [String: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
+        return self.upsert(
+            Dictionary(update.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs },
+            setOnInsert: Dictionary(setOnInsert.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs }
+        )
+    }
+}
+
+extension MDFindOneExpression {
+    
+    public func sort(_ sort: OrderedDictionary<String, MDSortOrderOption>) -> Self {
+        return self.sort(OrderedDictionary(sort.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs })
+    }
+    
+    public func includes(_ keys: String ...) -> Self {
+        return self.includes(keys.map { MDQueryKey(key: $0) })
+    }
+    
+    public func includes<S: Sequence>(_ keys: S) -> Self where S.Element == String {
+        return self.includes(keys.map { MDQueryKey(key: $0) })
     }
 }

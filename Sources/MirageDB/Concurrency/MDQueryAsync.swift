@@ -84,12 +84,12 @@ extension MDFindExpression {
 extension MDFindOneExpression {
     
     @discardableResult
-    public func update(_ update: [String : MDDataConvertible]) async throws -> MDObject? {
+    public func update(_ update: [String: MDDataConvertible]) async throws -> MDObject? {
         return try await self.update(update).get()
     }
     
     @discardableResult
-    public func update(_ update: [String : MDUpdateOption]) async throws -> MDObject? {
+    public func update(_ update: [String: MDUpdateOption]) async throws -> MDObject? {
         return try await self.update(update).get()
     }
 }
@@ -98,13 +98,61 @@ extension MDFindOneExpression {
 extension MDFindOneExpression {
     
     @discardableResult
-    public func upsert(_ upsert: [String : MDDataConvertible]) async throws -> MDObject? {
+    public func upsert(_ upsert: [String: MDDataConvertible]) async throws -> MDObject? {
         return try await self.upsert(upsert).get()
     }
     
     @discardableResult
-    public func upsert(_ upsert: [String : MDUpsertOption]) async throws -> MDObject? {
+    public func upsert(_ upsert: [String: MDUpsertOption]) async throws -> MDObject? {
         return try await self.upsert(upsert).get()
+    }
+    
+    @discardableResult
+    public func upsert(_ update: [String: MDDataConvertible], setOnInsert: [String: MDDataConvertible]) async throws -> MDObject? {
+        return try await self.upsert(update, setOnInsert: setOnInsert).get()
+    }
+    
+    @discardableResult
+    public func upsert(_ update: [String: MDUpdateOption], setOnInsert: [String: MDDataConvertible]) async throws -> MDObject? {
+        return try await self.upsert(update, setOnInsert: setOnInsert).get()
+    }
+}
+
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+extension MDFindOneExpression {
+    
+    @discardableResult
+    public func update(_ update: [MDQueryKey: MDDataConvertible]) async throws -> MDObject? {
+        return try await self.update(update).get()
+    }
+    
+    @discardableResult
+    public func update(_ update: [MDQueryKey: MDUpdateOption]) async throws -> MDObject? {
+        return try await self.update(update).get()
+    }
+}
+
+@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
+extension MDFindOneExpression {
+    
+    @discardableResult
+    public func upsert(_ upsert: [MDQueryKey: MDDataConvertible]) async throws -> MDObject? {
+        return try await self.upsert(upsert).get()
+    }
+    
+    @discardableResult
+    public func upsert(_ upsert: [MDQueryKey: MDUpsertOption]) async throws -> MDObject? {
+        return try await self.upsert(upsert).get()
+    }
+    
+    @discardableResult
+    public func upsert(_ update: [MDQueryKey: MDDataConvertible], setOnInsert: [MDQueryKey: MDDataConvertible]) async throws -> MDObject? {
+        return try await self.upsert(update, setOnInsert: setOnInsert).get()
+    }
+    
+    @discardableResult
+    public func upsert(_ update: [MDQueryKey: MDUpdateOption], setOnInsert: [MDQueryKey: MDDataConvertible]) async throws -> MDObject? {
+        return try await self.upsert(update, setOnInsert: setOnInsert).get()
     }
 }
 

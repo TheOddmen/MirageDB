@@ -31,13 +31,13 @@ public struct MDFindExpression: MDExpressionProtocol {
     
     var filters: [MDPredicateExpression] = []
     
-    var sort: OrderedDictionary<String, MDSortOrderOption> = [:]
+    var sort: OrderedDictionary<MDQueryKey, MDSortOrderOption> = [:]
     
     var skip: Int = 0
     
     var limit: Int = .max
     
-    var includes: Set<String>?
+    var includes: Set<MDQueryKey>?
 }
 
 extension MDQuery {
@@ -108,19 +108,19 @@ extension MDFindExpression {
         return result
     }
     
-    public func sort(_ sort: OrderedDictionary<String, MDSortOrderOption>) -> Self {
+    public func sort(_ sort: OrderedDictionary<MDQueryKey, MDSortOrderOption>) -> Self {
         var result = self
         result.sort = sort
         return result
     }
     
-    public func includes(_ keys: String ...) -> Self {
+    public func includes(_ keys: MDQueryKey ...) -> Self {
         var result = self
         result.includes = includes?.union(keys) ?? Set(keys)
         return result
     }
     
-    public func includes<S: Sequence>(_ keys: S) -> Self where S.Element == String {
+    public func includes<S: Sequence>(_ keys: S) -> Self where S.Element == MDQueryKey {
         var result = self
         result.includes = includes?.union(keys) ?? Set(keys)
         return result
