@@ -23,54 +23,47 @@
 //  THE SOFTWARE.
 //
 
-private func decodeInt32(_ obj: [String: DBData]) -> Int32? {
-    guard obj.count == 1 else { return nil }
-    guard obj.keys.first == "$numberInt" else { return nil }
-    guard let value = obj["$numberInt"]?.string else { return nil }
-    return Int32(value)
-}
-
 private func decodeInt64(_ obj: [String: DBData]) -> Int64? {
     guard obj.count == 1 else { return nil }
-    guard obj.keys.first == "$numberLong" else { return nil }
-    guard let value = obj["$numberLong"]?.string else { return nil }
+    guard obj.keys.first == "$signed" else { return nil }
+    guard let value = obj["$signed"]?.string else { return nil }
     return Int64(value)
 }
 
-private func decodeDouble(_ obj: [String: DBData]) -> Double? {
-    
+private func decodeUInt64(_ obj: [String: DBData]) -> UInt64? {
     guard obj.count == 1 else { return nil }
-    guard obj.keys.first == "$numberDouble" else { return nil }
-    guard let value = obj["$numberDouble"]?.string else { return nil }
-    
-    switch value {
-    case "Infinity": return .infinity
-    case "-Infinity": return -.infinity
-    case "NaN": return .nan
-    default: return Double(value)
-    }
+    guard obj.keys.first == "$unsigned" else { return nil }
+    guard let value = obj["$unsigned"]?.string else { return nil }
+    return UInt64(value)
 }
 
 private func decodeDecimal(_ obj: [String: DBData]) -> Decimal? {
     guard obj.count == 1 else { return nil }
-    guard obj.keys.first == "$numberDecimal" else { return nil }
-    guard let value = obj["$numberDecimal"]?.string else { return nil }
+    guard obj.keys.first == "$decimal" else { return nil }
+    guard let value = obj["$decimal"]?.string else { return nil }
     return Decimal(string: value)
 }
 
 private func decodeDate(_ obj: [String: DBData]) -> Date? {
     guard obj.count == 1 else { return nil }
     guard obj.keys.first == "$date" else { return nil }
-    guard let value = obj["$date"]?.dictionary else { return nil }
-    guard let millis = decodeInt64(value) else { return nil }
+    guard let value = obj["$date"]?.string else { return nil }
+    guard let millis = Int64(value) else { return nil }
     return Date(timeIntervalSince1970: Double(millis) / 1000)
 }
 
 private func decodeBinary(_ obj: [String: DBData]) -> Data? {
     guard obj.count == 1 else { return nil }
     guard obj.keys.first == "$binary" else { return nil }
-    guard let value = obj["base64"]?.string else { return nil }
+    guard let value = obj["$binary"]?.string else { return nil }
     return Data(base64Encoded: value)
+}
+
+private func decodeDocument(_ obj: [String: DBData]) -> [String: MDData]? {
+    guard obj.count == 1 else { return nil }
+    guard obj.keys.first == "$object" else { return nil }
+    guard let object = obj["$object"]?.dictionary else { return nil }
+    return try? object.mapValues(MDData.init(fromJSON:))
 }
 
 extension MDData.Number {
@@ -87,56 +80,61 @@ extension MDData.Number {
 
 extension MDData {
     
-    private static let extendedJSONTypes = [
-        "$numberInt": { decodeInt32($0).map(MDData.init) },
-        "$numberLong": { decodeInt64($0).map(MDData.init) },
-        "$numberDouble": { decodeDouble($0).map(MDData.init) },
-        "$numberDecimal": { decodeDecimal($0).map(MDData.init) },
+    private static let json_decoder = [
+        "$signed": { decodeInt64($0).map(MDData.init) },
+        "$unsigned": { decodeUInt64($0).map(MDData.init) },
+        "$decimal": { decodeDecimal($0).map(MDData.init) },
         "$binary": { decodeBinary($0).map(MDData.init) },
         "$date": { decodeDate($0).map(MDData.init) },
+        "$object": { decodeDocument($0).map(MDData.init) },
     ]
     
-    private init(fromExtendedJSON data: DBData) throws {
+    fileprivate init(fromJSON data: DBData) throws {
         switch data {
         case .null: self = nil
         case let .boolean(value): self.init(value)
         case let .string(value): self.init(value)
         case let .number(value): self = .number(Number(value))
         case let .timestamp(value): self.init(value)
-        case let .array(value): try self.init(value.map(MDData.init(fromExtendedJSON:)))
+        case let .array(value): try self.init(value.map(MDData.init(fromJSON:)))
         case let .dictionary(obj):
             
             if let key = obj.keys.first,
-               let decoder = MDData.extendedJSONTypes[key],
+               let decoder = MDData.json_decoder[key],
                let value = decoder(obj) {
                 
                 self = value
                 
             } else {
                 
-                try self.init(obj.mapValues(MDData.init(fromExtendedJSON:)))
+                try self.init(obj.mapValues(MDData.init(fromJSON:)))
             }
             
         default: throw MDError.unsupportedType
         }
     }
     
-    private func toExtendedJSON() -> DBData {
+    private func toJSON() -> DBData {
         switch self {
         case .null: return nil
         case let .boolean(value): return DBData(value)
         case let .string(value): return DBData(value)
         case let .number(value):
             switch value {
-            case let .signed(value): return ["$numberLong": "\(value)"]
-            case let .unsigned(value): return ["$numberLong": "\(value)"]
+            case let .signed(value): return ["$signed": "\(value)"]
+            case let .unsigned(value): return ["$unsigned": "\(value)"]
             case let .number(value): return DBData(value)
-            case let .decimal(value): return ["$numberDecimal": "\(value)"]
+            case let .decimal(value): return ["$decimal": "\(value)"]
             }
-        case let .timestamp(value): return ["$date": ["$numberLong": "\(Int64(value.timeIntervalSince1970 * 1000))"]]
-        case let .binary(value): return ["$binary": ["base64": DBData(value.base64EncodedString()), "subType": "00"]]
-        case let .array(value): return DBData(value.map { $0.toExtendedJSON() })
-        case let .dictionary(value): return DBData(value.mapValues { $0.toExtendedJSON() })
+        case let .timestamp(value): return ["$date": "\(Int64(value.timeIntervalSince1970 * 1000))"]
+        case let .binary(value): return ["$binary": DBData(value.base64EncodedString())]
+        case let .array(value): return DBData(value.map { $0.toJSON() })
+        case let .dictionary(value):
+            if value.keys.count == 1, let key = value.keys.first, MDData.json_decoder.keys.contains(key) {
+                return ["$object": DBData(value.mapValues { $0.toJSON() })]
+            } else {
+                return DBData(value.mapValues { $0.toJSON() })
+            }
         }
     }
 }
@@ -151,8 +149,8 @@ extension MDData {
         case let .number(value): self = .number(Number(value))
         case let .timestamp(value): self.init(value)
         case let .binary(value): self.init(value)
-        case let .array(value): try self.init(value.map(MDData.init(fromExtendedJSON:)))
-        case let .dictionary(value): try self.init(value.mapValues(MDData.init(fromExtendedJSON:)))
+        case let .array(value): try self.init(value.map(MDData.init(fromJSON:)))
+        case let .dictionary(value): try self.init(value.mapValues(MDData.init(fromJSON:)))
         default: throw MDError.unsupportedType
         }
     }
@@ -171,8 +169,8 @@ extension MDData {
             }
         case let .timestamp(value): return DBData(value)
         case let .binary(value): return DBData(value)
-        case let .array(value): return DBData(value.map { $0.toExtendedJSON() })
-        case let .dictionary(value): return DBData(value.mapValues { $0.toExtendedJSON() })
+        case let .array(value): return DBData(value.map { $0.toJSON() })
+        case let .dictionary(value): return DBData(value.mapValues { $0.toJSON() })
         }
     }
 }
