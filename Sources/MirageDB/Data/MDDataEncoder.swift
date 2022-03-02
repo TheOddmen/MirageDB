@@ -165,42 +165,6 @@ extension MDDataEncoder._Encoder {
     }
 }
 
-private struct _AnyEncodable: Encodable {
-    
-    let value: Encodable
-    
-    func encode(to encoder: Encoder) throws {
-        try value.encode(to: encoder)
-    }
-}
-
-private protocol _CollectionEncodableMarker: Encodable {
-    
-    var _array: [Encodable] { get }
-}
-
-extension _CollectionEncodableMarker where Self: Collection, Element: Encodable {
-    
-    fileprivate var _array: [Encodable] { return Array(self) }
-}
-
-extension Array: _CollectionEncodableMarker where Element: Encodable { }
-extension Set: _CollectionEncodableMarker where Element: Encodable { }
-extension OrderedSet: _CollectionEncodableMarker where Element: Encodable { }
-
-private protocol _StringDictionaryEncodableMarker: Encodable {
-    
-    var _dictionary: [String: Encodable] { get }
-}
-extension Dictionary: _StringDictionaryEncodableMarker where Key == String, Value: Encodable {
-    
-    fileprivate var _dictionary: [String: Encodable] { return self }
-}
-extension OrderedDictionary: _StringDictionaryEncodableMarker where Key == String, Value: Encodable {
-    
-    fileprivate var _dictionary: [String: Encodable] { return Dictionary(self) }
-}
-
 extension MDDataEncoder._EncoderStorage {
     
     func _encode(_ value: Encodable) throws -> MDData {
@@ -225,30 +189,15 @@ extension MDDataEncoder._EncoderStorage {
         case let value as Data: return MDData(value)
         case let value as Json.Number: return .number(.init(value))
         case let value as MDData.Number: return MDData(value)
-        case let value as _CollectionEncodableMarker:
-            
-            let storage = MDDataEncoder._RefArray(codingPath: codingPath, userInfo: userInfo)
-            
-            for item in value._array {
-                try storage.encode(_AnyEncodable(value: item))
-            }
-            
-            return storage.value
-            
-        case let value as _StringDictionaryEncodableMarker:
-            
-            let storage = MDDataEncoder._RefObject(codingPath: codingPath, userInfo: userInfo)
-            let container = MDDataEncoder._KeyedEncodingContainer<MDData.CodingKey>(ref: storage)
-            
-            for (key, item) in value._dictionary {
-                try container.encode(_AnyEncodable(value: item), forKey: MDData.CodingKey(stringValue: key))
-            }
-            
-            return storage.value
-            
-        case let value as _AnyEncodable: return try self._encode(value.value)
         case let value as MDDataConvertible: return value.toMDData()
-        default: throw Database.Error.unsupportedType
+        default:
+            
+            let encoder = MDDataEncoder._Encoder(codingPath: codingPath, userInfo: userInfo, storage: nil)
+            try value.encode(to: encoder)
+            
+            guard let encoded = encoder.storage?.value else { throw Database.Error.unsupportedType }
+            
+            return encoded
         }
     }
 }
