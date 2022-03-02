@@ -29,7 +29,7 @@ extension Dictionary where Key == String, Value == MDData {
     init(_ document: BSONDocument) throws {
         self.init()
         for (key, value) in document {
-            self[key] = try MDData(value)
+            self[key] = try MDData(fromBSON: value)
         }
     }
 }
@@ -37,13 +37,13 @@ extension Dictionary where Key == String, Value == MDData {
 extension MDData {
     
     @inlinable
-    public init(_ value: BSONDocument) throws {
-        try self.init(.document(value))
+    init(_ value: BSONDocument) throws {
+        try self.init(fromBSON: .document(value))
     }
     
     @inlinable
-    public init(_ value: BSON) throws {
-        switch value {
+    init(fromBSON data: BSON) throws {
+        switch data {
         case .null: self = nil
         case .undefined: self = nil
         case let .int32(value): self.init(value)
@@ -74,10 +74,10 @@ extension MDData {
     }
 }
 
-extension MDData.Number: BSONConvertible {
+extension MDData.Number {
     
     @inlinable
-    public func toBSON() -> BSON {
+    func toBSON() -> BSON {
         switch self {
         case let .signed(value): return BSON(value)
         case let .unsigned(value): return BSON(value)
@@ -87,15 +87,15 @@ extension MDData.Number: BSONConvertible {
     }
 }
 
-extension MDData: BSONConvertible {
+extension MDData {
     
     @inlinable
-    public func toBSON() -> BSON {
+    func toBSON() -> BSON {
         switch self {
         case .null: return .undefined
         case let .boolean(value): return BSON(value)
         case let .string(value): return BSON(value)
-        case let .number(value): return BSON(value)
+        case let .number(value): return value.toBSON()
         case let .timestamp(value): return BSON(value)
         case let .binary(value): return BSON(value)
         case let .array(value): return BSON(value.map { $0.toBSON() })

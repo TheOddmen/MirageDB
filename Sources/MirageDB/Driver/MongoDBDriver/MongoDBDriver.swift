@@ -30,7 +30,7 @@ extension MDObject {
     fileprivate init(class: String, data object: BSONDocument) throws {
         var data: [String: MDData] = [:]
         for (key, value) in object where !MDObject._default_fields.contains(key) {
-            data[key] = try MDData(value)
+            data[key] = try MDData(fromBSON: value)
         }
         self.init(
             class: `class`,
@@ -89,7 +89,7 @@ extension Dictionary where Key == String, Value == MDUpdateOption {
             case let .max(value): max[key] = value.toMDData().toBSON()
             case let .min(value): min[key] = value.toMDData().toBSON()
             case let .push(value): push[key] = value.toMDData().toBSON()
-            case let .removeAll(value): pullAll[key] = value.map { $0.toMDData() }.toBSON()
+            case let .removeAll(value): pullAll[key] = value.map { $0.toMDData().toBSON() }.toBSON()
             case .popFirst: pop[key] = -1
             case .popLast: pop[key] = 1
             }

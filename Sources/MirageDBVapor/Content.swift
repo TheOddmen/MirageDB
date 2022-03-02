@@ -38,11 +38,6 @@ extension BSONDocument: Content {
     public static var defaultContentType: HTTPMediaType { .json }
 }
 
-extension MDData: Content {
-    
-    public static var defaultContentType: HTTPMediaType { .json }
-}
-
 extension ExtendedJSONEncoder: ContentEncoder {
     
     public func encode<E: Encodable>(_ encodable: E, to body: inout ByteBuffer, headers: inout HTTPHeaders) throws {
