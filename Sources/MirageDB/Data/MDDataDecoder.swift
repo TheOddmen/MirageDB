@@ -25,28 +25,6 @@
 
 extension MDData {
     
-    @usableFromInline
-    struct CodingKey: Swift.CodingKey {
-        
-        @usableFromInline
-        var stringValue: String
-        
-        @usableFromInline
-        var intValue: Int?
-        
-        @inlinable
-        init(stringValue: String) {
-            self.stringValue = stringValue
-            self.intValue = nil
-        }
-        
-        @inlinable
-        init(intValue: Int) {
-            self.stringValue = "\(intValue)"
-            self.intValue = intValue
-        }
-    }
-    
     /// The strategy to use for decoding `Date` values.
     public enum DateDecodingStrategy {
         

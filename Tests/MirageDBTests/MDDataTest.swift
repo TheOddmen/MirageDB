@@ -1,5 +1,5 @@
 //
-//  Content.swift
+//  MDDataTest.swift
 //
 //  The MIT License
 //  Copyright (c) 2021 - 2022 O2ter Limited. All rights reserved.
@@ -23,38 +23,31 @@
 //  THE SOFTWARE.
 //
 
-extension Json: Content {
-    
-    public static var defaultContentType: HTTPMediaType { .json }
-}
+import MirageDB
+import XCTest
 
-extension BSON: Content {
+extension MDData {
     
-    public static var defaultContentType: HTTPMediaType { .json }
-}
-
-extension BSONDocument: Content {
-    
-    public static var defaultContentType: HTTPMediaType { .json }
-}
-
-extension MDData: Content {
-    
-    public static var defaultContentType: HTTPMediaType { .json }
-}
-
-extension ExtendedJSONEncoder: ContentEncoder {
-    
-    public func encode<E: Encodable>(_ encodable: E, to body: inout ByteBuffer, headers: inout HTTPHeaders) throws {
-        headers.contentType = .json
-        try body.writeBytes(self.encode(encodable))
+    var isDecimal: Bool {
+        switch self {
+        case .number(.decimal): return true
+        default: return false
+        }
     }
 }
 
-extension ExtendedJSONDecoder: ContentDecoder {
+class MDDataTest: XCTestCase {
     
-    public func decode<D: Decodable>(_ decodable: D.Type, from body: ByteBuffer, headers: HTTPHeaders) throws -> D {
-        let data = body.getData(at: body.readerIndex, length: body.readableBytes) ?? Data()
-        return try self.decode(D.self, from: data)
+    func testDecimalCoding() throws {
+        
+        let decimal: MDData = .number(.decimal(1.5))
+        
+        let encoder = ExtendedJSONEncoder()
+        let decoder = ExtendedJSONDecoder()
+        
+        let result = try decoder.decode(MDData.self, from: encoder.encode(decimal))
+        
+        XCTAssertTrue(result.isDecimal)
+        XCTAssertEqual(result, decimal)
     }
 }

@@ -65,7 +65,7 @@ extension MongoPredicateValue {
     fileprivate init(_ value: MDPredicateValue) throws {
         switch value {
         case let .key(key): self = .key(key)
-        case let .value(value): self = .value(value.toMDData().toBSON())
+        case let .value(value): self = .value(BSON(value.toMDData()))
         }
     }
 }
