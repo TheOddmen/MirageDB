@@ -127,13 +127,13 @@ extension MDData {
             case let .decimal(value): return ["$decimal": "\(value)"]
             }
         case let .timestamp(value): return ["$date": "\(Int64(value.timeIntervalSince1970 * 1000))"]
-        case let .binary(value): return ["$binary": DBData(value.base64EncodedString())]
-        case let .array(value): return DBData(value.map { $0.toJSON() })
+        case let .binary(value): return ["$binary": .string(value.base64EncodedString())]
+        case let .array(value): return .array(value.map { $0.toJSON() })
         case let .dictionary(value):
             if value.keys.count == 1, let key = value.keys.first, MDData.json_decoder.keys.contains(key) {
-                return ["$object": DBData(value.mapValues { $0.toJSON() })]
+                return ["$object": .dictionary(value.mapValues { $0.toJSON() })]
             } else {
-                return DBData(value.mapValues { $0.toJSON() })
+                return .dictionary(value.mapValues { $0.toJSON() })
             }
         }
     }
