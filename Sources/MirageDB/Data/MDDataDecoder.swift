@@ -262,7 +262,7 @@ extension MDData._Decoder: SingleValueDecodingContainer {
             
         case let .string(string):
             
-            guard let value = Decimal(string: string) else { throw Database.Error.unsupportedType }
+            guard let value = Decimal(string: string, locale: Locale(identifier: "en_US")) else { throw Database.Error.unsupportedType }
             return value
             
         default: throw Database.Error.unsupportedType

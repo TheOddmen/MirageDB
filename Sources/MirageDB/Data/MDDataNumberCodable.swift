@@ -62,7 +62,7 @@ extension MDData.Number: Decodable {
             case "-Infinity": return .number(-.infinity)
             case "NaN": return .number(.nan)
             default:
-                guard let decimal = Decimal(string: str) else { return nil }
+                guard let decimal = Decimal(string: str, locale: Locale(identifier: "en_US")) else { return nil }
                 return .decimal(decimal)
             }
             

@@ -41,7 +41,7 @@ private func decodeDecimal(_ obj: [String: DBData]) -> Decimal? {
     guard obj.count == 1 else { return nil }
     guard obj.keys.first == "$decimal" else { return nil }
     guard let value = obj["$decimal"]?.string else { return nil }
-    return Decimal(string: value)
+    return Decimal(string: value, locale: Locale(identifier: "en_US"))
 }
 
 private func decodeDate(_ obj: [String: DBData]) -> Date? {

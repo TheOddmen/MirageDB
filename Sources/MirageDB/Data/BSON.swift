@@ -57,7 +57,7 @@ extension MDData {
             case "-Infinity": self.init(-Double.infinity)
             case "NaN": self.init(Decimal.nan)
             default:
-                guard let decimal = Decimal(string: str) else { throw MDError.unsupportedType }
+                guard let decimal = Decimal(string: str, locale: Locale(identifier: "en_US")) else { throw MDError.unsupportedType }
                 self.init(decimal)
             }
             
