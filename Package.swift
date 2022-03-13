@@ -36,8 +36,8 @@ let package = Package(
         .library(name: "MirageDBVapor", targets: ["MirageDBVapor"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/vapor/vapor.git", from: "4.50.0"),
-        .package(url: "https://github.com/SusanDoggie/DoggieDB.git", from: "0.0.82"),
+        .package(url: "https://github.com/vapor/vapor.git", from: "4.55.2"),
+        .package(url: "https://github.com/SusanDoggie/DoggieDB.git", from: "0.0.84"),
     ],
     targets: [
         .target(
