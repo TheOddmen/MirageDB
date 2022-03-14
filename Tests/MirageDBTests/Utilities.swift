@@ -24,7 +24,38 @@
 //
 
 import MirageDB
+import XCTest
 
 func env(_ name: String) -> String? {
     getenv(name).flatMap { String(cString: $0) }
+}
+
+class MirageDBTestCase: XCTestCase {
+    
+    var connection_url: URLComponents! { return nil }
+    
+    private var eventLoopGroup: MultiThreadedEventLoopGroup!
+    private(set) var connection: MDConnection!
+    
+    override func setUpWithError() throws {
+        
+        do {
+            
+            eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+            self.addTeardownBlock { try! self.eventLoopGroup.syncShutdownGracefully() }
+            
+            var logger = Logger(label: "com.o2ter.MirageDB")
+            logger.logLevel = .debug
+            
+            self.connection = try MDConnection.connect(url: connection_url, logger: logger, on: eventLoopGroup).wait()
+            self.addTeardownBlock { try! self.connection.close().wait() }
+            
+            print(connection_url.scheme!, try connection.version().wait())
+            
+        } catch {
+            
+            print(error)
+            throw error
+        }
+    }
 }

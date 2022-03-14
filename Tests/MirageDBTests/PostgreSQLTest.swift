@@ -26,57 +26,25 @@
 import MirageDB
 import XCTest
 
-class PostgreSQLTest: XCTestCase {
+class PostgreSQLTest: MirageDBTestCase {
     
-    var eventLoopGroup: MultiThreadedEventLoopGroup!
-    var connection: MDConnection!
-    
-    override func setUpWithError() throws {
+    override var connection_url: URLComponents! {
         
-        do {
-            
-            eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-            
-            var url = URLComponents()
-            url.scheme = "postgres"
-            url.host = env("POSTGRES_HOST") ?? "localhost"
-            url.user = env("POSTGRES_USERNAME")
-            url.password = env("POSTGRES_PASSWORD")
-            url.path = "/\(env("POSTGRES_DATABASE") ?? "")"
-            
-            if let ssl_mode = env("POSTGRES_SSLMODE") {
-                url.queryItems = [
-                    URLQueryItem(name: "ssl", value: "true"),
-                    URLQueryItem(name: "sslmode", value: ssl_mode),
-                ]
-            }
-            
-            var logger = Logger(label: "com.o2ter.MirageDB")
-            logger.logLevel = .debug
-            
-            self.connection = try MDConnection.connect(url: url, logger: logger, on: eventLoopGroup).wait()
-            
-            print("POSTGRES:", try connection.version().wait())
-            
-        } catch {
-            
-            print(error)
-            throw error
-        }
-    }
-    
-    override func tearDownWithError() throws {
+        var url = URLComponents()
+        url.scheme = "postgres"
+        url.host = env("POSTGRES_HOST") ?? "localhost"
+        url.user = env("POSTGRES_USERNAME")
+        url.password = env("POSTGRES_PASSWORD")
+        url.path = "/\(env("POSTGRES_DATABASE") ?? "")"
         
-        do {
-            
-            try self.connection.close().wait()
-            try eventLoopGroup.syncShutdownGracefully()
-            
-        } catch {
-            
-            print(error)
-            throw error
+        if let ssl_mode = env("POSTGRES_SSLMODE") {
+            url.queryItems = [
+                URLQueryItem(name: "ssl", value: "true"),
+                URLQueryItem(name: "sslmode", value: ssl_mode),
+            ]
         }
+        
+        return url
     }
     
     func testCreateTable() throws {

@@ -26,63 +26,31 @@
 import MirageDB
 import XCTest
 
-class MongoDBTest: XCTestCase {
+class MongoDBTest: MirageDBTestCase {
     
-    var eventLoopGroup: MultiThreadedEventLoopGroup!
-    var connection: MDConnection!
-    
-    override func setUpWithError() throws {
+    override var connection_url: URLComponents! {
         
-        do {
-            
-            eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-            
-            var url = URLComponents()
-            url.scheme = "mongodb"
-            url.host = env("MONGO_HOST") ?? "localhost"
-            url.user = env("MONGO_USERNAME")
-            url.password = env("MONGO_PASSWORD")
-            url.path = "/\(env("MONGO_DATABASE") ?? "")"
-            
-            var queryItems: [URLQueryItem] = []
-            
-            if let authSource = env("MONGO_AUTHSOURCE") {
-                queryItems.append(URLQueryItem(name: "authSource", value: authSource))
-            }
-            
-            if let ssl_mode = env("MONGO_SSLMODE") {
-                queryItems.append(URLQueryItem(name: "ssl", value: "true"))
-                queryItems.append(URLQueryItem(name: "sslmode", value: ssl_mode))
-            }
-            
-            url.queryItems = queryItems.isEmpty ? nil : queryItems
-            
-            var logger = Logger(label: "com.o2ter.MirageDB")
-            logger.logLevel = .debug
-            
-            self.connection = try MDConnection.connect(url: url, logger: logger, on: eventLoopGroup).wait()
-            
-            print("MONGO:", try connection.version().wait())
-            
-        } catch {
-            
-            print(error)
-            throw error
-        }
-    }
-    
-    override func tearDownWithError() throws {
+        var url = URLComponents()
+        url.scheme = "mongodb"
+        url.host = env("MONGO_HOST") ?? "localhost"
+        url.user = env("MONGO_USERNAME")
+        url.password = env("MONGO_PASSWORD")
+        url.path = "/\(env("MONGO_DATABASE") ?? "")"
         
-        do {
-            
-            try self.connection.close().wait()
-            try eventLoopGroup.syncShutdownGracefully()
-            
-        } catch {
-            
-            print(error)
-            throw error
+        var queryItems: [URLQueryItem] = []
+        
+        if let authSource = env("MONGO_AUTHSOURCE") {
+            queryItems.append(URLQueryItem(name: "authSource", value: authSource))
         }
+        
+        if let ssl_mode = env("MONGO_SSLMODE") {
+            queryItems.append(URLQueryItem(name: "ssl", value: "true"))
+            queryItems.append(URLQueryItem(name: "sslmode", value: ssl_mode))
+        }
+        
+        url.queryItems = queryItems.isEmpty ? nil : queryItems
+        
+        return url
     }
     
     func testCreateTable() throws {
