@@ -30,6 +30,9 @@ let package = Package(
     name: "MirageDB",
     platforms: [
         .macOS(.v10_15),
+        .iOS(.v13),
+        .tvOS(.v13),
+        .watchOS(.v6),
     ],
     products: [
         .library(name: "MirageDB", targets: ["MirageDB"]),

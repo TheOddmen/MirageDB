@@ -404,7 +404,6 @@ struct MongoDBDriver: MDDriver {
     
     #if compiler(>=5.5.2) && canImport(_Concurrency)
     
-    @available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
     func withTransaction<T>(
         _ connection: MDConnection,
         _ transactionBody: (MDConnection) async throws -> T

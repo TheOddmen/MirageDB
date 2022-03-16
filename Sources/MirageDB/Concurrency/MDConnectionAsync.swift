@@ -25,7 +25,6 @@
 
 #if compiler(>=5.5.2) && canImport(_Concurrency)
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension MDConnection {
     
     public static func connect(
@@ -57,7 +56,6 @@ extension MDConnection {
     }
 }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension MDConnection {
     
     public func close() async throws {
@@ -77,7 +75,6 @@ extension MDConnection {
     }
 }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension MDConnection {
     
     public func withTransaction<T>(
@@ -87,7 +84,6 @@ extension MDConnection {
     }
 }
 
-@available(macOS 10.15, iOS 13, tvOS 13, watchOS 6, *)
 extension MDConnection {
     
     public func createTable(_ table: String, _ columns: [String: MDSQLDataType]) async throws {
