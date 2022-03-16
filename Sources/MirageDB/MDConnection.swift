@@ -32,7 +32,7 @@ public final class MDConnection: Sendable {
         self.connection = connection
         
         if let connection = connection as? DBSQLConnection {
-            Task { await connection.setPrimaryKeyHook { _, _ in ["_id"] } }
+            Task { await connection.hooks.setPrimaryKeyHook { _, _ in ["_id"] } }
         }
     }
 }
