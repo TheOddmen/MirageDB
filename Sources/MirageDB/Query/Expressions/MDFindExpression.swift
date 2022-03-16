@@ -49,30 +49,54 @@ extension MDQuery {
 
 extension MDFindExpression {
     
-    public func count() -> EventLoopFuture<Int> {
-        return self.connection.driver.count(self)
+    public func count() async throws -> Int {
+        return try await self.connection.driver.count(self)
     }
 }
 
 extension MDFindExpression {
     
-    public func toArray() -> EventLoopFuture<[MDObject]> {
-        return self.connection.driver.toArray(self)
+    public func toArray() async throws -> [MDObject] {
+        return try await self.connection.driver.toArray(self)
     }
     
-    public func forEach(_ body: @escaping (MDObject) throws -> Void) -> EventLoopFuture<Void> {
-        return self.connection.driver.forEach(self, body)
+    public func forEach(_ body: @escaping (MDObject) throws -> Void) async throws {
+        return try await self.connection.driver.forEach(self, body)
     }
     
-    public func first() -> EventLoopFuture<MDObject?> {
-        return self.connection.driver.first(self)
+    public func first() async throws -> MDObject? {
+        return try await self.connection.driver.first(self)
     }
 }
 
 extension MDFindExpression {
     
-    public func delete() -> EventLoopFuture<Int?> {
-        return self.connection.driver.deleteAll(self)
+    public func toStream() -> AsyncThrowingStream<MDObject, Error> {
+        
+        return AsyncThrowingStream { continuation in
+            
+            Task {
+                
+                do {
+                    
+                    try await self.forEach { continuation.yield($0) }
+                    
+                    continuation.finish()
+                    
+                } catch {
+                    
+                    continuation.finish(throwing: error)
+                }
+            }
+        }
+    }
+}
+
+extension MDFindExpression {
+    
+    @discardableResult
+    public func delete() async throws -> Int? {
+        return try await self.connection.driver.deleteAll(self)
     }
 }
 

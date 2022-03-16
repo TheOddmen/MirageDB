@@ -49,38 +49,45 @@ extension MDQuery {
 
 extension MDFindOneExpression {
     
-    public func update(_ update: [MDQueryKey: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
-        return self.update(update.mapValues { .set($0.toMDData()) })
+    @discardableResult
+    public func update(_ update: [MDQueryKey: MDDataConvertible]) async throws -> MDObject? {
+        return try await self.update(update.mapValues { .set($0.toMDData()) })
     }
     
-    public func update(_ update: [MDQueryKey: MDUpdateOption]) -> EventLoopFuture<MDObject?> {
-        return self.connection.driver.findOneAndUpdate(self, update)
-    }
-}
-
-extension MDFindOneExpression {
-    
-    public func upsert(_ upsert: [MDQueryKey: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
-        return self.upsert(upsert.mapValues { .set($0.toMDData()) })
-    }
-    
-    public func upsert(_ upsert: [MDQueryKey: MDUpsertOption]) -> EventLoopFuture<MDObject?> {
-        return self.upsert(upsert.compactMapValues { $0.update }, setOnInsert: upsert.compactMapValues { $0.setOnInsert })
-    }
-    
-    public func upsert(_ update: [MDQueryKey: MDDataConvertible], setOnInsert: [MDQueryKey: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
-        return self.upsert(update.mapValues { .set($0) }, setOnInsert: setOnInsert)
-    }
-    
-    public func upsert(_ update: [MDQueryKey: MDUpdateOption], setOnInsert: [MDQueryKey: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
-        return self.connection.driver.findOneAndUpsert(self, update, setOnInsert)
+    @discardableResult
+    public func update(_ update: [MDQueryKey: MDUpdateOption]) async throws -> MDObject? {
+        return try await self.connection.driver.findOneAndUpdate(self, update)
     }
 }
 
 extension MDFindOneExpression {
     
-    public func delete() -> EventLoopFuture<MDObject?> {
-        return self.connection.driver.findOneAndDelete(self)
+    @discardableResult
+    public func upsert(_ upsert: [MDQueryKey: MDDataConvertible]) async throws -> MDObject? {
+        return try await self.upsert(upsert.mapValues { .set($0.toMDData()) })
+    }
+    
+    @discardableResult
+    public func upsert(_ upsert: [MDQueryKey: MDUpsertOption]) async throws -> MDObject? {
+        return try await self.upsert(upsert.compactMapValues { $0.update }, setOnInsert: upsert.compactMapValues { $0.setOnInsert })
+    }
+    
+    @discardableResult
+    public func upsert(_ update: [MDQueryKey: MDDataConvertible], setOnInsert: [MDQueryKey: MDDataConvertible]) async throws -> MDObject? {
+        return try await self.upsert(update.mapValues { .set($0) }, setOnInsert: setOnInsert)
+    }
+    
+    @discardableResult
+    public func upsert(_ update: [MDQueryKey: MDUpdateOption], setOnInsert: [MDQueryKey: MDDataConvertible]) async throws -> MDObject? {
+        return try await self.connection.driver.findOneAndUpsert(self, update, setOnInsert)
+    }
+}
+
+extension MDFindOneExpression {
+    
+    @discardableResult
+    public func delete() async throws -> MDObject? {
+        return try await self.connection.driver.findOneAndDelete(self)
     }
 }
 
@@ -140,34 +147,40 @@ extension MDFindOneExpression {
 
 extension MDFindOneExpression {
     
-    public func update(_ update: [String: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
-        return self.update(Dictionary(update.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs })
+    @discardableResult
+    public func update(_ update: [String: MDDataConvertible]) async throws -> MDObject? {
+        return try await self.update(Dictionary(update.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs })
     }
     
-    public func update(_ update: [String: MDUpdateOption]) -> EventLoopFuture<MDObject?> {
-        return self.update(Dictionary(update.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs })
+    @discardableResult
+    public func update(_ update: [String: MDUpdateOption]) async throws -> MDObject? {
+        return try await self.update(Dictionary(update.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs })
     }
 }
 
 extension MDFindOneExpression {
     
-    public func upsert(_ upsert: [String: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
-        return self.upsert(Dictionary(upsert.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs })
+    @discardableResult
+    public func upsert(_ upsert: [String: MDDataConvertible]) async throws -> MDObject? {
+        return try await self.upsert(Dictionary(upsert.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs })
     }
     
-    public func upsert(_ upsert: [String: MDUpsertOption]) -> EventLoopFuture<MDObject?> {
-        return self.upsert(Dictionary(upsert.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs })
+    @discardableResult
+    public func upsert(_ upsert: [String: MDUpsertOption]) async throws -> MDObject? {
+        return try await self.upsert(Dictionary(upsert.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs })
     }
     
-    public func upsert(_ update: [String: MDDataConvertible], setOnInsert: [String: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
-        return self.upsert(
+    @discardableResult
+    public func upsert(_ update: [String: MDDataConvertible], setOnInsert: [String: MDDataConvertible]) async throws -> MDObject? {
+        return try await self.upsert(
             Dictionary(update.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs },
             setOnInsert: Dictionary(setOnInsert.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs }
         )
     }
     
-    public func upsert(_ update: [String: MDUpdateOption], setOnInsert: [String: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
-        return self.upsert(
+    @discardableResult
+    public func upsert(_ update: [String: MDUpdateOption], setOnInsert: [String: MDDataConvertible]) async throws -> MDObject? {
+        return try await self.upsert(
             Dictionary(update.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs },
             setOnInsert: Dictionary(setOnInsert.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs }
         )

@@ -135,76 +135,72 @@ extension MDObject {
 
 extension MDObject {
     
-    public func fetch<S: Sequence>(_ keys: S, on connection: MDConnection) -> EventLoopFuture<MDObject> where S.Element == MDQueryKey {
+    public mutating func fetch<S: Sequence>(_ keys: S, on connection: MDConnection) async throws where S.Element == MDQueryKey {
         
-        if let id = self.id {
-            
-            return connection.query()
-                .find(self.class)
-                .filter { $0.id == id }
-                .includes(keys)
-                .first()
-                .unwrap(orError: MDError.objectNotFound)
-            
-        } else {
-            return connection.eventLoopGroup.next().makeFailedFuture(MDError.invalidObjectId)
-        }
+        guard let id = self.id else { throw MDError.invalidObjectId }
+        
+        let query = connection.query()
+            .find(self.class)
+            .filter { $0.id == id }
+            .includes(keys)
+        
+        guard let result = try await query.first() else { throw MDError.objectNotFound }
+        
+        self = result
     }
     
-    public func fetch(on connection: MDConnection) -> EventLoopFuture<MDObject> {
+    public mutating func fetch(on connection: MDConnection) async throws {
         
-        if let id = self.id {
-            
-            return connection.query()
-                .find(self.class)
-                .filter { $0.id == id }
-                .first()
-                .unwrap(orError: MDError.objectNotFound)
-            
-        } else {
-            return connection.eventLoopGroup.next().makeFailedFuture(MDError.invalidObjectId)
-        }
+        guard let id = self.id else { throw MDError.invalidObjectId }
+        
+        let query = connection.query()
+            .find(self.class)
+            .filter { $0.id == id }
+        
+        guard let result = try await query.first() else { throw MDError.objectNotFound }
+        
+        self = result
     }
     
-    public func save(on connection: MDConnection) -> EventLoopFuture<MDObject> {
+    public mutating func save(on connection: MDConnection) async throws {
         
         let mutated = Dictionary(self.mutated.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs }
         
         if let id = self.id {
             
-            return connection.query()
+            let query = connection.query()
                 .findOne(self.class)
                 .filter { $0.id == id }
                 .includes(self.keys.map { MDQueryKey(key: $0) })
-                .update(mutated)
-                .unwrap(orError: MDError.objectNotFound)
+            
+            guard let result = try await query.update(mutated) else { throw MDError.objectNotFound }
+            
+            self = result
             
         } else {
             
-            return connection.driver.insert(connection, `class`, mutated.compactMapValues { $0.value })
+            self = try await connection.driver.insert(connection, `class`, mutated.compactMapValues { $0.value })
         }
     }
     
-    public func delete(on connection: MDConnection) -> EventLoopFuture<MDObject> {
+    public mutating func delete(on connection: MDConnection) async throws {
         
-        if let id = self.id {
-            
-            return connection.query()
-                .findOne(self.class)
-                .filter { $0.id == id }
-                .includes(self.keys.map { MDQueryKey(key: $0) })
-                .delete()
-                .unwrap(orError: MDError.objectNotFound)
-            
-        } else {
-            return connection.eventLoopGroup.next().makeFailedFuture(MDError.invalidObjectId)
-        }
+        guard let id = self.id else { throw MDError.invalidObjectId }
+        
+        let query = connection.query()
+            .findOne(self.class)
+            .filter { $0.id == id }
+            .includes(self.keys.map { MDQueryKey(key: $0) })
+        
+        guard let result = try await query.delete() else { throw MDError.objectNotFound }
+        
+        self = result
     }
 }
 
 extension MDObject {
     
-    public func fetch<S: Sequence>(_ keys: S, on connection: MDConnection) -> EventLoopFuture<MDObject> where S.Element == String {
-        return self.fetch(keys.map { MDQueryKey(key: $0) }, on: connection)
+    public mutating func fetch<S: Sequence>(_ keys: S, on connection: MDConnection) async throws where S.Element == String {
+        try await self.fetch(keys.map { MDQueryKey(key: $0) }, on: connection)
     }
 }

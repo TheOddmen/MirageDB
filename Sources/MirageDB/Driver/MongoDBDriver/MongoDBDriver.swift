@@ -111,25 +111,18 @@ extension Dictionary where Key == String, Value == MDUpdateOption {
 
 struct MongoDBDriver: MDDriver {
     
-    func tables(_ connection: MDConnection) -> EventLoopFuture<[String]> {
+    func tables(_ connection: MDConnection) async throws -> [String] {
         
-        return connection.connection.mongoQuery().collections().execute().toArray().map { $0.map { $0.name } }
+        return try await connection.connection.mongoQuery().collections().execute().toArray().map { $0.name }
     }
     
-    func count(_ query: MDFindExpression) -> EventLoopFuture<Int> {
+    func count(_ query: MDFindExpression) async throws -> Int {
         
-        do {
-            
-            let filter = try query.filterBSONDocument()
-            
-            let _query = query.connection.connection.mongoQuery().collection(query.class)
-            
-            return _query.count().filter(filter).execute()
-            
-        } catch {
-            
-            return query.connection.eventLoopGroup.next().makeFailedFuture(error)
-        }
+        let filter = try query.filterBSONDocument()
+        
+        let _query = query.connection.connection.mongoQuery().collection(query.class)
+        
+        return try await _query.count().filter(filter).execute()
     }
     
     private func _find(_ query: MDFindExpression) throws -> DBMongoFindExpression<BSONDocument> {
@@ -155,202 +148,156 @@ struct MongoDBDriver: MDDriver {
         return _query
     }
     
-    func toArray(_ query: MDFindExpression) -> EventLoopFuture<[MDObject]> {
+    func toArray(_ query: MDFindExpression) async throws -> [MDObject] {
+        
+        let _query = try self._find(query)
+        
+        return try await _query.execute().toArray().map { try MDObject(class: query.class, data: $0) }
+    }
+    
+    func forEach(_ query: MDFindExpression, _ body: @escaping (MDObject) throws -> Void) async throws {
+        
+        let _query = try self._find(query)
+        
+        return try await _query.execute().forEach { try body(MDObject(class: query.class, data: $0)) }
+    }
+    
+    func first(_ query: MDFindExpression) async throws -> MDObject? {
+        
+        let filter = try query.filterBSONDocument()
+        
+        var _query = query.connection.connection.mongoQuery().collection(query.class).findOne().filter(filter)
+        
+        if !query.sort.isEmpty {
+            _query = _query.sort(query.sort.stringKeys.mapValues(DBMongoSortOrder.init))
+        }
+        if let includes = query.includes {
+            let projection = Dictionary(uniqueKeysWithValues: includes.stringKeys.union(MDObject._default_fields).map { ($0, 1) })
+            _query = _query.projection(BSONDocument(projection))
+        }
+        
+        return try await _query.execute().map { try MDObject(class: query.class, data: $0) }
+    }
+    
+    func findOneAndUpdate(_ query: MDFindOneExpression, _ update: [MDQueryKey: MDUpdateOption]) async throws -> MDObject? {
+        
+        let filter = try query.filterBSONDocument()
+        
+        var _query = query.connection.connection.mongoQuery().collection(query.class).findOneAndUpdate().filter(filter)
+        
+        let now = Date()
+        
+        var update = update.stringKeys
+        update["_id"] = nil
+        update["_created_at"] = nil
+        update["_updated_at"] = .set(now)
+        
+        _query = try _query.update(update.toBSONDocument())
+        
+        switch query.returning {
+        case .before: _query = _query.returnDocument(.before)
+        case .after: _query = _query.returnDocument(.after)
+        }
+        
+        if !query.sort.isEmpty {
+            _query = _query.sort(query.sort.stringKeys.mapValues(DBMongoSortOrder.init))
+        }
+        if let includes = query.includes {
+            let projection = Dictionary(uniqueKeysWithValues: includes.stringKeys.union(MDObject._default_fields).map { ($0, 1) })
+            _query = _query.projection(BSONDocument(projection))
+        }
+        
+        return try await _query.execute().map { try MDObject(class: query.class, data: $0) }
+    }
+    
+    private func _findOneAndUpsert(_ query: MDFindOneExpression, _ update: [MDQueryKey: MDUpdateOption], _ setOnInsert: [MDQueryKey: MDDataConvertible]) async throws -> MDObject? {
+        
+        let filter = try query.filterBSONDocument()
+        
+        var _query = query.connection.connection.mongoQuery().collection(query.class).findOneAndUpdate().filter(filter)
+        
+        let now = Date()
+        
+        var update = update.stringKeys
+        update["_id"] = nil
+        update["_created_at"] = nil
+        update["_updated_at"] = .set(now)
+        
+        var setOnInsert = setOnInsert.stringKeys
+        setOnInsert["_id"] = query.objectIDGenerator?() ?? generalObjectIDGenerator()
+        setOnInsert["_created_at"] = now
+        setOnInsert["_updated_at"] = nil
+        
+        var _update = try update.toBSONDocument()
+        var _setOnInsert: BSONDocument = [:]
+        for case let (key, value) in setOnInsert where value.toMDData() != nil {
+            _setOnInsert[key] = value.toMDData().toBSON()
+        }
+        if !_setOnInsert.isEmpty { _update["$setOnInsert"] = BSON(_setOnInsert) }
+        
+        _query = _query.update(_update)
+        _query = _query.upsert(true)
+        
+        switch query.returning {
+        case .before: _query = _query.returnDocument(.before)
+        case .after: _query = _query.returnDocument(.after)
+        }
+        
+        if !query.sort.isEmpty {
+            _query = _query.sort(query.sort.stringKeys.mapValues(DBMongoSortOrder.init))
+        }
+        if let includes = query.includes {
+            let projection = Dictionary(uniqueKeysWithValues: includes.stringKeys.union(MDObject._default_fields).map { ($0, 1) })
+            _query = _query.projection(BSONDocument(projection))
+        }
+        
+        return try await _query.execute().map { try MDObject(class: query.class, data: $0) }
+    }
+    
+    func findOneAndUpsert(_ query: MDFindOneExpression, _ update: [MDQueryKey: MDUpdateOption], _ setOnInsert: [MDQueryKey: MDDataConvertible]) async throws -> MDObject? {
         
         do {
             
-            let _query = try self._find(query)
+            return try await self._findOneAndUpsert(query, update, setOnInsert)
             
-            return _query.execute().toArray().flatMapThrowing { try $0.map { try MDObject(class: query.class, data: $0) } }
+        } catch let error as MongoError.CommandError {
             
-        } catch {
-            
-            return query.connection.eventLoopGroup.next().makeFailedFuture(error)
-        }
-    }
-    
-    func forEach(_ query: MDFindExpression, _ body: @escaping (MDObject) throws -> Void) -> EventLoopFuture<Void> {
-        
-        do {
-            
-            let _query = try self._find(query)
-            
-            return _query.execute().forEach { try body(MDObject(class: query.class, data: $0)) }
-            
-        } catch {
-            
-            return query.connection.eventLoopGroup.next().makeFailedFuture(error)
-        }
-    }
-    
-    func first(_ query: MDFindExpression) -> EventLoopFuture<MDObject?> {
-        
-        do {
-            
-            let filter = try query.filterBSONDocument()
-            
-            var _query = query.connection.connection.mongoQuery().collection(query.class).findOne().filter(filter)
-            
-            if !query.sort.isEmpty {
-                _query = _query.sort(query.sort.stringKeys.mapValues(DBMongoSortOrder.init))
-            }
-            if let includes = query.includes {
-                let projection = Dictionary(uniqueKeysWithValues: includes.stringKeys.union(MDObject._default_fields).map { ($0, 1) })
-                _query = _query.projection(BSONDocument(projection))
-            }
-            
-            return _query.execute().flatMapThrowing { try $0.map { try MDObject(class: query.class, data: $0) } }
-            
-        } catch {
-            
-            return query.connection.eventLoopGroup.next().makeFailedFuture(error)
-        }
-    }
-    
-    func findOneAndUpdate(_ query: MDFindOneExpression, _ update: [MDQueryKey: MDUpdateOption]) -> EventLoopFuture<MDObject?> {
-        
-        do {
-            
-            let filter = try query.filterBSONDocument()
-            
-            var _query = query.connection.connection.mongoQuery().collection(query.class).findOneAndUpdate().filter(filter)
-            
-            let now = Date()
-            
-            var update = update.stringKeys
-            update["_id"] = nil
-            update["_created_at"] = nil
-            update["_updated_at"] = .set(now)
-            
-            _query = try _query.update(update.toBSONDocument())
-            
-            switch query.returning {
-            case .before: _query = _query.returnDocument(.before)
-            case .after: _query = _query.returnDocument(.after)
-            }
-            
-            if !query.sort.isEmpty {
-                _query = _query.sort(query.sort.stringKeys.mapValues(DBMongoSortOrder.init))
-            }
-            if let includes = query.includes {
-                let projection = Dictionary(uniqueKeysWithValues: includes.stringKeys.union(MDObject._default_fields).map { ($0, 1) })
-                _query = _query.projection(BSONDocument(projection))
-            }
-            
-            return _query.execute().flatMapThrowing { try $0.map { try MDObject(class: query.class, data: $0) } }
-            
-        } catch {
-            
-            return query.connection.eventLoopGroup.next().makeFailedFuture(error)
-        }
-    }
-    
-    private func _findOneAndUpsert(_ query: MDFindOneExpression, _ update: [MDQueryKey: MDUpdateOption], _ setOnInsert: [MDQueryKey: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
-        
-        do {
-            
-            let filter = try query.filterBSONDocument()
-            
-            var _query = query.connection.connection.mongoQuery().collection(query.class).findOneAndUpdate().filter(filter)
-            
-            let now = Date()
-            
-            var update = update.stringKeys
-            update["_id"] = nil
-            update["_created_at"] = nil
-            update["_updated_at"] = .set(now)
-            
-            var setOnInsert = setOnInsert.stringKeys
-            setOnInsert["_id"] = query.objectIDGenerator?() ?? generalObjectIDGenerator()
-            setOnInsert["_created_at"] = now
-            setOnInsert["_updated_at"] = nil
-            
-            var _update = try update.toBSONDocument()
-            var _setOnInsert: BSONDocument = [:]
-            for case let (key, value) in setOnInsert where value.toMDData() != nil {
-                _setOnInsert[key] = value.toMDData().toBSON()
-            }
-            if !_setOnInsert.isEmpty { _update["$setOnInsert"] = BSON(_setOnInsert) }
-            
-            _query = _query.update(_update)
-            _query = _query.upsert(true)
-            
-            switch query.returning {
-            case .before: _query = _query.returnDocument(.before)
-            case .after: _query = _query.returnDocument(.after)
-            }
-            
-            if !query.sort.isEmpty {
-                _query = _query.sort(query.sort.stringKeys.mapValues(DBMongoSortOrder.init))
-            }
-            if let includes = query.includes {
-                let projection = Dictionary(uniqueKeysWithValues: includes.stringKeys.union(MDObject._default_fields).map { ($0, 1) })
-                _query = _query.projection(BSONDocument(projection))
-            }
-            
-            return _query.execute().flatMapThrowing { try $0.map { try MDObject(class: query.class, data: $0) } }
-            
-        } catch {
-            
-            return query.connection.eventLoopGroup.next().makeFailedFuture(error)
-        }
-    }
-    
-    func findOneAndUpsert(_ query: MDFindOneExpression, _ update: [MDQueryKey: MDUpdateOption], _ setOnInsert: [MDQueryKey: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
-        
-        self._findOneAndUpsert(query, update, setOnInsert).flatMapError { error in
-            
-            if let error = error as? MongoError.CommandError,
-               error.code == 11000 && error.message.contains(" index: _id_ ") {
+            if error.code == 11000 && error.message.contains(" index: _id_ ") {
                 
-                return self.findOneAndUpsert(query, update, setOnInsert)
+                return try await self.findOneAndUpsert(query, update, setOnInsert)
             }
             
-            return query.connection.eventLoopGroup.next().makeFailedFuture(error)
+            throw error
         }
     }
     
-    func findOneAndDelete(_ query: MDFindOneExpression) -> EventLoopFuture<MDObject?> {
+    func findOneAndDelete(_ query: MDFindOneExpression) async throws -> MDObject? {
         
-        do {
-            
-            let filter = try query.filterBSONDocument()
-            
-            var _query = query.connection.connection.mongoQuery().collection(query.class).findOneAndDelete().filter(filter)
-            
-            if !query.sort.isEmpty {
-                _query = _query.sort(query.sort.stringKeys.mapValues(DBMongoSortOrder.init))
-            }
-            if let includes = query.includes {
-                let projection = Dictionary(uniqueKeysWithValues: includes.stringKeys.union(MDObject._default_fields).map { ($0, 1) })
-                _query = _query.projection(BSONDocument(projection))
-            }
-            
-            return _query.execute().flatMapThrowing { try $0.map { try MDObject(class: query.class, data: $0) } }
-            
-        } catch {
-            
-            return query.connection.eventLoopGroup.next().makeFailedFuture(error)
-        }
-    }
-    
-    func deleteAll(_ query: MDFindExpression) -> EventLoopFuture<Int?> {
+        let filter = try query.filterBSONDocument()
         
-        do {
-            
-            let filter = try query.filterBSONDocument()
-            
-            let _query = query.connection.connection.mongoQuery().collection(query.class)
-            
-            return _query.deleteMany().filter(filter).execute().map { $0?.deletedCount }
-            
-        } catch {
-            
-            return query.connection.eventLoopGroup.next().makeFailedFuture(error)
+        var _query = query.connection.connection.mongoQuery().collection(query.class).findOneAndDelete().filter(filter)
+        
+        if !query.sort.isEmpty {
+            _query = _query.sort(query.sort.stringKeys.mapValues(DBMongoSortOrder.init))
         }
+        if let includes = query.includes {
+            let projection = Dictionary(uniqueKeysWithValues: includes.stringKeys.union(MDObject._default_fields).map { ($0, 1) })
+            _query = _query.projection(BSONDocument(projection))
+        }
+        
+        return try await _query.execute().map { try MDObject(class: query.class, data: $0) }
     }
     
-    private func _insert(_ connection: MDConnection, _ class: String, _ values: [MDQueryKey: MDData]) -> EventLoopFuture<MDObject> {
+    func deleteAll(_ query: MDFindExpression) async throws -> Int? {
+        
+        let filter = try query.filterBSONDocument()
+        
+        let _query = query.connection.connection.mongoQuery().collection(query.class)
+        
+        return try await _query.deleteMany().filter(filter).execute()?.deletedCount
+    }
+    
+    private func _insert(_ connection: MDConnection, _ class: String, _ values: [MDQueryKey: MDData]) async throws -> MDObject {
         
         let now = Date()
         
@@ -361,48 +308,38 @@ struct MongoDBDriver: MDDriver {
         
         let _values = BSONDocument(data.mapValues { $0.toBSON() })
         
-        return connection.connection.mongoQuery().collection(`class`)
+        let result = try await connection.connection.mongoQuery().collection(`class`)
             .insertOne()
             .value(_values)
             .execute()
-            .flatMapThrowing { result in
-                
-                guard let id = result?.insertedID.stringValue else { throw MDError.unknown }
-                
-                return MDObject(
-                    class: `class`,
-                    id: id,
-                    createdAt: now,
-                    updatedAt: now,
-                    data: data
-                )
-            }
+        
+        guard let id = result?.insertedID.stringValue else { throw MDError.unknown }
+        
+        return MDObject(
+            class: `class`,
+            id: id,
+            createdAt: now,
+            updatedAt: now,
+            data: data
+        )
     }
     
-    func insert(_ connection: MDConnection, _ class: String, _ values: [MDQueryKey: MDData]) -> EventLoopFuture<MDObject> {
+    func insert(_ connection: MDConnection, _ class: String, _ values: [MDQueryKey: MDData]) async throws -> MDObject {
         
-        self._insert(connection, `class`, values).flatMapError { error in
+        do {
             
-            if let error = error as? MongoError.WriteError,
-               let writeFailure = error.writeFailure,
-               writeFailure.code == 11000 && writeFailure.message.contains(" index: _id_ ") {
+            return try await self._insert(connection, `class`, values)
+            
+        } catch let error as MongoError.WriteError {
+            
+            if let writeFailure = error.writeFailure, writeFailure.code == 11000 && writeFailure.message.contains(" index: _id_ ") {
                 
-                return self.insert(connection, `class`, values)
+                return try await self.insert(connection, `class`, values)
             }
             
-            return connection.eventLoopGroup.next().makeFailedFuture(error)
+            throw error
         }
     }
-    
-    func withTransaction<T>(
-        _ connection: MDConnection,
-        _ transactionBody: @escaping (MDConnection) throws -> EventLoopFuture<T>
-    ) -> EventLoopFuture<T> {
-        
-        return connection.connection.withTransaction { try transactionBody(MDConnection(connection: $0)) }
-    }
-    
-    #if compiler(>=5.5.2) && canImport(_Concurrency)
     
     func withTransaction<T>(
         _ connection: MDConnection,
@@ -412,17 +349,19 @@ struct MongoDBDriver: MDDriver {
         return try await connection.connection.withTransaction { try await transactionBody(MDConnection(connection: $0)) }
     }
     
-    #endif
-
 }
 
 extension MongoDBDriver {
     
-    func createTable(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
+    func createTable(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) async throws {
         
-        return connection.connection.mongoQuery().createCollection(table).execute().map { _ in }.flatMapErrorThrowing { error in
+        do {
             
-            if let error = error as? MongoError.CommandError, error.code == 48 { // Collection already exists
+            _ = try await connection.connection.mongoQuery().createCollection(table).execute()
+            
+        } catch let error as MongoError.CommandError {
+            
+            if error.code == 48 { // Collection already exists
                 return
             }
             
@@ -430,17 +369,16 @@ extension MongoDBDriver {
         }
     }
     
-    func addColumns(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
+    func addColumns(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) async throws {
         
-        return connection.eventLoopGroup.next().makeSucceededVoidFuture()
     }
     
-    func dropTable(_ connection: MDConnection, _ table: String) -> EventLoopFuture<Void> {
+    func dropTable(_ connection: MDConnection, _ table: String) async throws {
         
-        return connection.connection.mongoQuery().collection(table).drop().execute()
+        try await connection.connection.mongoQuery().collection(table).drop().execute()
     }
     
-    func dropColumns(_ connection: MDConnection, _ table: String, _ columns: Set<String>) -> EventLoopFuture<Void> {
+    func dropColumns(_ connection: MDConnection, _ table: String, _ columns: Set<String>) async throws {
         
         var unset: BSONDocument = [:]
         
@@ -448,10 +386,10 @@ extension MongoDBDriver {
             unset[column] = 1
         }
         
-        return connection.connection.mongoQuery().collection(table).updateMany().update(["$unset": BSON(unset)]).execute().map { _ in }
+        _ = try await connection.connection.mongoQuery().collection(table).updateMany().update(["$unset": BSON(unset)]).execute()
     }
     
-    func addIndex(_ connection: MDConnection, _ table: String, _ index: MDSQLTableIndex) -> EventLoopFuture<Void> {
+    func addIndex(_ connection: MDConnection, _ table: String, _ index: MDSQLTableIndex) async throws {
         
         var keys: BSONDocument = [:]
         
@@ -462,11 +400,11 @@ extension MongoDBDriver {
             }
         }
         
-        return connection.connection.mongoQuery().collection(table).createIndex().index(keys).name(index.name).unique(index.isUnique).execute().map { _ in }
+        _ = try await connection.connection.mongoQuery().collection(table).createIndex().index(keys).name(index.name).unique(index.isUnique).execute()
     }
     
-    func dropIndex(_ connection: MDConnection, _ table: String, _ index: String) -> EventLoopFuture<Void> {
+    func dropIndex(_ connection: MDConnection, _ table: String, _ index: String) async throws {
         
-        return connection.connection.mongoQuery().collection(table).dropIndex().index(index).execute()
+        try await connection.connection.mongoQuery().collection(table).dropIndex().index(index).execute()
     }
 }

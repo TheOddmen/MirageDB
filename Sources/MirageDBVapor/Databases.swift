@@ -41,6 +41,10 @@ extension DatabaseID: ExpressibleByStringLiteral {
 
 public class DatabasePool {
     
+    let logger: Logger
+    
+    let eventLoopGroup: EventLoopGroup
+    
     let connection: EventLoopFuture<MDConnection>?
     
     let pool: EventLoopGroupConnectionPool<MDConnectionPoolSource>
@@ -53,57 +57,70 @@ public class DatabasePool {
         on eventLoopGroup: EventLoopGroup
     ) {
         
+        self.logger = logger
+        self.eventLoopGroup = eventLoopGroup
+        
+        let _source: MDConnectionPoolSource
+        
         if source.driver.isThreadBased {
             
-            let connection = MDConnection.connect(
-                config: source.configuration,
-                logger: logger,
-                driver: source.driver,
-                on: eventLoopGroup)
+            let promise = eventLoopGroup.next().makePromise(of: MDConnection.self)
             
-            self.connection = connection
+            promise.completeWithTask {
+                
+                try await MDConnection.connect(
+                    config: source.configuration,
+                    logger: logger,
+                    driver: source.driver,
+                    on: eventLoopGroup)
+            }
             
-            self.pool = EventLoopGroupConnectionPool(
-                source: MDConnectionPoolSource(generator: { _, eventLoop in
-                    connection.map { $0.bind(to: eventLoop)  }
-                }),
-                maxConnectionsPerEventLoop: maxConnectionsPerEventLoop,
-                requestTimeout: requestTimeout,
-                logger: logger,
-                on: eventLoopGroup
-            )
+            self.connection = promise.futureResult
+            
+            _source = MDConnectionPoolSource { _, eventLoop in promise.futureResult.map { $0.bind(to: eventLoop) } }
             
         } else {
             
             self.connection = nil
             
-            self.pool = EventLoopGroupConnectionPool(
-                source: MDConnectionPoolSource(generator: { logger, eventLoop in
-                    MDConnection.connect(
+            _source = MDConnectionPoolSource { logger, eventLoop in
+                
+                let promise = eventLoopGroup.next().makePromise(of: MDConnection.self)
+                
+                promise.completeWithTask {
+                    
+                    try await MDConnection.connect(
                         config: source.configuration,
                         logger: logger,
                         driver: source.driver,
                         on: eventLoop)
-                }),
-                maxConnectionsPerEventLoop: maxConnectionsPerEventLoop,
-                requestTimeout: requestTimeout,
-                logger: logger,
-                on: eventLoopGroup
-            )
+                }
+                
+                return promise.futureResult
+            }
         }
+        
+        self.pool = EventLoopGroupConnectionPool(
+            source: _source,
+            maxConnectionsPerEventLoop: maxConnectionsPerEventLoop,
+            requestTimeout: requestTimeout,
+            logger: logger,
+            on: eventLoopGroup
+        )
     }
     
     public func withConnection<Result>(
         _ closure: @escaping (MDConnection) -> EventLoopFuture<Result>
     ) -> EventLoopFuture<Result> {
-        return self.pool.withConnection { closure($0.connection) }
+        return self.pool.withConnection(logger: logger, on: eventLoopGroup.next()) { closure($0.connection) }
     }
     
     func shutdown() {
-        if let connection = self.connection {
-            connection.flatMap { $0.close() }.whenComplete { _ in self.pool.shutdown() }
-        } else {
-            pool.shutdown()
+        Task {
+            if let connection = try await self.connection?.get() {
+                try await connection.close()
+            }
+            self.pool.shutdown()
         }
     }
 }

@@ -29,83 +29,74 @@ protocol MDDriver {
         _ connection: MDConnection,
         _ table: String,
         _ columns: [String: MDSQLDataType]
-    ) -> EventLoopFuture<Void>
+    ) async throws -> Void
     
     func addColumns(
         _ connection: MDConnection,
         _ table: String,
         _ columns: [String: MDSQLDataType]
-    ) -> EventLoopFuture<Void>
+    ) async throws -> Void
     
     func dropTable(
         _ connection: MDConnection,
         _ table: String
-    ) -> EventLoopFuture<Void>
+    ) async throws -> Void
     
     func dropColumns(
         _ connection: MDConnection,
         _ table: String,
         _ columns: Set<String>
-    ) -> EventLoopFuture<Void>
+    ) async throws -> Void
     
     func addIndex(
         _ connection: MDConnection,
         _ table: String,
         _ index: MDSQLTableIndex
-    ) -> EventLoopFuture<Void>
+    ) async throws -> Void
     
     func dropIndex(
         _ connection: MDConnection,
         _ table: String,
         _ index: String
-    ) -> EventLoopFuture<Void>
+    ) async throws -> Void
     
-    func tables(_ connection: MDConnection) -> EventLoopFuture<[String]>
+    func tables(_ connection: MDConnection) async throws -> [String]
     
-    func count(_ query: MDFindExpression) -> EventLoopFuture<Int>
+    func count(_ query: MDFindExpression) async throws -> Int
     
-    func toArray(_ query: MDFindExpression) -> EventLoopFuture<[MDObject]>
+    func toArray(_ query: MDFindExpression) async throws -> [MDObject]
     
     func forEach(
         _ query: MDFindExpression,
         _ body: @escaping (MDObject) throws -> Void
-    ) -> EventLoopFuture<Void>
+    ) async throws -> Void
     
-    func first(_ query: MDFindExpression) -> EventLoopFuture<MDObject?>
+    func first(_ query: MDFindExpression) async throws -> MDObject?
     
     func findOneAndUpdate(
         _ query: MDFindOneExpression,
         _ update: [MDQueryKey: MDUpdateOption]
-    ) -> EventLoopFuture<MDObject?>
+    ) async throws -> MDObject?
     
     func findOneAndUpsert(
         _ query: MDFindOneExpression,
         _ update: [MDQueryKey: MDUpdateOption],
         _ setOnInsert: [MDQueryKey: MDDataConvertible]
-    ) -> EventLoopFuture<MDObject?>
+    ) async throws -> MDObject?
     
-    func findOneAndDelete(_ query: MDFindOneExpression) -> EventLoopFuture<MDObject?>
+    func findOneAndDelete(_ query: MDFindOneExpression) async throws -> MDObject?
     
-    func deleteAll(_ query: MDFindExpression) -> EventLoopFuture<Int?>
+    func deleteAll(_ query: MDFindExpression) async throws -> Int?
     
     func insert(
         _ connection: MDConnection,
         _ class: String,
         _ data: [MDQueryKey: MDData]
-    ) -> EventLoopFuture<MDObject>
-    
-    func withTransaction<T>(
-        _ connection: MDConnection,
-        _ transactionBody: @escaping (MDConnection) throws -> EventLoopFuture<T>
-    ) -> EventLoopFuture<T>
-    
-    #if compiler(>=5.5.2) && canImport(_Concurrency)
+    ) async throws -> MDObject
     
     func withTransaction<T>(
         _ connection: MDConnection,
         _ transactionBody: (MDConnection) async throws -> T
     ) async throws -> T
-    
-    #endif
     
 }

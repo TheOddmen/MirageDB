@@ -61,138 +61,98 @@ extension MDSQLDataType {
 
 extension PostgreSQLDriver {
     
-    func _createTable(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
+    func _createTable(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) async throws {
+        
+        guard let _connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
+        
+        let list: [SQLRaw] = ["_id VARCHAR(10) NOT NULL PRIMARY KEY"] + columns.map { "\(identifier: $0.key) \($0.value.postgresType)" }
+        
+        let sql: SQLRaw = "CREATE TABLE IF NOT EXISTS \(identifier: table) (\(list.joined(separator: ",")))"
         
         do {
             
-            guard let _connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
+            try await _connection.execute(sql)
             
-            let list: [SQLRaw] = ["_id VARCHAR(10) NOT NULL PRIMARY KEY"] + columns.map { "\(identifier: $0.key) \($0.value.postgresType)" }
+        } catch let error as PostgresError {
             
-            let sql: SQLRaw = "CREATE TABLE IF NOT EXISTS \(identifier: table) (\(list.joined(separator: ",")))"
-            
-            return _connection.execute(sql)
-                .map { _ in }
-                .flatMapError { error in
-                    
-                    if case let .server(error) = error as? PostgresError {
-                        
-                        let sqlState = error.fields[.sqlState] == "23505"
-                        let schemaName = error.fields[.schemaName] == "pg_catalog"
-                        let tableName = error.fields[.tableName] == "pg_type"
-                        let constraintName = error.fields[.constraintName] == "pg_type_typname_nsp_index"
-                        let routine = error.fields[.routine] == "_bt_check_unique"
-                        
-                        if sqlState && schemaName && tableName && constraintName && routine {
-                            return self._createTable(connection, table, columns)
-                        }
-                    }
-                    
-                    return _connection.eventLoopGroup.next().makeFailedFuture(error)
-                }
-            
-        } catch {
-            
-            return connection.eventLoopGroup.next().makeFailedFuture(error)
-        }
-    }
-    
-    func dropTable(_ connection: MDConnection, _ table: String) -> EventLoopFuture<Void> {
-        
-        do {
-            
-            guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
-            
-            let sql: SQLRaw = "DROP TABLE IF EXISTS \(identifier: table)"
-            
-            return connection.execute(sql).map { _ in }
-            
-        } catch {
-            
-            return connection.eventLoopGroup.next().makeFailedFuture(error)
-        }
-    }
-    
-    func addColumns(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
-        
-        do {
-            
-            guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
-            
-            let list: [SQLRaw] = columns.map { "ADD COLUMN IF NOT EXISTS \(identifier: $0.key) \($0.value.postgresType)" }
-            
-            let sql: SQLRaw = "ALTER TABLE IF EXISTS \(identifier: table) \(list.joined(separator: ","))"
-            
-            return connection.execute(sql).map { _ in }
-            
-        } catch {
-            
-            return connection.eventLoopGroup.next().makeFailedFuture(error)
-        }
-    }
-    
-    func dropColumns(_ connection: MDConnection, _ table: String, _ columns: Set<String>) -> EventLoopFuture<Void> {
-        
-        do {
-            
-            guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
-            
-            let list: [SQLRaw] = columns.map { "DROP COLUMN IF EXISTS \(identifier: $0)" }
-            
-            let sql: SQLRaw = "ALTER TABLE IF EXISTS \(identifier: table) \(list.joined(separator: ","))"
-            
-            return connection.execute(sql).map { _ in }
-            
-        } catch {
-            
-            return connection.eventLoopGroup.next().makeFailedFuture(error)
-        }
-    }
-    
-    func addIndex(_ connection: MDConnection, _ table: String, _ index: MDSQLTableIndex) -> EventLoopFuture<Void> {
-        
-        do {
-            
-            guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
-            
-            var list: [SQLRaw] = []
-            
-            for (key, option) in index.columns {
-                switch option {
-                case .ascending: list.append("\(identifier: key) ASC")
-                case .descending: list.append("\(identifier: key) DESC")
+            if case let .server(error) = error {
+                
+                let sqlState = error.fields[.sqlState] == "23505"
+                let schemaName = error.fields[.schemaName] == "pg_catalog"
+                let tableName = error.fields[.tableName] == "pg_type"
+                let constraintName = error.fields[.constraintName] == "pg_type_typname_nsp_index"
+                let routine = error.fields[.routine] == "_bt_check_unique"
+                
+                if sqlState && schemaName && tableName && constraintName && routine {
+                    return try await self._createTable(connection, table, columns)
                 }
             }
             
-            let sql: SQLRaw
-            
-            if index.isUnique {
-                sql = "CREATE UNIQUE INDEX IF NOT EXISTS \(identifier: index.name) ON \(identifier: table) (\(list.joined(separator: ",")))"
-            } else {
-                sql = "CREATE INDEX IF NOT EXISTS \(identifier: index.name) ON \(identifier: table) (\(list.joined(separator: ",")))"
-            }
-            
-            return connection.execute(sql).map { _ in }
-            
-        } catch {
-            
-            return connection.eventLoopGroup.next().makeFailedFuture(error)
+            throw error
         }
     }
     
-    func dropIndex(_ connection: MDConnection, _ table: String, _ index: String) -> EventLoopFuture<Void> {
+    func dropTable(_ connection: MDConnection, _ table: String) async throws {
         
-        do {
-            
-            guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
-            
-            let sql: SQLRaw = "DROP INDEX IF EXISTS \(identifier: index)"
-            
-            return connection.execute(sql).map { _ in }
-            
-        } catch {
-            
-            return connection.eventLoopGroup.next().makeFailedFuture(error)
+        guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
+        
+        let sql: SQLRaw = "DROP TABLE IF EXISTS \(identifier: table)"
+        
+        try await connection.execute(sql)
+    }
+    
+    func addColumns(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) async throws {
+        
+        guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
+        
+        let list: [SQLRaw] = columns.map { "ADD COLUMN IF NOT EXISTS \(identifier: $0.key) \($0.value.postgresType)" }
+        
+        let sql: SQLRaw = "ALTER TABLE IF EXISTS \(identifier: table) \(list.joined(separator: ","))"
+        
+        try await connection.execute(sql)
+    }
+    
+    func dropColumns(_ connection: MDConnection, _ table: String, _ columns: Set<String>) async throws {
+        
+        guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
+        
+        let list: [SQLRaw] = columns.map { "DROP COLUMN IF EXISTS \(identifier: $0)" }
+        
+        let sql: SQLRaw = "ALTER TABLE IF EXISTS \(identifier: table) \(list.joined(separator: ","))"
+        
+        try await connection.execute(sql)
+    }
+    
+    func addIndex(_ connection: MDConnection, _ table: String, _ index: MDSQLTableIndex) async throws {
+        
+        guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
+        
+        var list: [SQLRaw] = []
+        
+        for (key, option) in index.columns {
+            switch option {
+            case .ascending: list.append("\(identifier: key) ASC")
+            case .descending: list.append("\(identifier: key) DESC")
+            }
         }
+        
+        let sql: SQLRaw
+        
+        if index.isUnique {
+            sql = "CREATE UNIQUE INDEX IF NOT EXISTS \(identifier: index.name) ON \(identifier: table) (\(list.joined(separator: ",")))"
+        } else {
+            sql = "CREATE INDEX IF NOT EXISTS \(identifier: index.name) ON \(identifier: table) (\(list.joined(separator: ",")))"
+        }
+        
+        try await connection.execute(sql)
+    }
+    
+    func dropIndex(_ connection: MDConnection, _ table: String, _ index: String) async throws {
+        
+        guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
+        
+        let sql: SQLRaw = "DROP INDEX IF EXISTS \(identifier: index)"
+        
+        try await connection.execute(sql)
     }
 }

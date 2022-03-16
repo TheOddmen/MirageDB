@@ -37,20 +37,32 @@ class MirageDBTestCase: XCTestCase {
     private var eventLoopGroup: MultiThreadedEventLoopGroup!
     private(set) var connection: MDConnection!
     
-    override func setUpWithError() throws {
+    override func setUp() async throws {
         
         do {
             
             eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
-            self.addTeardownBlock { try! self.eventLoopGroup.syncShutdownGracefully() }
             
             var logger = Logger(label: "com.o2ter.MirageDB")
             logger.logLevel = .debug
             
-            self.connection = try MDConnection.connect(url: connection_url, logger: logger, on: eventLoopGroup).wait()
-            self.addTeardownBlock { try! self.connection.close().wait() }
+            self.connection = try await MDConnection.connect(url: connection_url, logger: logger, on: eventLoopGroup)
             
-            print(connection_url.scheme!, try connection.version().wait())
+            print(connection_url.scheme!, try await connection.version())
+            
+        } catch {
+            
+            print(error)
+            throw error
+        }
+    }
+    
+    override func tearDown() async throws {
+        
+        do {
+            
+            try await self.connection.close()
+            try eventLoopGroup.syncShutdownGracefully()
             
         } catch {
             

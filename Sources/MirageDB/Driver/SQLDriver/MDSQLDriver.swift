@@ -29,29 +29,31 @@ protocol MDSQLDriver: MDDriver {
         _ connection: MDConnection,
         _ table: String,
         _ columns: [String: MDSQLDataType]
-    ) -> EventLoopFuture<Void>
+    ) async throws -> Void
 }
 
 extension MDSQLDriver {
     
-    func createTable(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
-        
-        var columns = columns
-        columns["_created_at"] = .timestamp
-        columns["_updated_at"] = .timestamp
+    func createTable(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) async throws {
         
         connection.logger.trace("Generating table \(table) if necessary.")
         
-        let result = self._createTable(connection, table, columns)
-        
-        result.whenComplete { result in
-            switch result {
-            case .success: connection.logger.trace("Generate table \(table) completed.")
-            case let .failure(error): connection.logger.trace("Generate table \(table) failed. Error: \(error)")
-            }
+        do {
+            
+            var columns = columns
+            columns["_created_at"] = .timestamp
+            columns["_updated_at"] = .timestamp
+            
+            try await self._createTable(connection, table, columns)
+            
+            connection.logger.trace("Generate table \(table) completed.")
+            
+        } catch {
+            
+            connection.logger.trace("Generate table \(table) failed. Error: \(error)")
+            
+            throw error
         }
-        
-        return result
     }
 }
 
@@ -164,68 +166,56 @@ extension DBUpsertOption {
 
 extension MDSQLDriver {
     
-    func tables(_ connection: MDConnection) -> EventLoopFuture<[String]> {
+    func tables(_ connection: MDConnection) async throws -> [String] {
         
-        do {
-            
-            guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
-            
-            return connection.tables()
-            
-        } catch {
-            
-            return connection.eventLoopGroup.next().makeFailedFuture(error)
-        }
+        guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
+        
+        return try await connection.tables()
     }
     
-    func checkTableExists(_ connection: MDConnection, _ table: String) -> EventLoopFuture<Bool> {
+    func checkTableExists(_ connection: MDConnection, _ table: String) async throws -> Bool {
         
-        return self.tables(connection).map { tables in
-            
-            let _table = table.lowercased()
-            
-            return tables.contains(where: { $0.lowercased() == _table })
-        }
+        let _table = table.lowercased()
+        
+        return try await self.tables(connection).contains(where: { $0.lowercased() == _table })
     }
     
-    func enforceFieldExists(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
+    func enforceFieldExists(_ connection: MDConnection, _ table: String, _ columns: [String: MDSQLDataType]) async throws {
         
-        return self.checkTableExists(connection, table).flatMap { tableExists in
+        if try await self.checkTableExists(connection, table) {
             
-            if tableExists {
+            if columns.isEmpty { return }
+            
+            connection.logger.trace("Generating columns for table \(table) if necessary.")
+            
+            do {
                 
-                if columns.isEmpty {
-                    
-                    return connection.eventLoopGroup.next().makeSucceededVoidFuture()
-                }
+                try await self.addColumns(connection, table, columns)
                 
-                connection.logger.trace("Generating columns for table \(table) if necessary.")
+                connection.logger.trace("Generate columns for table \(table) completed.")
                 
-                let result = self.addColumns(connection, table, columns)
+            } catch {
                 
-                result.whenComplete { result in
-                    switch result {
-                    case .success: connection.logger.trace("Generate columns for table \(table) completed.")
-                    case let .failure(error): connection.logger.trace("Generate columns for table \(table) failed. Error: \(error)")
-                    }
-                }
+                connection.logger.trace("Generate columns for table \(table) failed. Error: \(error)")
                 
-                return result
+                throw error
+            }
+            
+        } else {
+            
+            connection.logger.trace("Generating table \(table)")
+            
+            do {
                 
-            } else {
+                try await self.createTable(connection, table, columns)
                 
-                connection.logger.trace("Generating table \(table)")
+                connection.logger.trace("Generate table \(table) completed.")
                 
-                let result = self.createTable(connection, table, columns)
+            } catch {
                 
-                result.whenComplete { result in
-                    switch result {
-                    case .success: connection.logger.trace("Generate table \(table) completed.")
-                    case let .failure(error): connection.logger.trace("Generate table \(table) failed. Error: \(error)")
-                    }
-                }
+                connection.logger.trace("Generate table \(table) failed. Error: \(error)")
                 
-                return result
+                throw error
             }
         }
     }
@@ -233,23 +223,15 @@ extension MDSQLDriver {
 
 extension MDSQLDriver {
     
-    func count(_ query: MDFindExpression) -> EventLoopFuture<Int> {
+    func count(_ query: MDFindExpression) async throws -> Int {
         
         var _query = query.connection.connection.query().find(query.class)
         
         _query = _query.filter(query.filters.map(DBPredicateExpression.init))
         
-        return self.checkTableExists(query.connection, query.class).flatMap { tableExists in
-            
-            if tableExists {
-                
-                return _query.count()
-                
-            } else {
-                
-                return query.connection.eventLoopGroup.next().makeSucceededFuture(0)
-            }
-        }
+        guard try await self.checkTableExists(query.connection, query.class) else { return 0 }
+        
+        return try await _query.count()
     }
     
     private func _find(_ query: MDFindExpression) throws -> DBFindExpression {
@@ -274,59 +256,29 @@ extension MDSQLDriver {
         return _query
     }
     
-    func toArray(_ query: MDFindExpression) -> EventLoopFuture<[MDObject]> {
+    func toArray(_ query: MDFindExpression) async throws -> [MDObject] {
         
-        do {
-            
-            let _query = try self._find(query)
-            
-            return self.checkTableExists(query.connection, query.class).flatMap { tableExists in
-                
-                if tableExists {
-                    
-                    return _query.toArray().flatMapThrowing { try $0.map(MDObject.init) }
-                    
-                } else {
-                    
-                    return query.connection.eventLoopGroup.next().makeSucceededFuture([])
-                }
-            }
-            
-        } catch {
-            
-            return query.connection.eventLoopGroup.next().makeFailedFuture(error)
-        }
-    }
-    
-    func forEach(_ query: MDFindExpression, _ body: @escaping (MDObject) throws -> Void) -> EventLoopFuture<Void> {
+        let _query = try self._find(query)
         
-        do {
-            
-            let _query = try self._find(query)
-            
-            return self.checkTableExists(query.connection, query.class).flatMap { tableExists in
-                
-                if tableExists {
-                    
-                    return _query.forEach { try body(MDObject($0)) }.map { _ in }
-                    
-                } else {
-                    
-                    return query.connection.eventLoopGroup.next().makeSucceededVoidFuture()
-                }
-            }
-            
-        } catch {
-            
-            return query.connection.eventLoopGroup.next().makeFailedFuture(error)
-        }
+        guard try await self.checkTableExists(query.connection, query.class) else { return [] }
+        
+        return try await _query.toArray().map(MDObject.init)
     }
     
-    func first(_ query: MDFindExpression) -> EventLoopFuture<MDObject?> {
-        return self.toArray(query.limit(1)).map { $0.first }
+    func forEach(_ query: MDFindExpression, _ body: @escaping (MDObject) throws -> Void) async throws {
+        
+        let _query = try self._find(query)
+        
+        guard try await self.checkTableExists(query.connection, query.class) else { return }
+        
+        return try await _query.forEach { try body(MDObject($0)) }
     }
     
-    func findOneAndUpdate(_ query: MDFindOneExpression, _ update: [MDQueryKey: MDUpdateOption]) -> EventLoopFuture<MDObject?> {
+    func first(_ query: MDFindExpression) async throws -> MDObject? {
+        return try await self.toArray(query.limit(1)).first
+    }
+    
+    func findOneAndUpdate(_ query: MDFindOneExpression, _ update: [MDQueryKey: MDUpdateOption]) async throws -> MDObject? {
         
         var _query = query.connection.connection.query().findOne(query.class)
         
@@ -354,13 +306,12 @@ extension MDSQLDriver {
         _update["_created_at"] = nil
         _update["_updated_at"] = .set(now)
         
-        return self.enforceFieldExists(query.connection, query.class, columns).flatMap {
-            
-            _query.update(_update.mapValues(DBUpdateOption.init)).flatMapThrowing { try $0.map(MDObject.init) }
-        }
+        try await self.enforceFieldExists(query.connection, query.class, columns)
+        
+        return try await _query.update(_update.mapValues(DBUpdateOption.init)).map(MDObject.init)
     }
     
-    private func _findOneAndUpsert(_ query: MDFindOneExpression, _ update: [MDQueryKey: MDUpdateOption], _ setOnInsert: [MDQueryKey: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
+    private func _findOneAndUpsert(_ query: MDFindOneExpression, _ update: [MDQueryKey: MDUpdateOption], _ setOnInsert: [MDQueryKey: MDDataConvertible]) async throws -> MDObject? {
         
         var _query = query.connection.connection.query().findOne(query.class)
         
@@ -396,26 +347,29 @@ extension MDSQLDriver {
         _setOnInsert["_created_at"] = DBData(now)
         _setOnInsert["_updated_at"] = nil
         
-        return self.enforceFieldExists(query.connection, query.class, columns).flatMap {
-            
-            _query.upsert(_update, setOnInsert: _setOnInsert).flatMapThrowing { try $0.map(MDObject.init) }
-        }
+        try await self.enforceFieldExists(query.connection, query.class, columns)
+        
+        return try await _query.upsert(_update, setOnInsert: _setOnInsert).map(MDObject.init)
     }
     
-    func findOneAndUpsert(_ query: MDFindOneExpression, _ update: [MDQueryKey: MDUpdateOption], _ setOnInsert: [MDQueryKey: MDDataConvertible]) -> EventLoopFuture<MDObject?> {
+    func findOneAndUpsert(_ query: MDFindOneExpression, _ update: [MDQueryKey: MDUpdateOption], _ setOnInsert: [MDQueryKey: MDDataConvertible]) async throws -> MDObject? {
         
-        self._findOneAndUpsert(query, update, setOnInsert).flatMapError { error in
+        do {
             
-            if let error = error as? Database.Error, error == .duplicatedPrimaryKey {
+            return try await self._findOneAndUpsert(query, update, setOnInsert)
+            
+        } catch let error as Database.Error {
+            
+            if error == .duplicatedPrimaryKey {
                 
-                return self.findOneAndUpsert(query, update, setOnInsert)
+                return try await self.findOneAndUpsert(query, update, setOnInsert)
             }
             
-            return query.connection.eventLoopGroup.next().makeFailedFuture(error)
+            throw error
         }
     }
     
-    func findOneAndDelete(_ query: MDFindOneExpression) -> EventLoopFuture<MDObject?> {
+    func findOneAndDelete(_ query: MDFindOneExpression) async throws -> MDObject? {
         
         var _query = query.connection.connection.query().findOne(query.class)
         
@@ -428,19 +382,19 @@ extension MDSQLDriver {
             _query = _query.includes(includes.stringKeys.union(MDObject._default_fields))
         }
         
-        return _query.delete().flatMapThrowing { try $0.map(MDObject.init) }
+        return try await _query.delete().map(MDObject.init)
     }
     
-    func deleteAll(_ query: MDFindExpression) -> EventLoopFuture<Int?> {
+    func deleteAll(_ query: MDFindExpression) async throws -> Int? {
         
         var _query = query.connection.connection.query().find(query.class)
         
         _query = _query.filter(query.filters.map(DBPredicateExpression.init))
         
-        return _query.delete()
+        return try await _query.delete()
     }
     
-    private func _insert(_ connection: MDConnection, _ class: String, _ data: [MDQueryKey: MDData]) -> EventLoopFuture<MDObject> {
+    private func _insert(_ connection: MDConnection, _ class: String, _ data: [MDQueryKey: MDData]) async throws -> MDObject {
         
         let now = Date()
         
@@ -452,43 +406,29 @@ extension MDSQLDriver {
         _data["_created_at"] = DBData(now)
         _data["_updated_at"] = DBData(now)
         
-        return self.enforceFieldExists(connection, `class`, columns).flatMap {
-            
-            connection.connection.query().insert(`class`, _data).flatMapThrowing { try MDObject($0) }
-        }
-    }
-    
-    func insert(_ connection: MDConnection, _ class: String, _ values: [MDQueryKey: MDData]) -> EventLoopFuture<MDObject> {
+        try await self.enforceFieldExists(connection, `class`, columns)
         
-        self._insert(connection, `class`, values).flatMapError { error in
-            
-            if let error = error as? Database.Error, error == .duplicatedPrimaryKey {
-                
-                return self.insert(connection, `class`, values)
-            }
-            
-            return connection.eventLoopGroup.next().makeFailedFuture(error)
-        }
+        let result = try await connection.connection.query().insert(`class`, _data)
+        
+        return try MDObject(result)
     }
     
-    func withTransaction<T>(
-        _ connection: MDConnection,
-        _ transactionBody: @escaping (MDConnection) throws -> EventLoopFuture<T>
-    ) -> EventLoopFuture<T> {
+    func insert(_ connection: MDConnection, _ class: String, _ values: [MDQueryKey: MDData]) async throws -> MDObject {
         
         do {
             
-            guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
+            return try await self._insert(connection, `class`, values)
             
-            return connection.withTransaction { try transactionBody(MDConnection(connection: $0)) }
+        } catch let error as Database.Error {
             
-        } catch {
+            if error == .duplicatedPrimaryKey {
+                
+                return try await self.insert(connection, `class`, values)
+            }
             
-            return connection.eventLoopGroup.next().makeFailedFuture(error)
+            throw error
         }
     }
-    
-    #if compiler(>=5.5.2) && canImport(_Concurrency)
     
     func withTransaction<T>(
         _ connection: MDConnection,
@@ -498,9 +438,6 @@ extension MDSQLDriver {
         guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
         
         return try await connection.withTransaction { try await transactionBody(MDConnection(connection: $0)) }
-        
     }
     
-    #endif
-
 }

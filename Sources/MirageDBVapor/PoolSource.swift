@@ -27,6 +27,8 @@ public class MDConnectionPoolItem: ConnectionPoolItem {
     
     public let connection: MDConnection
     
+    public private(set) var isClosed: Bool = false
+    
     init(connection: MDConnection) {
         self.connection = connection
     }
@@ -35,12 +37,16 @@ public class MDConnectionPoolItem: ConnectionPoolItem {
         return connection.eventLoopGroup.next()
     }
     
-    public var isClosed: Bool {
-        return connection.isClosed
-    }
-    
     public func close() -> EventLoopFuture<Void> {
-        return connection.close()
+        
+        let promise = eventLoop.makePromise(of: Void.self)
+        
+        promise.completeWithTask {
+            try await self.connection.close()
+            self.isClosed = true
+        }
+        
+        return promise.futureResult
     }
 }
 

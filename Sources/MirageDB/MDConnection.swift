@@ -23,7 +23,7 @@
 //  THE SOFTWARE.
 //
 
-public class MDConnection {
+public final class MDConnection: Sendable {
     
     let connection: DBConnection
     
@@ -32,7 +32,7 @@ public class MDConnection {
         self.connection = connection
         
         if let connection = connection as? DBSQLConnection {
-            connection.primaryKeyHook = { connection, _ in connection.eventLoopGroup.next().makeSucceededFuture(["_id"]) }
+            Task { await connection.setPrimaryKeyHook { _, _ in ["_id"] } }
         }
     }
 }
@@ -46,10 +46,6 @@ extension MDConnection {
 
 extension MDConnection {
     
-    public var isClosed: Bool {
-        return connection.isClosed
-    }
-    
     public var logger: Logger {
         return connection.logger
     }
@@ -58,23 +54,23 @@ extension MDConnection {
         return MDConnection(connection: connection.bind(to: eventLoop))
     }
     
-    public func close() -> EventLoopFuture<Void> {
-        return connection.close()
+    public func close() async throws {
+        try await connection.close()
     }
 }
 
 extension MDConnection {
     
-    public func version() -> EventLoopFuture<String> {
-        return connection.version()
+    public func version() async throws -> String {
+        return try await connection.version()
     }
     
-    public func databases() -> EventLoopFuture<[String]> {
-        return connection.databases()
+    public func databases() async throws -> [String] {
+        return try await connection.databases()
     }
     
-    public func tables() -> EventLoopFuture<[String]> {
-        return self.driver.tables(self)
+    public func tables() async throws -> [String] {
+        return try await self.driver.tables(self)
     }
 }
 
@@ -85,27 +81,33 @@ extension MDConnection {
         logger: Logger = .init(label: "com.o2ter.MirageDB"),
         driver: DBDriver,
         on eventLoopGroup: EventLoopGroup
-    ) -> EventLoopFuture<MDConnection> {
+    ) async throws -> MDConnection {
         
-        return Database.connect(config: config, logger: logger, driver: driver, on: eventLoopGroup).map(MDConnection.init)
+        let connection = try await Database.connect(config: config, logger: logger, driver: driver, on: eventLoopGroup)
+        
+        return MDConnection(connection: connection)
     }
     
     public static func connect(
         url: URL,
         logger: Logger = .init(label: "com.o2ter.MirageDB"),
         on eventLoopGroup: EventLoopGroup
-    ) -> EventLoopFuture<MDConnection> {
+    ) async throws -> MDConnection {
         
-        return Database.connect(url: url, logger: logger, on: eventLoopGroup).map(MDConnection.init)
+        let connection = try await Database.connect(url: url, logger: logger, on: eventLoopGroup)
+        
+        return MDConnection(connection: connection)
     }
     
     public static func connect(
         url: URLComponents,
         logger: Logger = .init(label: "com.o2ter.MirageDB"),
         on eventLoopGroup: EventLoopGroup
-    ) -> EventLoopFuture<MDConnection> {
+    ) async throws -> MDConnection {
         
-        return Database.connect(url: url, logger: logger, on: eventLoopGroup).map(MDConnection.init)
+        let connection = try await Database.connect(url: url, logger: logger, on: eventLoopGroup)
+        
+        return MDConnection(connection: connection)
     }
 }
 
@@ -123,35 +125,35 @@ extension MDConnection {
 extension MDConnection {
     
     public func withTransaction<T>(
-        _ transactionBody: @escaping (MDConnection) throws -> EventLoopFuture<T>
-    ) -> EventLoopFuture<T> {
-        return self.driver.withTransaction(self) { try transactionBody($0) }
+        _ transactionBody: (MDConnection) async throws -> T
+    ) async throws -> T {
+        return try await self.driver.withTransaction(self) { try await transactionBody($0) }
     }
 }
 
 extension MDConnection {
     
-    public func createTable(_ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
-        return self.driver.createTable(self, table, columns)
+    public func createTable(_ table: String, _ columns: [String: MDSQLDataType]) async throws {
+        return try await self.driver.createTable(self, table, columns)
     }
     
-    public func addColumns(_ table: String, _ columns: [String: MDSQLDataType]) -> EventLoopFuture<Void> {
-        return self.driver.addColumns(self, table, columns)
+    public func addColumns(_ table: String, _ columns: [String: MDSQLDataType]) async throws {
+        return try await self.driver.addColumns(self, table, columns)
     }
     
-    public func dropTable(_ table: String) -> EventLoopFuture<Void> {
-        return self.driver.dropTable(self, table)
+    public func dropTable(_ table: String) async throws {
+        return try await self.driver.dropTable(self, table)
     }
     
-    public func dropColumns(_ table: String, _ columns: Set<String>) -> EventLoopFuture<Void> {
-        return self.driver.dropColumns(self, table, columns)
+    public func dropColumns(_ table: String, _ columns: Set<String>) async throws {
+        return try await self.driver.dropColumns(self, table, columns)
     }
     
-    public func addIndex(_ table: String, _ index: MDSQLTableIndex) -> EventLoopFuture<Void> {
-        return self.driver.addIndex(self, table, index)
+    public func addIndex(_ table: String, _ index: MDSQLTableIndex) async throws {
+        return try await self.driver.addIndex(self, table, index)
     }
     
-    public func dropIndex(_ table: String, _ index: String) -> EventLoopFuture<Void> {
-        return self.driver.dropIndex(self, table, index)
+    public func dropIndex(_ table: String, _ index: String) async throws {
+        return try await self.driver.dropIndex(self, table, index)
     }
 }

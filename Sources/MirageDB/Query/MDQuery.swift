@@ -41,14 +41,14 @@ extension MDConnection {
 
 extension MDQuery {
     
-    public func insert(_ class: String, _ data: [MDQueryKey: MDData]) -> EventLoopFuture<MDObject> {
-        return self.connection.driver.insert(connection, `class`, data)
+    public func insert(_ class: String, _ data: [MDQueryKey: MDData]) async throws -> MDObject {
+        return try await self.connection.driver.insert(connection, `class`, data)
     }
 }
 
 extension MDQuery {
     
-    public func insert(_ class: String, _ data: [String: MDData]) -> EventLoopFuture<MDObject> {
-        return self.insert(`class`, Dictionary(data.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs })
+    public func insert(_ class: String, _ data: [String: MDData]) async throws -> MDObject {
+        return try await self.insert(`class`, Dictionary(data.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs })
     }
 }

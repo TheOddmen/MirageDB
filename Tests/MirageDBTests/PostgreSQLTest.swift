@@ -47,15 +47,15 @@ class PostgreSQLTest: MirageDBTestCase {
         return url
     }
     
-    func testCreateTable() throws {
+    func testCreateTable() async throws {
         
         do {
             
-            let obj1 = try connection.query()
+            let obj1 = try await connection.query()
                 .insert("testCreateTable", [
                     "name": "John",
                     "age": 10,
-                ]).wait()
+                ])
             
             XCTAssertEqual(obj1.id?.count, 10)
             XCTAssertEqual(obj1["name"], "John")
@@ -68,7 +68,7 @@ class PostgreSQLTest: MirageDBTestCase {
         }
     }
     
-    func testCustomObjectIDGenerator() throws {
+    func testCustomObjectIDGenerator() async throws {
         
         let OBJECT_ID_CHARS = "abcdefghijklmnopqrstuvwxyz0123456789"
         
@@ -78,13 +78,13 @@ class PostgreSQLTest: MirageDBTestCase {
 
         do {
             
-            let obj = try connection.query()
+            let obj = try await connection.query()
                 .findOne("testCustomObjectIDGenerator")
                 .filter { $0["col"] == "text_1" }
                 .objectID(with: objectIDGenerator)
                 .upsert([
                     "col": .set("text_1")
-                ]).wait()
+                ])
             
             XCTAssertEqual(obj?.id?.count, 10)
             XCTAssertEqual(obj?.id, obj?.id?.lowercased())
@@ -97,7 +97,7 @@ class PostgreSQLTest: MirageDBTestCase {
         }
     }
     
-    func testDuplicatedObjectID() throws {
+    func testDuplicatedObjectID() async throws {
         
         var counter = 0
         
@@ -110,16 +110,16 @@ class PostgreSQLTest: MirageDBTestCase {
             
             for _ in 0..<7 {
                 
-                _ = try connection.query()
+                try await connection.query()
                     .findOne("testDuplicatedObjectID")
                     .filter { $0["col"] != "text_1" }
                     .objectID(with: objectIDGenerator)
                     .upsert([
                         "col": .set("text_1")
-                    ]).wait()
+                    ])
             }
             
-            let list = try connection.query().find("testDuplicatedObjectID").toArray().wait()
+            let list = try await connection.query().find("testDuplicatedObjectID").toArray()
             
             XCTAssertEqual(Set(list.compactMap { $0.id }), ["0", "1", "2", "3", "4", "5", "6"])
             
@@ -130,18 +130,18 @@ class PostgreSQLTest: MirageDBTestCase {
         }
     }
     
-    func testSetNil() throws {
+    func testSetNil() async throws {
         
         do {
             
-            var obj = try connection.query().insert("testSetNil", ["col": 1]).wait()
+            var obj = try await connection.query().insert("testSetNil", ["col": 1])
             
             XCTAssertEqual(obj.id?.count, 10)
             XCTAssertEqual(obj["col"], 1)
             
             obj.set("col", nil)
             
-            obj = try obj.save(on: connection).wait()
+            try await obj.save(on: connection)
             
             XCTAssertEqual(obj["col"], nil)
             
@@ -152,7 +152,7 @@ class PostgreSQLTest: MirageDBTestCase {
         }
     }
     
-    func testExtendedJSON() throws {
+    func testExtendedJSON() async throws {
         
         do {
             
@@ -167,7 +167,7 @@ class PostgreSQLTest: MirageDBTestCase {
                 "dictionary": [:],
             ]
             
-            let obj1 = try connection.query().insert("testExtendedJSON", ["col": json]).wait()
+            let obj1 = try await connection.query().insert("testExtendedJSON", ["col": json])
             
             XCTAssertEqual(obj1.id?.count, 10)
             XCTAssertEqual(obj1["col"], json)
@@ -179,34 +179,34 @@ class PostgreSQLTest: MirageDBTestCase {
         }
     }
     
-    func testPatternMatchingQuery() throws {
+    func testPatternMatchingQuery() async throws {
         
         do {
             
-            let obj1 = try connection.query().insert("testPatternMatchingQuery", ["col": "text to be search"]).wait()
-            let obj2 = try connection.query().insert("testPatternMatchingQuery", ["col": "long long' string%"]).wait()
-            _ = try connection.query().insert("testPatternMatchingQuery", ["col": "long long' string%, hello"]).wait()
+            let obj1 = try await connection.query().insert("testPatternMatchingQuery", ["col": "text to be search"])
+            let obj2 = try await connection.query().insert("testPatternMatchingQuery", ["col": "long long' string%"])
+            _ = try await connection.query().insert("testPatternMatchingQuery", ["col": "long long' string%, hello"])
             
-            let res1 = try connection.query()
+            let res1 = try await connection.query()
                 .find("testPatternMatchingQuery")
                 .filter { .startsWith($0["col"], "text to ") }
-                .toArray().wait()
+                .toArray()
             
             XCTAssertEqual(res1.count, 1)
             XCTAssertEqual(res1.first?.id, obj1.id)
             
-            let res2 = try connection.query()
+            let res2 = try await connection.query()
                 .find("testPatternMatchingQuery")
                 .filter { .endsWith($0["col"], "ong' string%") }
-                .toArray().wait()
+                .toArray()
             
             XCTAssertEqual(res2.count, 1)
             XCTAssertEqual(res2.first?.id, obj2.id)
             
-            let res3 = try connection.query()
+            let res3 = try await connection.query()
                 .find("testPatternMatchingQuery")
                 .filter { .contains($0["col"], "long' s") }
-                .toArray().wait()
+                .toArray()
             
             XCTAssertEqual(res3.count, 2)
             
@@ -217,38 +217,38 @@ class PostgreSQLTest: MirageDBTestCase {
         }
     }
     
-    func testUpdateQuery() throws {
+    func testUpdateQuery() async throws {
         
         do {
             
             var obj = MDObject(class: "testUpdateQuery")
-            obj = try obj.save(on: connection).wait()
+            try await obj.save(on: connection)
             
             XCTAssertEqual(obj.id?.count, 10)
             
             obj["col"] = "text_1"
             
-            obj = try obj.save(on: connection).wait()
+            try await obj.save(on: connection)
             
             XCTAssertEqual(obj["col"].string, "text_1")
             
-            let obj2 = try connection.query()
+            let obj2 = try await connection.query()
                 .findOne("testUpdateQuery")
                 .filter { $0.id == obj.id }
                 .update([
                     "col": .set("text_2")
-                ]).wait()
+                ])
             
             XCTAssertEqual(obj2?.id, obj.id)
             XCTAssertEqual(obj2?["col"].string, "text_2")
             
-            let obj3 = try connection.query()
+            let obj3 = try await connection.query()
                 .findOne("testUpdateQuery")
                 .filter { $0.id == obj.id }
                 .returning(.before)
                 .update([
                     "col": .set("text_3")
-                ]).wait()
+                ])
             
             XCTAssertEqual(obj3?.id, obj.id)
             XCTAssertEqual(obj3?["col"].string, "text_2")
@@ -260,37 +260,37 @@ class PostgreSQLTest: MirageDBTestCase {
         }
     }
     
-    func testUpsertQuery() throws {
+    func testUpsertQuery() async throws {
         
         do {
             
-            let obj = try connection.query()
+            let obj = try await connection.query()
                 .findOne("testUpsertQuery")
                 .filter { $0["col"] == "text_1" }
                 .upsert([
                     "col": .set("text_1")
-                ]).wait()
+                ])
             
             XCTAssertEqual(obj?.id?.count, 10)
             XCTAssertEqual(obj?["col"].string, "text_1")
             
-            let obj2 = try connection.query()
+            let obj2 = try await connection.query()
                 .findOne("testUpsertQuery")
                 .filter { $0.id == obj?.id }
                 .upsert([
                     "col": .set("text_2")
-                ]).wait()
+                ])
             
             XCTAssertEqual(obj2?.id, obj?.id)
             XCTAssertEqual(obj2?["col"].string, "text_2")
             
-            let obj3 = try connection.query()
+            let obj3 = try await connection.query()
                 .findOne("testUpsertQuery")
                 .filter { $0.id == obj?.id }
                 .returning(.before)
                 .upsert([
                     "col": .set("text_3")
-                ]).wait()
+                ])
             
             XCTAssertEqual(obj3?.id, obj?.id)
             XCTAssertEqual(obj3?["col"].string, "text_2")
@@ -302,11 +302,11 @@ class PostgreSQLTest: MirageDBTestCase {
         }
     }
     
-    func testIncludesQuery() throws {
+    func testIncludesQuery() async throws {
         
         do {
             
-            let obj = try connection.query()
+            let obj = try await connection.query()
                 .findOne("testIncludesQuery")
                 .filter { $0["dummy1"] == 1 }
                 .includes(["dummy1", "dummy2"])
@@ -315,7 +315,7 @@ class PostgreSQLTest: MirageDBTestCase {
                     "dummy2": .set(2),
                     "dummy3": .set(3),
                     "dummy4": .set(4),
-                ]).wait()
+                ])
             
             XCTAssertEqual(obj?.keys, ["dummy1", "dummy2"])
             
@@ -326,7 +326,7 @@ class PostgreSQLTest: MirageDBTestCase {
         }
     }
     
-    func testQueryNumberOperation() throws {
+    func testQueryNumberOperation() async throws {
         
         do {
             
@@ -335,13 +335,13 @@ class PostgreSQLTest: MirageDBTestCase {
             obj["col_2"] = 1
             obj["col_3"] = 1
             
-            obj = try obj.save(on: connection).wait()
+            try await obj.save(on: connection)
             
             obj.increment("col_1", by: 2)
             obj.increment("col_2", by: 2)
             obj.increment("col_3", by: 2)
             
-            obj = try obj.save(on: connection).wait()
+            try await obj.save(on: connection)
             
             XCTAssertEqual(obj["col_1"].intValue, 3)
             XCTAssertEqual(obj["col_2"].intValue, 3)
