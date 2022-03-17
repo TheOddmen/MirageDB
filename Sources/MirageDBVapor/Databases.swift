@@ -115,6 +115,21 @@ public class DatabasePool {
         return self.pool.withConnection(logger: logger, on: eventLoopGroup.next()) { closure($0.connection) }
     }
     
+    public func withConnection<Result>(
+        _ closure: @escaping (MDConnection) async throws -> Result
+    ) async throws -> Result {
+        
+        return try await self.withConnection { connection in
+            
+            let promise = connection.eventLoopGroup.next().makePromise(of: Result.self)
+            
+            promise.completeWithTask{ try await closure(connection) }
+            
+            return promise.futureResult
+            
+        }.get()
+    }
+    
     func shutdown() {
         Task {
             if let connection = try await self.connection?.get() {
