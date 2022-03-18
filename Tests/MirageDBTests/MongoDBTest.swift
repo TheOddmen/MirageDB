@@ -48,6 +48,10 @@ class MongoDBTest: MirageDBTestCase {
             queryItems.append(URLQueryItem(name: "sslmode", value: ssl_mode))
         }
         
+        if let replicaSet = env("MONGO_REPLICA_SET") {
+            queryItems.append(URLQueryItem(name: "replicaSet", value: replicaSet))
+        }
+        
         url.queryItems = queryItems.isEmpty ? nil : queryItems
         
         return url
