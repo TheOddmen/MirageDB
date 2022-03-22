@@ -45,6 +45,8 @@ class MirageDBTestCase: XCTestCase {
             
             var logger = Logger(label: "com.o2ter.MirageDB")
             logger.logLevel = .debug
+
+            print("connection url:", connection_url)
             
             self.connection = try await MDConnection.connect(url: connection_url, logger: logger, on: eventLoopGroup)
             
