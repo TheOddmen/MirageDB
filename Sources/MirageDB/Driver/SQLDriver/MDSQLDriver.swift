@@ -432,7 +432,7 @@ extension MDSQLDriver {
     
     func withTransaction<T>(
         _ connection: MDConnection,
-        _ transactionBody: (MDConnection) async throws -> T
+        _ transactionBody: @escaping (MDConnection) async throws -> T
     ) async throws -> T {
         
         guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }

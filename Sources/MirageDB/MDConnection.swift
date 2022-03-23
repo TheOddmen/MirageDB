@@ -125,7 +125,7 @@ extension MDConnection {
 extension MDConnection {
     
     public func withTransaction<T>(
-        _ transactionBody: (MDConnection) async throws -> T
+        _ transactionBody: @escaping (MDConnection) async throws -> T
     ) async throws -> T {
         return try await self.driver.withTransaction(self) { try await transactionBody($0) }
     }
