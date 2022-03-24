@@ -8,48 +8,8 @@ env:
   MONGO_USERNAME: miragedb
   MONGO_PASSWORD: miragedb
   MONGO_AUTHSOURCE: admin
+  MONGO_REPLICA_SET: rs0
 jobs:
-  macos:
-    name: ${{ matrix.name }}
-    runs-on: macOS-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        name: [macOS, macOS(SwiftPM)]
-        include:
-          - name: macOS
-            use_xcodebuild: true
-            sdk: macosx
-            destination: 'platform=macOS'
-            enable_codecov: true
-          - name: macOS(SwiftPM)
-            use_xcodebuild: false
-    env:
-      use_xcodebuild: ${{ matrix.use_xcodebuild }}
-      schemes: MirageDB
-      sdk: ${{ matrix.sdk }}
-      destination: ${{ matrix.destination }}
-      enable_codecov: ${{ matrix.enable_codecov }}
-    steps:
-    - uses: actions/checkout@v1
-      with:
-        submodules: recursive
-    - name: Initialize containers 
-      run: ./.github/workflows/macos_init_service
-      timeout-minutes: 10
-    - name: Build
-      uses: SusanDoggie/swift-action@main
-      with:
-        action: build
-    - name: Run tests
-      uses: SusanDoggie/swift-action@main
-      with:
-        action: test
-      env:
-        POSTGRES_HOST: localhost
-        MONGO_HOST: localhost
-    - uses: codecov/codecov-action@v2
-      if: ${{ matrix.enable_codecov }}
   ubuntu_swift:
     name: ${{ matrix.swift_version }}-${{ matrix.distro }}
     container: 
@@ -64,20 +24,21 @@ jobs:
           POSTGRES_USER: ${{ env.POSTGRES_USERNAME }}
           POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ env.POSTGRES_DATABASE }}
-      mongo: 
-        image: mongo
-        ports: 
-          - 27017:27017
-        env:
-          MONGO_INITDB_ROOT_USERNAME: ${{ env.MONGO_USERNAME }}
-          MONGO_INITDB_ROOT_PASSWORD: ${{ env.MONGO_PASSWORD }}
-          MONGO_INITDB_DATABASE: ${{ env.MONGO_DATABASE }}
     strategy:
       fail-fast: false
       matrix:
         swift_version: [5.6]
         distro: [bionic, focal]
     steps:
+    - name: Start MongoDB
+      uses: SusanDoggie/mongodb-action@0.0.1
+      with:
+        network: ${{ job.container.network }}
+        host: mongo
+        username: ${{ env.MONGO_USERNAME }}
+        password: ${{ env.MONGO_PASSWORD }}
+        database: ${{ env.MONGO_DATABASE }}
+        replica_set: ${{ env.MONGO_REPLICA_SET }}
     - uses: actions/checkout@v1
       with:
         submodules: recursive
@@ -110,14 +71,6 @@ jobs:
           POSTGRES_USER: ${{ env.POSTGRES_USERNAME }}
           POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
           POSTGRES_DB: ${{ env.POSTGRES_DATABASE }}
-      mongo: 
-        image: mongo
-        ports: 
-          - 27017:27017
-        env:
-          MONGO_INITDB_ROOT_USERNAME: ${{ env.MONGO_USERNAME }}
-          MONGO_INITDB_ROOT_PASSWORD: ${{ env.MONGO_PASSWORD }}
-          MONGO_INITDB_DATABASE: ${{ env.MONGO_DATABASE }}
     continue-on-error: true
     strategy:
       fail-fast: false
@@ -125,6 +78,15 @@ jobs:
         swift_version: [main]
         distro: [bionic, focal]
     steps:
+    - name: Start MongoDB
+      uses: SusanDoggie/mongodb-action@0.0.1
+      with:
+        network: ${{ job.container.network }}
+        host: mongo
+        username: ${{ env.MONGO_USERNAME }}
+        password: ${{ env.MONGO_PASSWORD }}
+        database: ${{ env.MONGO_DATABASE }}
+        replica_set: ${{ env.MONGO_REPLICA_SET }}
     - uses: actions/checkout@v1
       with:
         submodules: recursive
