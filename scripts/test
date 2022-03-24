@@ -38,7 +38,19 @@ trap cleanup EXIT
 docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" postgres_test_db_${RAND}
 docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" mongo_test_db_${RAND}
 
-until docker exec --tty mongo_test_db_${RAND} mongo 'admin' --eval 'quit(0)'; do sleep 1; done
+sleep 1
+TIMER=0
+
+until docker exec --tty mongo_test_db_${RAND} mongo 'admin' --eval 'quit(0)'; do
+  sleep 1
+  echo "."
+  TIMER=$((TIMER + 1))
+
+  if [[ $TIMER -eq 20 ]]; then
+    echo "MongoDB did not initialize within 20 seconds. Exiting."
+    exit 2
+  fi
+done
 
 docker exec --tty mongo_test_db_${RAND} mongo --eval "
   rs.initiate({
