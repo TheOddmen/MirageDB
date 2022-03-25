@@ -62,6 +62,8 @@ protocol MDDriver {
     
     func tables(_ connection: MDConnection) async throws -> [String]
     
+    func stats(_ connection: MDConnection, _ class: String) async throws -> MDTableStats
+    
     func count(_ query: MDFindExpression) async throws -> Int
     
     func toArray(_ query: MDFindExpression) async throws -> [MDObject]

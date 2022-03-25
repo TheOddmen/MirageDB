@@ -173,6 +173,15 @@ extension MDSQLDriver {
         return try await connection.tables()
     }
     
+    func stats(_ connection: MDConnection, _ class: String) async throws -> MDTableStats {
+        
+        guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
+        
+        let stats = try await connection.size(of: `class`)
+        
+        return MDTableStats(stats)
+    }
+    
     func checkTableExists(_ connection: MDConnection, _ table: String) async throws -> Bool {
         
         let _table = table.lowercased()

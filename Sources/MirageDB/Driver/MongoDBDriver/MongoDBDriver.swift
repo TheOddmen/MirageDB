@@ -116,6 +116,17 @@ struct MongoDBDriver: MDDriver {
         return try await connection.connection.mongoQuery().collections().execute().toArray().map { $0.name }
     }
     
+    func stats(_ connection: MDConnection, _ class: String) async throws -> MDTableStats {
+        
+        let stats = try await connection.connection.mongoQuery().collStats(`class`)
+        
+        guard let storageSize = stats["storageSize"]?.toInt() else { throw MDError.unsupportedOperation }
+        guard let totalIndexSize = stats["totalIndexSize"]?.toInt() else { throw MDError.unsupportedOperation }
+        guard let totalSize = stats["totalSize"]?.toInt() else { throw MDError.unsupportedOperation }
+        
+        return MDTableStats(table: storageSize, indexes: totalIndexSize, total: totalSize)
+    }
+    
     func count(_ query: MDFindExpression) async throws -> Int {
         
         let filter = try query.filterBSONDocument()

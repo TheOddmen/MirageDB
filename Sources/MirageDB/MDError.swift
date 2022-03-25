@@ -33,4 +33,6 @@ public enum MDError: Error, Hashable {
     
     case invalidObjectId
     
+    case unsupportedOperation
+    
 }

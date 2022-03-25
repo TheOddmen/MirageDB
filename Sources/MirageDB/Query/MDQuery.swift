@@ -54,3 +54,29 @@ extension MDQuery {
         return try await self.insert(`class`, Dictionary(data.map { (MDQueryKey(key: $0), $1) }) { _, rhs in rhs })
     }
 }
+
+public struct MDTableStats {
+    
+    public var table: Int
+    
+    public var indexes: Int
+    
+    public var total: Int
+    
+}
+
+extension MDTableStats {
+    
+    init(_ stats: DBSQLTableStats) {
+        self.table = stats.table
+        self.indexes = stats.indexes
+        self.total = stats.total
+    }
+}
+
+extension MDQuery {
+    
+    public func size(of class: String) async throws -> MDTableStats {
+        return try await self.connection.driver.stats(connection, `class`)
+    }
+}
