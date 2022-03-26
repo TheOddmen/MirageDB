@@ -368,7 +368,7 @@ extension MongoDBDriver {
         
         do {
             
-            _ = try await connection.connection.mongoQuery().createCollection(table).execute()
+            try await connection.connection.mongoQuery().createCollection(table).execute()
             
         } catch let error as MongoError.CommandError {
             
@@ -397,7 +397,7 @@ extension MongoDBDriver {
             unset[column] = 1
         }
         
-        _ = try await connection.connection.mongoQuery().collection(table).updateMany().update(["$unset": BSON(unset)]).execute()
+        try await connection.connection.mongoQuery().collection(table).updateMany().update(["$unset": BSON(unset)]).execute()
     }
     
     func addIndex(_ connection: MDConnection, _ table: String, _ index: MDSQLTableIndex) async throws {
@@ -411,7 +411,7 @@ extension MongoDBDriver {
             }
         }
         
-        _ = try await connection.connection.mongoQuery().collection(table).createIndex().index(keys).name(index.name).unique(index.isUnique).execute()
+        try await connection.connection.mongoQuery().collection(table).createIndex().index(keys).name(index.name).unique(index.isUnique).execute()
     }
     
     func dropIndex(_ connection: MDConnection, _ table: String, _ index: String) async throws {

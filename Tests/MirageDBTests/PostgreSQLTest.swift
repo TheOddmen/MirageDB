@@ -143,7 +143,7 @@ class PostgreSQLTest: MirageDBTestCase {
         
         let obj1 = try await connection.query().insert("testPatternMatchingQuery", ["col": "text to be search"])
         let obj2 = try await connection.query().insert("testPatternMatchingQuery", ["col": "long long' string%"])
-        _ = try await connection.query().insert("testPatternMatchingQuery", ["col": "long long' string%, hello"])
+        try await connection.query().insert("testPatternMatchingQuery", ["col": "long long' string%, hello"])
         
         let res1 = try await connection.query()
             .find("testPatternMatchingQuery")
