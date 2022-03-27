@@ -28,15 +28,19 @@ docker run -d --rm --name mongo_test_db_${RAND} \
   -p 27017:27017 \
   mongo --replSet rs0
 
+docker run -d --rm --name redis_test_db_${RAND} -p 6379:6379 redis
+
 function cleanup {
   docker stop postgres_test_db_${RAND}
   docker stop mongo_test_db_${RAND}
+  docker stop redis_test_db_${RAND}
 }
 
 trap cleanup EXIT
 
 docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" postgres_test_db_${RAND}
 docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" mongo_test_db_${RAND}
+docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" redis_test_db_${RAND}
 
 sleep 1
 TIMER=0

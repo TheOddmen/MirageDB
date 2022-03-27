@@ -1,6 +1,5 @@
-// swift-tools-version:5.6
 //
-//  Package.swift
+//  MDPubsubDriver.swift
 //
 //  The MIT License
 //  Copyright (c) 2021 - 2022 O2ter Limited. All rights reserved.
@@ -24,43 +23,22 @@
 //  THE SOFTWARE.
 //
 
-import PackageDescription
-
-let package = Package(
-    name: "MirageDB",
-    platforms: [
-        .macOS(.v10_15),
-        .iOS(.v13),
-        .tvOS(.v13),
-        .watchOS(.v6),
-    ],
-    products: [
-        .library(name: "MirageDB", targets: ["MirageDB"]),
-        .library(name: "MirageDBVapor", targets: ["MirageDBVapor"]),
-    ],
-    dependencies: [
-        .package(url: "https://github.com/vapor/vapor.git", from: "4.55.2"),
-        .package(url: "https://github.com/SusanDoggie/DoggieDB.git", from: "0.1.12"),
-    ],
-    targets: [
-        .target(
-            name: "MirageDB",
-            dependencies: [
-                .product(name: "DoggieDB", package: "DoggieDB"),
-            ]
-        ),
-        .target(
-            name: "MirageDBVapor",
-            dependencies: [
-                .target(name: "MirageDB"),
-                .product(name: "Vapor", package: "vapor"),
-            ]
-        ),
-        .testTarget(
-            name: "MirageDBTests",
-            dependencies: [
-                .target(name: "MirageDB"),
-            ]
-        ),
-    ]
-)
+protocol MDPubsubDriver {
+    
+    func publish(
+        _ connection: MDConnection,
+        _ channel: String,
+        _ message: MDData
+    ) async throws
+    
+    func subscribe(
+        _ connection: MDConnection,
+        _ channel: String,
+        _ handler: @escaping (_ channel: String, _ message: MDData) -> Void
+    ) async throws
+    
+    func unsubscribe(
+        _ connection: MDConnection,
+        _ channel: String
+    ) async throws
+}
