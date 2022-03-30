@@ -40,7 +40,7 @@ public struct MDSQLTableIndex {
 
 extension MDSQLTableIndex {
     
-    public enum Options {
+    public enum Options: CaseIterable {
         
         case ascending
         

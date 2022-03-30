@@ -23,7 +23,7 @@
 //  THE SOFTWARE.
 //
 
-public enum MDSQLDataType {
+public enum MDSQLDataType: CaseIterable {
     
     case id
     

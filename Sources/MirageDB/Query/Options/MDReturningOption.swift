@@ -23,7 +23,7 @@
 //  THE SOFTWARE.
 //
 
-public enum MDReturningOption {
+public enum MDReturningOption: CaseIterable {
     
     case before
     

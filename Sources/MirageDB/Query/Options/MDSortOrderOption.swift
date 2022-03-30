@@ -23,7 +23,7 @@
 //  THE SOFTWARE.
 //
 
-public enum MDSortOrderOption {
+public enum MDSortOrderOption: CaseIterable {
     
     case ascending
     
