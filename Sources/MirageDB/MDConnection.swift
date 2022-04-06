@@ -129,6 +129,34 @@ extension MDConnection {
     ) async throws -> T {
         return try await self.driver.withTransaction(self) { try await transactionBody($0) }
     }
+    
+    public func withTransaction<S: AsyncSequence>(
+        _ transactionBody: @escaping (MDConnection) async throws -> S
+    ) -> AsyncThrowingChannel<S.Element, Error> {
+        
+        let channel = AsyncThrowingChannel<S.Element, Error>()
+        
+        Task {
+            
+            do {
+                
+                try await self.withTransaction { connection in
+                    
+                    for try await element in try await transactionBody(connection) {
+                        await channel.send(element)
+                    }
+                }
+                
+                await channel.finish()
+                
+            } catch {
+                
+                await channel.fail(error)
+            }
+        }
+        
+        return channel
+    }
 }
 
 extension MDConnection {
