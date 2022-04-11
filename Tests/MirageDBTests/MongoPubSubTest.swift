@@ -59,8 +59,10 @@ class MongoPubSubTest: MirageDBTestCase {
     
     func testPubSub() async throws {
         
-        var continuation: AsyncStream<String>.Continuation!
-        let stream = AsyncStream { continuation = $0 }
+        var _continuation: AsyncStream<String>.Continuation!
+        let stream = AsyncStream { _continuation = $0 }
+        
+        let continuation = _continuation!
         
         try await connection.pubsubService.subscribe("test") { connection, channel, message in
             

@@ -82,7 +82,7 @@ extension Dictionary where Key == String, Value == MDUpdateOption {
         
         for (key, value) in self {
             switch value {
-            case .set(nil): unset[key] = ""
+            case .set(MDData.null): unset[key] = ""
             case let .set(value): set[key] = value.toMDData().toBSON()
             case let .increment(value): inc[key] = value.toMDData().toBSON()
             case let .multiply(value): mul[key] = value.toMDData().toBSON()

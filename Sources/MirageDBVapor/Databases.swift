@@ -116,7 +116,7 @@ public class DatabasePool {
     }
     
     public func withConnection<Result>(
-        _ closure: @escaping (MDConnection) async throws -> Result
+        _ closure: @Sendable @escaping (MDConnection) async throws -> Result
     ) async throws -> Result {
         
         return try await self.withConnection { connection in
