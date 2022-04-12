@@ -24,7 +24,7 @@
 //
 
 @frozen
-public enum MDData: Hashable, @unchecked Sendable {
+public enum MDData: Hashable, Sendable {
     
     case null
     
