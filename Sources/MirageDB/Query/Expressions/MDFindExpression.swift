@@ -23,6 +23,8 @@
 //  THE SOFTWARE.
 //
 
+@preconcurrency import Collections
+
 public struct MDFindExpression: MDExpressionProtocol {
     
     public let connection: MDConnection

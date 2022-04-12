@@ -23,7 +23,7 @@
 //  THE SOFTWARE.
 //
 
-public struct MDFindOneExpression: MDExpressionProtocol {
+public struct MDFindOneExpression: MDExpressionProtocol, @unchecked Sendable {
     
     public let connection: MDConnection
     

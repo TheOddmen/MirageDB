@@ -23,7 +23,7 @@
 //  THE SOFTWARE.
 //
 
-public struct MDObject: Hashable, Equatable, Identifiable, Sendable {
+public struct MDObject: Hashable, Equatable, Identifiable, @unchecked Sendable {
     
     static let _default_fields = ["_id", "_created_at", "_updated_at"]
     
