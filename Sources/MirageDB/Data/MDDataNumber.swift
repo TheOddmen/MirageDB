@@ -26,7 +26,7 @@
 extension MDData {
     
     @frozen
-    public enum Number {
+    public enum Number: @unchecked Sendable {
         
         case signed(Int64)
         
