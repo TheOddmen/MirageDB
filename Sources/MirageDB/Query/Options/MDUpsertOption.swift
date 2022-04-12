@@ -23,7 +23,7 @@
 //  THE SOFTWARE.
 //
 
-public enum MDUpsertOption {
+public enum MDUpsertOption: @unchecked Sendable {
     
     case set(MDDataConvertible)
     

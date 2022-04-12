@@ -24,7 +24,7 @@
 //
 
 @frozen
-public struct MDPredicateBuilder {
+public struct MDPredicateBuilder: Sendable {
     
     @inlinable
     public init() {

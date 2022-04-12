@@ -24,7 +24,7 @@
 //
 
 @frozen
-public indirect enum MDPredicateExpression {
+public indirect enum MDPredicateExpression: Sendable {
     
     case not(MDPredicateExpression)
     
@@ -60,7 +60,7 @@ public indirect enum MDPredicateExpression {
 }
 
 @frozen
-public enum MDPredicateValue {
+public enum MDPredicateValue: @unchecked Sendable {
     
     case key(String)
     

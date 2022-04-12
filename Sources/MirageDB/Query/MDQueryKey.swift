@@ -24,7 +24,7 @@
 //
 
 @frozen
-public struct MDQueryKey: Hashable {
+public struct MDQueryKey: Hashable, Sendable {
     
     public var key: String
     

@@ -23,7 +23,7 @@
 //  THE SOFTWARE.
 //
 
-public enum MDUpdateOption {
+public enum MDUpdateOption: @unchecked Sendable {
     
     case set(MDDataConvertible)
     

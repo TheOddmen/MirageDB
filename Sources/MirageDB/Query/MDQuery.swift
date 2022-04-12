@@ -23,7 +23,7 @@
 //  THE SOFTWARE.
 //
 
-public struct MDQuery {
+public struct MDQuery: Sendable {
     
     public let connection: MDConnection
     

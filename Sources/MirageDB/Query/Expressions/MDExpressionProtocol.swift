@@ -23,7 +23,7 @@
 //  THE SOFTWARE.
 //
 
-public protocol MDExpressionProtocol {
+public protocol MDExpressionProtocol: Sendable {
     
     var connection: MDConnection { get }
 }
