@@ -455,7 +455,7 @@ extension MDData {
             switch self {
             case var .array(value):
                 
-                updateValue(&self) {
+                replaceValue(&self) {
                     if index >= value.count {
                         value.append(contentsOf: repeatElement(nil, count: index - value.count + 1))
                     }
@@ -488,7 +488,7 @@ extension MDData {
             switch self {
             case var .dictionary(value):
                 
-                updateValue(&self) {
+                replaceValue(&self) {
                     value[key] = newValue.isNil ? nil : newValue
                     return .dictionary(value)
                 }
