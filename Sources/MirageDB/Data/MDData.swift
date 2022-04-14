@@ -455,11 +455,13 @@ extension MDData {
             switch self {
             case var .array(value):
                 
-                if index >= value.count {
-                    value.append(contentsOf: repeatElement(nil, count: index - value.count + 1))
+                updateValue(&self) {
+                    if index >= value.count {
+                        value.append(contentsOf: repeatElement(nil, count: index - value.count + 1))
+                    }
+                    value[index] = newValue
+                    return .array(value)
                 }
-                value[index] = newValue
-                self = .array(value)
                 
             default: fatalError("Not an array.")
             }
@@ -486,8 +488,10 @@ extension MDData {
             switch self {
             case var .dictionary(value):
                 
-                value[key] = newValue.isNil ? nil : newValue
-                self = .dictionary(value)
+                updateValue(&self) {
+                    value[key] = newValue.isNil ? nil : newValue
+                    return .dictionary(value)
+                }
                 
             default: fatalError("Not an object.")
             }
