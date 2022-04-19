@@ -44,7 +44,7 @@ struct MongoPubsubDriver: MDPubsubDriver {
             
             do {
                 
-                handler(channel, try MDData(message))
+                $handler.wrappedValue(channel, try MDData(message))
                 
             } catch {
                 
