@@ -37,14 +37,16 @@ struct MongoPubsubDriver: MDPubsubDriver {
     func subscribe(
         _ connection: MDConnection,
         _ channel: String,
-        @UnsafeSendable _ handler: @escaping (_ channel: String, _ message: MDData) -> Void
+        _ handler: @escaping (_ channel: String, _ message: MDData) -> Void
     ) async throws {
+        
+        let _handler = UnsafeSendable(wrappedValue: handler)
         
         try await connection.connection.mongoPubSub().subscribe(channel: channel) { connection, channel, message in
             
             do {
                 
-                handler(channel, try MDData(message))
+                _handler.wrappedValue(channel, try MDData(message))
                 
             } catch {
                 
