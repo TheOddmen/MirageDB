@@ -183,24 +183,11 @@ extension PostgreSQLDriver {
             
             if case let .server(error) = error {
                 
-                do {
-                    
-                    let sqlState = error.fields[.sqlState] == "40001"
-                    let routine = error.fields[.routine] == "ExecLockRows"
-                    
-                    if sqlState && routine {
-                        return try await self.withTransaction(connection, options, transactionBody)
-                    }
-                }
+                let sqlState = error.fields[.sqlState] == "40P01"
+                let routine = error.fields[.routine] == "DeadLockReport"
                 
-                do {
-                    
-                    let sqlState = error.fields[.sqlState] == "40P01"
-                    let routine = error.fields[.routine] == "DeadLockReport"
-                    
-                    if sqlState && routine {
-                        return try await self.withTransaction(connection, options, transactionBody)
-                    }
+                if sqlState && routine {
+                    return try await self.withTransaction(connection, options, transactionBody)
                 }
             }
             
