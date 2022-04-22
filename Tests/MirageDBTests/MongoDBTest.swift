@@ -346,4 +346,128 @@ class MongoDBTest: MirageDBTestCase {
         }
     }
     
+    func testLongTransaction2() async throws {
+        
+        var obj = MDObject(class: "testLongTransaction2")
+        obj["col"] = 0
+        
+        try await obj.save(on: connection)
+        
+        var connections: [MDConnection] = []
+        
+        for _ in 0..<10 {
+            try await connections.append(self._create_connection())
+        }
+        
+        let result: Set<Int> = try await withThrowingTaskGroup(of: MDObject.self) { group in
+            
+            for connection in connections {
+                
+                group.addTask {
+                    
+                    try await connection.withTransaction(MDTransactionOptions(
+                        mode: .serialize,
+                        retryOnConflict: true
+                    )) { connection in
+                        
+                        var obj = try await connection.query().find("testLongTransaction2").first()!
+                        var value = obj["col"].intValue!
+                        
+                        try await Task.sleep(nanoseconds: 1_000_000_000)
+                        
+                        value += 1
+                        obj = try await connection.query().findOne("testLongTransaction2")
+                            .filter { $0.id == obj.id }
+                            .update(["col": value])!
+                        
+                        try await Task.sleep(nanoseconds: 1_000_000_000)
+                        
+                        value += 1
+                        obj = try await connection.query().findOne("testLongTransaction2")
+                            .filter { $0.id == obj.id }
+                            .update(["col": value])!
+                        
+                        return obj
+                    }
+                }
+            }
+            
+            var result: Set<Int> = []
+            
+            for try await item in group {
+                result.insert(item["col"].intValue!)
+            }
+            
+            return result
+        }
+        
+        XCTAssertEqual(result, [2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
+        
+        for connection in connections {
+            try await connection.close()
+        }
+    }
+    
+    func testLongTransaction3() async throws {
+        
+        var obj = MDObject(class: "testLongTransaction3")
+        obj["col"] = 0
+        
+        try await obj.save(on: connection)
+        
+        var connections: [MDConnection] = []
+        
+        for _ in 0..<10 {
+            try await connections.append(self._create_connection())
+        }
+        
+        let result: Set<Int> = try await withThrowingTaskGroup(of: MDObject.self) { group in
+            
+            for connection in connections {
+                
+                group.addTask {
+                    
+                    try await connection.withTransaction(MDTransactionOptions(
+                        mode: .serialize,
+                        retryOnConflict: true
+                    )) { connection in
+                        
+                        var obj = try await connection.query().find("testLongTransaction3").first()!
+                        var value = obj["col"].intValue!
+                        
+                        try await Task.sleep(nanoseconds: 1_000_000_000)
+                        
+                        value += 1
+                        obj = try await connection.query().findOne("testLongTransaction3")
+                            .filter { $0.id == obj.id }
+                            .upsert(["col": value])!
+                        
+                        try await Task.sleep(nanoseconds: 1_000_000_000)
+                        
+                        value += 1
+                        obj = try await connection.query().findOne("testLongTransaction3")
+                            .filter { $0.id == obj.id }
+                            .upsert(["col": value])!
+                        
+                        return obj
+                    }
+                }
+            }
+            
+            var result: Set<Int> = []
+            
+            for try await item in group {
+                result.insert(item["col"].intValue!)
+            }
+            
+            return result
+        }
+        
+        XCTAssertEqual(result, [2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
+        
+        for connection in connections {
+            try await connection.close()
+        }
+    }
+    
 }
