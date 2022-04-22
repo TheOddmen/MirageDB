@@ -98,6 +98,7 @@ protocol MDDriver {
     
     func withTransaction<T>(
         _ connection: MDConnection,
+        _ options: MDTransactionOptions,
         _ transactionBody: @escaping (MDConnection) async throws -> T
     ) async throws -> T
     

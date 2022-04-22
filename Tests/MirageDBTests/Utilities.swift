@@ -34,22 +34,29 @@ class MirageDBTestCase: XCTestCase {
     
     var connection_url: URLComponents! { return nil }
     
-    private var eventLoopGroup: MultiThreadedEventLoopGroup!
+    private let eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
     private(set) var connection: MDConnection!
     
-    override func setUp() async throws {
-        
-        eventLoopGroup = MultiThreadedEventLoopGroup(numberOfThreads: 1)
+    private lazy var logger: Logger = {
         
         var logger = Logger(label: "com.o2ter.MirageDB")
         logger.logLevel = .debug
         
         logger.info("connection url: \(connection_url!)")
         
-        self.connection = try await MDConnection.connect(url: connection_url, logger: logger, on: eventLoopGroup)
+        return logger
+    }()
+    
+    override func setUp() async throws {
+        
+        self.connection = try await self._create_connection()
         
         let version = try await connection.version()
         logger.info("\(connection_url.scheme!) \(version)")
+    }
+    
+    func _create_connection() async throws -> MDConnection {
+        return try await MDConnection.connect(url: connection_url, logger: logger, on: eventLoopGroup)
     }
     
     override func tearDown() async throws {

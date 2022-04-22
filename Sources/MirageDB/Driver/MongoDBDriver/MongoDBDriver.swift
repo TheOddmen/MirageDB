@@ -354,10 +354,11 @@ struct MongoDBDriver: MDDriver {
     
     func withTransaction<T>(
         _ connection: MDConnection,
+        _ options: MDTransactionOptions,
         _ transactionBody: @escaping (MDConnection) async throws -> T
     ) async throws -> T {
         
-        return try await connection.connection.withTransaction { try await transactionBody(MDConnection(connection: $0)) }
+        return try await connection.connection.withTransaction(.init(options)) { try await transactionBody(MDConnection(connection: $0)) }
     }
     
 }

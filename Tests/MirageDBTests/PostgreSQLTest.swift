@@ -274,4 +274,77 @@ class PostgreSQLTest: MirageDBTestCase {
         XCTAssertEqual(obj["col_3"].intValue, 3)
     }
     
+    func testLongTransaction() async throws {
+        
+        var obj = MDObject(class: "testLongTransaction")
+        obj["col"] = 0
+        
+        try await obj.save(on: connection)
+        
+        var connections: [MDConnection] = []
+        
+        for _ in 0..<10 {
+            try await connections.append(self._create_connection())
+        }
+        
+        let result: Set<Int> = try await withThrowingTaskGroup(of: MDObject.self) { group in
+            
+            for connection in connections {
+                
+                group.addTask {
+                    
+                    do {
+                        
+                        return try await connection.withTransaction(MDTransactionOptions(
+                            mode: .serialize,
+                            retryOnConflict: true
+                        )) { connection in
+                            
+                            var obj = try await connection.query().find("testLongTransaction").first()!
+                            var value = obj["col"].intValue!
+                            
+                            value += 1
+                            obj["col"] = MDData(value)
+                            
+                            try await Task.sleep(nanoseconds: 1_000_000_000)
+                            
+                            try await obj.save(on: connection)
+                            
+                            value += 1
+                            obj["col"] = MDData(value)
+                            
+                            try await Task.sleep(nanoseconds: 1_000_000_000)
+                            
+                            try await obj.save(on: connection)
+                            
+                            return obj
+                        }
+                        
+                    } catch {
+                        
+                        print(type(of: error))
+                        
+                        connection.logger.error("\(error)")
+                        
+                        throw error
+                    }
+                }
+            }
+            
+            var result: Set<Int> = []
+            
+            for try await item in group {
+                result.insert(item["col"].intValue!)
+            }
+            
+            return result
+        }
+        
+        XCTAssertEqual(result, [2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
+        
+        for connection in connections {
+            try await connection.close()
+        }
+    }
+    
 }
