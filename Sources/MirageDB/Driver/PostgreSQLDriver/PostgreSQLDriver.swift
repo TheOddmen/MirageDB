@@ -173,6 +173,8 @@ extension PostgreSQLDriver {
         _ transactionBody: @escaping (MDConnection) async throws -> T
     ) async throws -> T {
         
+        guard options.retryOnConflict else { return try await self._withTransaction(connection, options, transactionBody) }
+        
         do {
             
             return try await self._withTransaction(connection, options, transactionBody)
