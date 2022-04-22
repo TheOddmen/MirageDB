@@ -156,7 +156,7 @@ extension PostgreSQLDriver {
         try await connection.execute(sql)
     }
     
-    func _withTransaction<T>(
+    func withTransaction<T>(
         _ connection: MDConnection,
         _ options: MDTransactionOptions,
         _ transactionBody: @escaping (MDConnection) async throws -> T
@@ -165,34 +165,6 @@ extension PostgreSQLDriver {
         guard let connection = connection.connection as? DBSQLConnection else { throw MDError.unknown }
         
         return try await connection.withTransaction(.init(options)) { try await transactionBody(MDConnection(connection: $0)) }
-    }
-    
-    func withTransaction<T>(
-        _ connection: MDConnection,
-        _ options: MDTransactionOptions,
-        _ transactionBody: @escaping (MDConnection) async throws -> T
-    ) async throws -> T {
-        
-        guard options.retryOnConflict else { return try await self._withTransaction(connection, options, transactionBody) }
-        
-        do {
-            
-            return try await self._withTransaction(connection, options, transactionBody)
-            
-        } catch let error as PostgresError {
-            
-            if case let .server(error) = error {
-                
-                let sqlState = error.fields[.sqlState] == "40P01"
-                let routine = error.fields[.routine] == "DeadLockReport"
-                
-                if sqlState && routine {
-                    return try await self.withTransaction(connection, options, transactionBody)
-                }
-            }
-            
-            throw error
-        }
     }
     
 }
