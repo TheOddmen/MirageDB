@@ -303,40 +303,29 @@ class MongoDBTest: MirageDBTestCase {
                 
                 group.addTask {
                     
-                    do {
+                    try await connection.withTransaction(MDTransactionOptions(
+                        mode: .serialize,
+                        retryOnConflict: true
+                    )) { connection in
                         
-                        return try await connection.withTransaction(MDTransactionOptions(
-                            mode: .serialize,
-                            retryOnConflict: true
-                        )) { connection in
-                            
-                            var obj = try await connection.query().find("testLongTransaction").first()!
-                            var value = obj["col"].intValue!
-                            
-                            value += 1
-                            obj["col"] = MDData(value)
-                            
-                            try await Task.sleep(nanoseconds: 1_000_000_000)
-                            
-                            try await obj.save(on: connection)
-                            
-                            value += 1
-                            obj["col"] = MDData(value)
-                            
-                            try await Task.sleep(nanoseconds: 1_000_000_000)
-                            
-                            try await obj.save(on: connection)
-                            
-                            return obj
-                        }
+                        var obj = try await connection.query().find("testLongTransaction").first()!
+                        var value = obj["col"].intValue!
                         
-                    } catch {
+                        value += 1
+                        obj["col"] = MDData(value)
                         
-                        print(type(of: error))
+                        try await Task.sleep(nanoseconds: 1_000_000_000)
                         
-                        connection.logger.error("\(error)")
+                        try await obj.save(on: connection)
                         
-                        throw error
+                        value += 1
+                        obj["col"] = MDData(value)
+                        
+                        try await Task.sleep(nanoseconds: 1_000_000_000)
+                        
+                        try await obj.save(on: connection)
+                        
+                        return obj
                     }
                 }
             }
