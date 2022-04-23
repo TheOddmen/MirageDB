@@ -293,7 +293,7 @@ class MongoDBTest: MirageDBTestCase {
         
         var connections: [MDConnection] = []
         
-        for _ in 0..<10 {
+        for _ in 0..<4 {
             try await connections.append(self._create_connection())
         }
         
@@ -304,7 +304,7 @@ class MongoDBTest: MirageDBTestCase {
                 group.addTask {
                     
                     try await connection.withTransaction(MDTransactionOptions(
-                        mode: .serialize,
+                        mode: .repeatable,
                         retryOnConflict: true
                     )) { connection in
                         
@@ -339,7 +339,7 @@ class MongoDBTest: MirageDBTestCase {
             return result
         }
         
-        XCTAssertEqual(result, [2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
+        XCTAssertEqual(result, [2, 4, 6, 8])
         
         for connection in connections {
             try await connection.close()
@@ -355,7 +355,7 @@ class MongoDBTest: MirageDBTestCase {
         
         var connections: [MDConnection] = []
         
-        for _ in 0..<10 {
+        for _ in 0..<4 {
             try await connections.append(self._create_connection())
         }
         
@@ -366,7 +366,7 @@ class MongoDBTest: MirageDBTestCase {
                 group.addTask {
                     
                     try await connection.withTransaction(MDTransactionOptions(
-                        mode: .serialize,
+                        mode: .repeatable,
                         retryOnConflict: true
                     )) { connection in
                         
@@ -401,7 +401,7 @@ class MongoDBTest: MirageDBTestCase {
             return result
         }
         
-        XCTAssertEqual(result, [2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
+        XCTAssertEqual(result, [2, 4, 6, 8])
         
         for connection in connections {
             try await connection.close()
@@ -417,7 +417,7 @@ class MongoDBTest: MirageDBTestCase {
         
         var connections: [MDConnection] = []
         
-        for _ in 0..<10 {
+        for _ in 0..<4 {
             try await connections.append(self._create_connection())
         }
         
@@ -428,7 +428,7 @@ class MongoDBTest: MirageDBTestCase {
                 group.addTask {
                     
                     try await connection.withTransaction(MDTransactionOptions(
-                        mode: .serialize,
+                        mode: .repeatable,
                         retryOnConflict: true
                     )) { connection in
                         
@@ -463,7 +463,193 @@ class MongoDBTest: MirageDBTestCase {
             return result
         }
         
-        XCTAssertEqual(result, [2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
+        XCTAssertEqual(result, [2, 4, 6, 8])
+        
+        for connection in connections {
+            try await connection.close()
+        }
+    }
+    
+    func testLongTransaction4() async throws {
+        
+        var obj = MDObject(class: "testLongTransaction4")
+        obj["col"] = 0
+        
+        try await obj.save(on: connection)
+        
+        var connections: [MDConnection] = []
+        
+        for _ in 0..<4 {
+            try await connections.append(self._create_connection())
+        }
+        
+        let result: Set<Int> = try await withThrowingTaskGroup(of: MDObject.self) { group in
+            
+            for connection in connections {
+                
+                group.addTask {
+                    
+                    try await connection.withTransaction(MDTransactionOptions(
+                        mode: .serializable,
+                        retryOnConflict: true
+                    )) { connection in
+                        
+                        var obj = try await connection.query().find("testLongTransaction4").first()!
+                        var value = obj["col"].intValue!
+                        
+                        value += 1
+                        obj["col"] = MDData(value)
+                        
+                        try await Task.sleep(nanoseconds: 1_000_000_000)
+                        
+                        try await obj.save(on: connection)
+                        
+                        value += 1
+                        obj["col"] = MDData(value)
+                        
+                        try await Task.sleep(nanoseconds: 1_000_000_000)
+                        
+                        try await obj.save(on: connection)
+                        
+                        return obj
+                    }
+                }
+            }
+            
+            var result: Set<Int> = []
+            
+            for try await item in group {
+                result.insert(item["col"].intValue!)
+            }
+            
+            return result
+        }
+        
+        XCTAssertEqual(result, [2, 4, 6, 8])
+        
+        for connection in connections {
+            try await connection.close()
+        }
+    }
+    
+    func testLongTransaction5() async throws {
+        
+        var obj = MDObject(class: "testLongTransaction5")
+        obj["col"] = 0
+        
+        try await obj.save(on: connection)
+        
+        var connections: [MDConnection] = []
+        
+        for _ in 0..<4 {
+            try await connections.append(self._create_connection())
+        }
+        
+        let result: Set<Int> = try await withThrowingTaskGroup(of: MDObject.self) { group in
+            
+            for connection in connections {
+                
+                group.addTask {
+                    
+                    try await connection.withTransaction(MDTransactionOptions(
+                        mode: .serializable,
+                        retryOnConflict: true
+                    )) { connection in
+                        
+                        var obj = try await connection.query().find("testLongTransaction5").first()!
+                        var value = obj["col"].intValue!
+                        
+                        try await Task.sleep(nanoseconds: 1_000_000_000)
+                        
+                        value += 1
+                        obj = try await connection.query().findOne("testLongTransaction5")
+                            .filter { $0.id == obj.id }
+                            .update(["col": value])!
+                        
+                        try await Task.sleep(nanoseconds: 1_000_000_000)
+                        
+                        value += 1
+                        obj = try await connection.query().findOne("testLongTransaction5")
+                            .filter { $0.id == obj.id }
+                            .update(["col": value])!
+                        
+                        return obj
+                    }
+                }
+            }
+            
+            var result: Set<Int> = []
+            
+            for try await item in group {
+                result.insert(item["col"].intValue!)
+            }
+            
+            return result
+        }
+        
+        XCTAssertEqual(result, [2, 4, 6, 8])
+        
+        for connection in connections {
+            try await connection.close()
+        }
+    }
+    
+    func testLongTransaction6() async throws {
+        
+        var obj = MDObject(class: "testLongTransaction6")
+        obj["col"] = 0
+        
+        try await obj.save(on: connection)
+        
+        var connections: [MDConnection] = []
+        
+        for _ in 0..<4 {
+            try await connections.append(self._create_connection())
+        }
+        
+        let result: Set<Int> = try await withThrowingTaskGroup(of: MDObject.self) { group in
+            
+            for connection in connections {
+                
+                group.addTask {
+                    
+                    try await connection.withTransaction(MDTransactionOptions(
+                        mode: .serializable,
+                        retryOnConflict: true
+                    )) { connection in
+                        
+                        var obj = try await connection.query().find("testLongTransaction6").first()!
+                        var value = obj["col"].intValue!
+                        
+                        try await Task.sleep(nanoseconds: 1_000_000_000)
+                        
+                        value += 1
+                        obj = try await connection.query().findOne("testLongTransaction6")
+                            .filter { $0.id == obj.id }
+                            .upsert(["col": value])!
+                        
+                        try await Task.sleep(nanoseconds: 1_000_000_000)
+                        
+                        value += 1
+                        obj = try await connection.query().findOne("testLongTransaction6")
+                            .filter { $0.id == obj.id }
+                            .upsert(["col": value])!
+                        
+                        return obj
+                    }
+                }
+            }
+            
+            var result: Set<Int> = []
+            
+            for try await item in group {
+                result.insert(item["col"].intValue!)
+            }
+            
+            return result
+        }
+        
+        XCTAssertEqual(result, [2, 4, 6, 8])
         
         for connection in connections {
             try await connection.close()

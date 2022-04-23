@@ -49,7 +49,12 @@ extension MDTransactionOptions {
         
         case `default`
         
-        case serialize
+        case committed
+        
+        case repeatable
+        
+        case serializable
+        
     }
     
 }
@@ -66,7 +71,9 @@ extension DBTransactionOptions.Mode {
     init(_ mode: MDTransactionOptions.Mode) {
         switch mode {
         case .default: self = .default
-        case .serialize: self = .serialize
+        case .committed: self = .committed
+        case .repeatable: self = .repeatable
+        case .serializable: self = .serializable
         }
     }
 }
