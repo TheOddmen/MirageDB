@@ -110,24 +110,22 @@ public class DatabasePool {
     }
     
     public func withConnection<Result>(
-        _ closure: @escaping (MDConnection) -> EventLoopFuture<Result>
-    ) -> EventLoopFuture<Result> {
-        return self.pool.withConnection(logger: logger, on: eventLoopGroup.next()) { closure($0.connection) }
-    }
-    
-    public func withConnection<Result>(
         _ closure: @Sendable @escaping (MDConnection) async throws -> Result
     ) async throws -> Result {
         
-        return try await self.withConnection { connection in
+        let result = self.pool.withConnection(
+            logger: logger,
+            on: eventLoopGroup.next()
+        ) { item -> EventLoopFuture<Result> in
             
-            let promise = connection.eventLoopGroup.next().makePromise(of: Result.self)
+            let promise = item.connection.eventLoopGroup.next().makePromise(of: Result.self)
             
-            promise.completeWithTask{ try await closure(connection) }
+            promise.completeWithTask { try await closure(item.connection) }
             
             return promise.futureResult
-            
-        }.get()
+        }
+        
+        return try await result.get()
     }
     
     func shutdown() {
