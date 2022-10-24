@@ -59,13 +59,6 @@ private func decodeBinary(_ obj: [String: DBData]) -> Data? {
     return Data(base64Encoded: value)
 }
 
-private func decodeDocument(_ obj: [String: DBData]) -> [String: MDData]? {
-    guard obj.count == 1 else { return nil }
-    guard obj.keys.first == "$object" else { return nil }
-    guard let object = obj["$object"]?.dictionary else { return nil }
-    return try? object.mapValues(MDData.init(fromJSON:))
-}
-
 extension MDData.Number {
     
     fileprivate init(_ value: DBData.Number) {
@@ -86,8 +79,15 @@ extension MDData {
         "$decimal": { decodeDecimal($0).map(MDData.init) },
         "$binary": { decodeBinary($0).map(MDData.init) },
         "$date": { decodeDate($0).map(MDData.init) },
-        "$object": { decodeDocument($0).map(MDData.init) },
     ]
+    
+    private static func escape_key(_ key: String) -> String {
+        return key.first == "$" ? "$\(key)" : key
+    }
+    
+    private static func unescape_key(_ key: String) -> String {
+        return key.first == "$" ? String(key.dropFirst()) : key
+    }
     
     fileprivate init(fromJSON data: DBData) throws {
         switch data {
@@ -99,16 +99,8 @@ extension MDData {
         case let .array(value): try self.init(value.map(MDData.init(fromJSON:)))
         case let .dictionary(obj):
             
-            if let key = obj.keys.first,
-               let decoder = MDData.json_decoder[key],
-               let value = decoder(obj) {
-                
-                self = value
-                
-            } else {
-                
-                try self.init(obj.mapValues(MDData.init(fromJSON:)))
-            }
+            let unescaped = try obj.map { key, value in (MDData.unescape_key(key), try MDData(fromJSON: value)) }
+            self.init(Dictionary(uniqueKeysWithValues: unescaped))
             
         default: throw MDError.unsupportedType
         }
@@ -130,11 +122,9 @@ extension MDData {
         case let .binary(value): return ["$binary": .string(value.base64EncodedString())]
         case let .array(value): return .array(value.map { $0.toJSON() })
         case let .dictionary(value):
-            if value.keys.count == 1, let key = value.keys.first, MDData.json_decoder.keys.contains(key) {
-                return ["$object": .dictionary(value.mapValues { $0.toJSON() })]
-            } else {
-                return .dictionary(value.mapValues { $0.toJSON() })
-            }
+            
+            let escaped = value.map { key, value in (MDData.escape_key(key), value.toJSON()) }
+            return .dictionary(Dictionary(uniqueKeysWithValues: escaped))
         }
     }
 }
