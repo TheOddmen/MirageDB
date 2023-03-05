@@ -23,6 +23,8 @@
 //  THE SOFTWARE.
 //
 
+import NIOConcurrencyHelpers
+
 public struct DatabaseID: Hashable, Codable {
     
     public let string: String
@@ -149,7 +151,7 @@ public class Databases {
     
     private var pools: [DatabaseID: DatabasePool]
     
-    private var lock: Lock
+    private var lock: NIOLock
     
     public init(threadPool: NIOThreadPool, logger: Logger, on eventLoopGroup: EventLoopGroup) {
         self.eventLoopGroup = eventLoopGroup
